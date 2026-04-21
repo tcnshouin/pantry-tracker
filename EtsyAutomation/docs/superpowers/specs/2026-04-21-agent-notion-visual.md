@@ -32,16 +32,19 @@ Default (no match): `warm`
 
 Photos are selected from a curated pool of reliable Unsplash photo IDs, grouped by theme. The photo for a given product is selected by taking `hash(product_name) % pool_size` so it is deterministic per product but varies across products.
 
-**Photo pools (6 IDs each):**
+**Photo pools (6 IDs each — all IDs must be verified working before implementation):**
 
 ```
-warm:         1493119508027, 1507003211169, 1544716278-ca5, 1476514974600, 1512453015560, 1556909114-38a
-professional: 1484480974693, 1507238691740, 1460925895969, 1553484771-14a, 1568992823564, 1498075702-b9d
-aesthetic:    1499750310107, 1495745646-a4, 1517971055-4f, 1558618047-b0e, 1452421819408, 1519682577737
+warm:         1493119508027, 1507003211169, 1476514974600, 1512453015560, 1544716278, 1556909114
+professional: 1484480974693, 1507238691740, 1460925895969, 1568992823564, 1553484771, 1498075702
+aesthetic:    1499750310107, 1452421819408, 1519682577737, 1517971055, 1558618047, 1495745646
 earthy:       1416879595882, 1463936579959, 1464822634775, 1472214103674, 1444492695851, 1425082628738
 ```
 
+Photo selection: `photoIndex = simpleHash(product_name) % 6` where `simpleHash` sums char codes.
 Unsplash URL format: `https://images.unsplash.com/photo-{id}?w=1200&q=80`
+
+**Note:** During implementation, verify each photo ID loads correctly before finalising the pool.
 
 ## Layout Type → Emoji Icon
 
@@ -77,11 +80,11 @@ After page creation, append blocks via `PATCH /v1/blocks/{id}/children`:
 ## Per-Page Enhancements by layout_type
 
 ### cover
-**Page creation:**
+**Page creation:** cover photo + icon = `theme_icon` (the theme-level icon: 🌸 warm / 📊 professional / ✨ aesthetic / 🌿 earthy)
 ```json
 {
   "cover": { "type": "external", "external": { "url": "<unsplash-url>" } },
-  "icon": { "type": "emoji", "emoji": "<theme-icon>" }
+  "icon": { "type": "emoji", "emoji": "<theme_icon>" }
 }
 ```
 **Blocks appended:**
@@ -138,10 +141,13 @@ After page creation, append blocks via `PATCH /v1/blocks/{id}/children`:
     ]}},
     "Date": { "date": {} },
     "<content_element_1>": { "rich_text": {} },
-    "<content_element_2>": { "rich_text": {} },
-    "...": {}
+    "<content_element_N>": { "rich_text": {} }
   }
 }
+```
+All items in `content_elements` become individual `rich_text` properties (truncated to 100 chars each, consistent with existing behavior). If `content_elements` is empty, only Name/Status/Priority/Date are created.
+
+```json
 ```
 
 ### journal
@@ -177,7 +183,7 @@ User can switch to Calendar view in Notion UI by clicking `+ Add a view → Cale
 ## Workflow Changes to agent_notion
 
 ### New node: Detect Theme
-**Type:** Code, placed after Set Config, before Root ID Set?
+**Type:** Code, placed immediately after Set Config, before the existing Root ID Set node.
 
 Inputs: `product_name`, `root_page_id`, `notion_token`, `pages_json_raw`
 Logic: keyword match on `product_name.toLowerCase()` → sets `theme` string and derived `theme_color`, `callout_bg`, `theme_icon`, `photo_url`
