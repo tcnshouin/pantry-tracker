@@ -18,6 +18,7 @@ type PlayerData = {
 }
 
 local playerData: { [Player]: PlayerData } = {}
+local equippedCosmetics: { [Player]: string } = {}
 
 local EconomyManager = {}
 
@@ -211,6 +212,19 @@ function EconomyManager.start()
 
 	GetOwnedCosmeticsFn.OnServerInvoke = function(player: Player)
 		return EconomyManager.getOwnedCosmetics(player)
+	end
+
+	Players.PlayerRemoving:Connect(function(p)
+		equippedCosmetics[p] = nil
+	end)
+
+	local EquipFn = ReplicatedStorage:WaitForChild(Constants.REMOTEFN_EQUIP_COSMETIC) :: RemoteFunction
+	EquipFn.OnServerInvoke = function(player: Player, cosmeticId: string): (boolean, string)
+		local data = playerData[player]
+		if not data then return false, "Not loaded" end
+		if not table.find(data.cosmetics, cosmeticId) then return false, "Not owned" end
+		equippedCosmetics[player] = cosmeticId
+		return true, cosmeticId
 	end
 
 	Players.PlayerAdded:Connect(function(player: Player)

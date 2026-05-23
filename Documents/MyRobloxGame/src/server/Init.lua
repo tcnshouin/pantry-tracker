@@ -11,3 +11,6 @@ EconomyManager.start()
 
 local MonetizationManager = require(script.Parent.MonetizationManager)
 MonetizationManager.start()
+
+local LeaderboardManager = require(script.Parent.LeaderboardManager)
+LeaderboardManager.start()
