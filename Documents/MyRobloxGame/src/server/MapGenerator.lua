@@ -139,7 +139,7 @@ local function spawnChunk(offset: Vector3, chunksCleared: number): { model: Mode
     return { model = chunkModel, endOffset = endOffset }
 end
 
-local function placeCheckpoint(position: Vector3)
+local function placeCheckpoint(position: Vector3, _player: Player)
     local cp = Instance.new("Part")
     cp.Name = "Checkpoint"
     cp.Size = Vector3.new(8, 10, 1)
@@ -215,7 +215,7 @@ local function advanceChunks(player: Player)
     local ownsVip = false
     local interval = if ownsVip then Constants.CHECKPOINT_INTERVAL_VIP else Constants.CHECKPOINT_INTERVAL
     if state.chunksCleared % interval == 0 then
-        placeCheckpoint(state.nextChunkOffset - Vector3.new(4, 0, 0))
+        placeCheckpoint(state.nextChunkOffset - Vector3.new(4, 0, 0), player)
     end
 
     local freq = getChaosFrequency(state.chunksCleared)
