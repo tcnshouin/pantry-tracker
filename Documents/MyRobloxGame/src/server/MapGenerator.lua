@@ -5,13 +5,16 @@ local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace         = game:GetService("Workspace")
 
-local Constants   = require(ReplicatedStorage:WaitForChild("Constants"))
-local ChunkEasy   = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkEasy"))
-local ChunkMedium = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkMedium"))
-local ChunkHard   = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkHard"))
+local Constants          = require(ReplicatedStorage:WaitForChild("Constants"))
+local ChunkEasy          = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkEasy"))
+local ChunkMedium        = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkMedium"))
+local ChunkHard          = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkHard"))
 
-local ChunkSpawnedEvent = ReplicatedStorage:WaitForChild(Constants.REMOTE_CHUNK_SPAWNED) :: RemoteEvent
-local PowerupManager    = require(script.Parent.PowerupManager)
+local ChunkSpawnedEvent  = ReplicatedStorage:WaitForChild(Constants.REMOTE_CHUNK_SPAWNED) :: RemoteEvent
+local PowerupManager     = require(script.Parent.PowerupManager)
+local EconomyManager     = require(script.Parent.EconomyManager)
+local LeaderboardManager = require(script.Parent.LeaderboardManager)
+local MonetizationManager = require(script.Parent.MonetizationManager)
 
 type PlayerState = {
     chunksCleared:    number,
@@ -171,9 +174,7 @@ local function triggerChaosEvent(player: Player)
     local state = playerStates[player]
     if not state then return end
 
-    -- TODO: replace with MonetizationManager once Task 5 is done
-    local ownsChaoWard = false
-    if not state.chaosWardUsed and ownsChaoWard then
+    if not state.chaosWardUsed and MonetizationManager.playerOwnsPass(player, Constants.PASS_CHAOS_WARD) then
         state.chaosWardUsed = true
         return
     end
@@ -204,8 +205,7 @@ local function triggerChaosEvent(player: Player)
         end
     end
 
-    -- TODO: replace with EconomyManager once Task 4 is done
-    -- EconomyManager.awardShards(player, Constants.SHARDS_CHAOS_SURVIVED)
+    EconomyManager.awardShards(player, Constants.SHARDS_CHAOS_SURVIVED)
 end
 
 local function advanceChunks(player: Player)
@@ -219,9 +219,10 @@ local function advanceChunks(player: Player)
     state.chunksCleared += 1
     state.score += 1
 
-    -- TODO: replace with MonetizationManager once Task 5 is done
-    local ownsVip = false
-    local interval = if ownsVip then Constants.CHECKPOINT_INTERVAL_VIP else Constants.CHECKPOINT_INTERVAL
+    EconomyManager.onChunkCleared(player, state.chunksCleared)
+    LeaderboardManager.updateSessionScore(player, state.score)
+
+    local interval = if MonetizationManager.playerOwnsPass(player, Constants.PASS_VIP_CHECKPOINT) then Constants.CHECKPOINT_INTERVAL_VIP else Constants.CHECKPOINT_INTERVAL
     if state.chunksCleared % interval == 0 then
         placeCheckpoint(state.nextChunkOffset - Vector3.new(4, 0, 0), player)
     end
@@ -269,8 +270,7 @@ local function createKillZone()
         local state = playerStates[player]
         if not state or state.invincible then return end
 
-        -- TODO: replace with EconomyManager once Task 4 is done
-        -- EconomyManager.onPlayerDeath(player, state.score)
+        EconomyManager.onPlayerDeath(player, state.score)
 
         state.score = 0
 
