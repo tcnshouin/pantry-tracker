@@ -105,7 +105,7 @@ local function applyGhost()
 		end
 	end
 
-	task.wait(getDrawbackDuration(Constants.POWERUP_GHOST_DRAWBACK) - 0.5)
+	task.wait(math.max(0, getDrawbackDuration(Constants.POWERUP_GHOST_DRAWBACK) - 0.5))
 	gui:Destroy()
 end
 
@@ -193,5 +193,5 @@ local HANDLERS: { [string]: () -> () } = {
 
 ApplyPowerEvent.OnClientEvent:Connect(function(powerupType: string)
 	local handler = HANDLERS[powerupType]
-	if handler then handler() end
+	if handler then task.spawn(handler) end
 end)

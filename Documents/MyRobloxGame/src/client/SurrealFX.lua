@@ -46,7 +46,8 @@ end
 
 local function applyOrbPulse(part: Instance)
 	if not part:IsA("BasePart") then return end
-	local light = part:FindFirstChildOfClass("PointLight")
+	local basePart = part :: BasePart
+	local light = basePart:FindFirstChildOfClass("PointLight")
 	if light then
 		local tween = TweenService:Create(
 			light,
@@ -55,7 +56,7 @@ local function applyOrbPulse(part: Instance)
 		)
 		tween:Play()
 	end
-	startColorCycle(part)
+	startColorCycle(basePart)
 end
 
 function SurrealFX.applyGlitchSkin(active: boolean)
