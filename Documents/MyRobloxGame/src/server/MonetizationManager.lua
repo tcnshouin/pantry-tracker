@@ -52,7 +52,15 @@ local function cacheAndApplyPasses(player: Player)
     end
 end
 
+local ALL_PASSES_SET: { [number]: boolean } = {}
+for _, passId in ipairs(ALL_PASSES) do
+    if passId ~= 0 then
+        ALL_PASSES_SET[passId] = true
+    end
+end
+
 local function onPassPurchased(player: Player, passId: number)
+    if passId == 0 then return end
     if not passCache[player] then
         passCache[player] = {}
     end
@@ -66,8 +74,10 @@ end
 
 function MonetizationManager.start()
     Players.PlayerAdded:Connect(function(player)
-        player.CharacterAdded:Wait()
-        cacheAndApplyPasses(player)
+        local char = player.Character or player.CharacterAdded:Wait()
+        if char then
+            task.spawn(cacheAndApplyPasses, player)
+        end
     end)
 
     Players.PlayerRemoving:Connect(function(player)
@@ -82,7 +92,7 @@ function MonetizationManager.start()
 
     local PromptEvent = ReplicatedStorage:WaitForChild(Constants.REMOTE_PROMPT_PASS) :: RemoteEvent
     PromptEvent.OnServerEvent:Connect(function(player, passId: number)
-        if passId == 0 then return end
+        if passId == 0 or not ALL_PASSES_SET[passId] then return end
         MarketplaceService:PromptGamePassPurchase(player, passId)
     end)
 end
