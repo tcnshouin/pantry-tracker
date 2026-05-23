@@ -100,7 +100,7 @@ function SurrealFX.applyGlitchSkin(active: boolean)
 	end
 end
 
-ChunkSpawnedEvt.OnClientEvent:Connect(function(chunkModel: Model, mutations: { string })
+ChunkSpawnedEvt.OnClientEvent:Connect(function(_chunkId: number, mutations: { string }, chunkModel: Model)
 	for _, desc in chunkModel:GetDescendants() do
 		if desc:IsA("BasePart") then
 			for _, mutation in mutations do

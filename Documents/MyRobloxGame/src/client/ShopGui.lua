@@ -158,12 +158,12 @@ local function buildItems()
 			actionBtn.BackgroundColor3 = Color3.fromRGB(90, 30, 160)
 			actionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 			actionBtn.MouseButton1Click:Connect(function()
-				local success: boolean = PurchaseFn:InvokeServer(item.id)
+				local success, msg = PurchaseFn:InvokeServer(item.id)
 				if success then
 					actionBtn.Text = "Equip"
 					actionBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 60)
 				else
-					errorLabel.Text = "Not enough shards!"
+					errorLabel.Text = tostring(msg) or "Error"
 					task.delay(2, function()
 						errorLabel.Text = ""
 					end)

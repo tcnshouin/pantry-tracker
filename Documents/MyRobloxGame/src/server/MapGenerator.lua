@@ -355,7 +355,7 @@ function MapGenerator.start()
     createKillZone()
 
     Players.PlayerAdded:Connect(function(player)
-        player.CharacterAdded:Wait()
+        local _ = player.Character or player.CharacterAdded:Wait()
         MapGenerator.initPlayer(player)
     end)
 
