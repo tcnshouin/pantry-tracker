@@ -49,6 +49,19 @@ Constants.PASS_CELESTIAL_AURA = 0
 Constants.PASS_SHATTER_INTO_GOLD = 0
 Constants.PASS_GLITCH_SKIN = 0
 
+-- Shard cosmetics catalog: cosmeticId -> shard cost (server-authoritative)
+Constants.COSMETICS_CATALOG = {
+    NeonTrail       = 150,
+    FloatingShardsTrail = 200,
+    RainbowMistTrail = 250,
+    GlowingAura     = 200,
+    StaticAura      = 300,
+    DreamCloudAura  = 400,
+    ExplodeIntoStars = 250,
+    DissolveIntoPixels = 350,
+    ShatterLikeGlass = 500,
+}
+
 -- CollectionService tags
 Constants.TAG_POWERUP_ORB = "PowerupOrb"
 Constants.TAG_CHUNK_PART = "ChunkPart"

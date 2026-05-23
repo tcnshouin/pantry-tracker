@@ -124,16 +124,19 @@ function EconomyManager.onPlayerDeath(player: Player, score: number)
 	end
 end
 
-function EconomyManager.purchaseCosmetic(player: Player, cosmeticId: string, cost: number): (boolean, string)
+function EconomyManager.purchaseCosmetic(player: Player, cosmeticId: string): (boolean, string)
 	local data = playerData[player]
 	if not data then
 		return false, "Player data not loaded"
 	end
 
-	for _, owned in data.cosmetics do
-		if owned == cosmeticId then
-			return false, "Already owned"
-		end
+	local cost = Constants.COSMETICS_CATALOG[cosmeticId]
+	if not cost then
+		return false, "Unknown cosmetic"
+	end
+
+	if table.find(data.cosmetics, cosmeticId) then
+		return false, "Already owned"
 	end
 
 	if data.shards < cost then
@@ -143,20 +146,21 @@ function EconomyManager.purchaseCosmetic(player: Player, cosmeticId: string, cos
 	data.shards -= cost
 	table.insert(data.cosmetics, cosmeticId)
 
-	local saveOk = pcall(function()
-		local userId = tostring(player.UserId)
-		ShardsDS:SetAsync(userId, data.shards)
+	local userId = tostring(player.UserId)
+	local cosOk = pcall(function()
 		CosmeticsDS:SetAsync(userId, data.cosmetics)
 	end)
 
-	if not saveOk then
+	if not cosOk then
 		data.shards += cost
 		local idx = table.find(data.cosmetics, cosmeticId)
-		if idx then
-			table.remove(data.cosmetics, idx)
-		end
+		if idx then table.remove(data.cosmetics, idx) end
 		return false, "Save failed — please try again"
 	end
+
+	pcall(function()
+		ShardsDS:SetAsync(userId, data.shards)
+	end)
 
 	UpdateShardsEvent:FireClient(player, data.shards)
 	return true, "Success"
@@ -201,8 +205,8 @@ function EconomyManager.start()
 	local PurchaseCosmeticFn = ReplicatedStorage:WaitForChild(Constants.REMOTEFN_PURCHASE_COSMETIC) :: RemoteFunction
 	local GetOwnedCosmeticsFn = ReplicatedStorage:WaitForChild(Constants.REMOTEFN_GET_OWNED_COSMETICS) :: RemoteFunction
 
-	PurchaseCosmeticFn.OnServerInvoke = function(player: Player, cosmeticId: string, cost: number)
-		return EconomyManager.purchaseCosmetic(player, cosmeticId, cost)
+	PurchaseCosmeticFn.OnServerInvoke = function(player: Player, cosmeticId: string)
+		return EconomyManager.purchaseCosmetic(player, cosmeticId)
 	end
 
 	GetOwnedCosmeticsFn.OnServerInvoke = function(player: Player)
@@ -210,14 +214,11 @@ function EconomyManager.start()
 	end
 
 	Players.PlayerAdded:Connect(function(player: Player)
+		loadPlayerData(player)
 		task.spawn(function()
-			loadPlayerData(player)
-
-			while player.Parent do
+			while player and player.Parent do
 				task.wait(Constants.SHARD_SAVE_INTERVAL)
-				if player.Parent then
-					savePlayerData(player)
-				end
+				savePlayerData(player)
 			end
 		end)
 	end)
