@@ -16,6 +16,7 @@ type PlayerState = {
     chunksCleared:    number,
     nextChunkOffset:  Vector3,
     activeChunks:     { { model: Model, endX: number } },
+    checkpoints:      { Part },
     checkpointCFrame: CFrame,
     invincible:       boolean,
     chaosWardUsed:    boolean,
@@ -25,13 +26,6 @@ type PlayerState = {
 local playerStates: { [Player]: PlayerState } = {}
 
 local MapGenerator = {}
-
-local function getDifficultyTier(chunksCleared: number): number
-    if chunksCleared < Constants.DIFF_MEDIUM_START then return 1
-    elseif chunksCleared < Constants.DIFF_HARD_START then return 2
-    else return 3
-    end
-end
 
 local function getMutationSpeed(chunksCleared: number): number
     if chunksCleared <= 10 then return 1
@@ -58,12 +52,14 @@ local function pickChunk(chunksCleared: number)
     local total = 100 + medWeight + hardWeight
     local roll = math.random(1, total)
 
-    if roll <= 100 then
+    if roll <= 100 and #ChunkEasy > 0 then
         return ChunkEasy[math.random(1, #ChunkEasy)]
-    elseif roll <= 100 + medWeight then
+    elseif roll <= 100 + medWeight and #ChunkMedium > 0 then
         return ChunkMedium[math.random(1, #ChunkMedium)]
-    else
+    elseif #ChunkHard > 0 then
         return ChunkHard[math.random(1, #ChunkHard)]
+    else
+        return ChunkEasy[1]
     end
 end
 
@@ -80,7 +76,8 @@ local function applyServerMutation(part: BasePart, mutation: string, speed: numb
                 local goal = part.CFrame * CFrame.Angles(0, math.pi * 2, 0)
                 local t = TweenService:Create(part, TweenInfo.new(4 / speed, Enum.EasingStyle.Linear), { CFrame = goal })
                 t:Play()
-                t.Completed:Wait()
+                pcall(function() t.Completed:Wait() end)
+                if not (part and part.Parent) then break end
             end
         end)
 
@@ -139,7 +136,7 @@ local function spawnChunk(offset: Vector3, chunksCleared: number): { model: Mode
     return { model = chunkModel, endOffset = endOffset }
 end
 
-local function placeCheckpoint(position: Vector3, _player: Player)
+local function placeCheckpoint(position: Vector3, player: Player): Part
     local cp = Instance.new("Part")
     cp.Name = "Checkpoint"
     cp.Size = Vector3.new(8, 10, 1)
@@ -149,14 +146,23 @@ local function placeCheckpoint(position: Vector3, _player: Player)
     cp.CFrame = CFrame.new(position)
     cp.Parent = Workspace
 
-    cp.Touched:Connect(function(hit)
+    local conn: RBXScriptConnection
+    conn = cp.Touched:Connect(function(hit)
         local char = hit.Parent
         if not char then return end
         local p = Players:GetPlayerFromCharacter(char)
-        if p and playerStates[p] then
+        if p == player and playerStates[p] then
             playerStates[p].checkpointCFrame = cp.CFrame
+            conn:Disconnect()
         end
     end)
+
+    local state = playerStates[player]
+    if state then
+        table.insert(state.checkpoints, cp)
+    end
+
+    return cp
 end
 
 local function triggerChaosEvent(player: Player)
@@ -219,7 +225,7 @@ local function advanceChunks(player: Player)
     end
 
     local freq = getChaosFrequency(state.chunksCleared)
-    if state.chunksCleared % freq == 0 then
+    if freq ~= math.huge and state.chunksCleared % freq == 0 then
         triggerChaosEvent(player)
     end
 
@@ -280,6 +286,7 @@ function MapGenerator.initPlayer(player: Player)
         chunksCleared    = 0,
         nextChunkOffset  = spawnPos,
         activeChunks     = {},
+        checkpoints      = {},
         checkpointCFrame = CFrame.new(spawnPos),
         invincible       = false,
         chaosWardUsed    = false,
@@ -290,7 +297,12 @@ function MapGenerator.initPlayer(player: Player)
         advanceChunks(player)
     end
 
+    local generation = 0
+
     player.CharacterAdded:Connect(function(char)
+        generation += 1
+        local myGen = generation
+
         local state = playerStates[player]
         if state then
             state.invincible = true
@@ -305,7 +317,7 @@ function MapGenerator.initPlayer(player: Player)
         end
 
         task.spawn(function()
-            while player and player.Parent do
+            while player and player.Parent and generation == myGen do
                 local c = player.Character
                 local state2 = playerStates[player]
                 if c and state2 then
@@ -325,6 +337,9 @@ function MapGenerator.cleanupPlayer(player: Player)
     if state then
         for _, entry in ipairs(state.activeChunks) do
             entry.model:Destroy()
+        end
+        for _, cp in ipairs(state.checkpoints) do
+            cp:Destroy()
         end
     end
     playerStates[player] = nil
