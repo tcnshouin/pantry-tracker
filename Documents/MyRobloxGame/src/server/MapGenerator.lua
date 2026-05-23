@@ -111,6 +111,8 @@ local function spawnChunk(offset: Vector3, chunksCleared: number): { model: Mode
     local chunkModel = Instance.new("Model")
     chunkModel.Name = "Chunk_" .. chunkId
     chunkModel.Parent = Workspace
+    local PowerupManager = require(script.Parent.PowerupManager)
+    PowerupManager.onChunkSpawned(chunkModel)
 
     for _, platData in ipairs(data.platforms) do
         local part = Instance.new("Part")

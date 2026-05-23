@@ -14,3 +14,6 @@ MonetizationManager.start()
 
 local LeaderboardManager = require(script.Parent.LeaderboardManager)
 LeaderboardManager.start()
+
+local PowerupManager = require(script.Parent.PowerupManager)
+PowerupManager.start()
