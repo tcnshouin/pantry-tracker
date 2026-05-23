@@ -5,3 +5,6 @@ Remotes.init()
 
 local MapGenerator = require(script.Parent.MapGenerator)
 MapGenerator.start()
+
+local EconomyManager = require(script.Parent.EconomyManager)
+EconomyManager.start()
