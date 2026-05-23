@@ -8,3 +8,6 @@ MapGenerator.start()
 
 local EconomyManager = require(script.Parent.EconomyManager)
 EconomyManager.start()
+
+local MonetizationManager = require(script.Parent.MonetizationManager)
+MonetizationManager.start()
