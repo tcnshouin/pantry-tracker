@@ -26,7 +26,9 @@ function Remotes.init()
 end
 
 function Remotes.get(name: string): Instance
-    return ReplicatedStorage:WaitForChild(name, 10)
+    local child = ReplicatedStorage:WaitForChild(name, 10)
+    assert(child, string.format("[Remotes] '%s' not found in ReplicatedStorage after 10s", name))
+    return child
 end
 
 return Remotes
