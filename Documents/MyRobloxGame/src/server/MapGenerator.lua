@@ -11,6 +11,7 @@ local ChunkMedium = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChil
 local ChunkHard   = require(ReplicatedStorage:WaitForChild("Chunks"):WaitForChild("ChunkHard"))
 
 local ChunkSpawnedEvent = ReplicatedStorage:WaitForChild(Constants.REMOTE_CHUNK_SPAWNED) :: RemoteEvent
+local PowerupManager    = require(script.Parent.PowerupManager)
 
 type PlayerState = {
     chunksCleared:    number,
@@ -111,8 +112,6 @@ local function spawnChunk(offset: Vector3, chunksCleared: number): { model: Mode
     local chunkModel = Instance.new("Model")
     chunkModel.Name = "Chunk_" .. chunkId
     chunkModel.Parent = Workspace
-    local PowerupManager = require(script.Parent.PowerupManager)
-    PowerupManager.onChunkSpawned(chunkModel)
 
     for _, platData in ipairs(data.platforms) do
         local part = Instance.new("Part")
@@ -132,6 +131,7 @@ local function spawnChunk(offset: Vector3, chunksCleared: number): { model: Mode
         end
     end
 
+    PowerupManager.onChunkSpawned(chunkModel)
     ChunkSpawnedEvent:FireAllClients(chunkId, data.mutations, chunkModel)
 
     local endOffset = offset + Vector3.new(data.length, 0, 0)
