@@ -103,7 +103,7 @@ local ChunkEasy: { Chunk } = {
             { pos = Vector3.new(9,  2,  0), size = Vector3.new(5, 1, 5), material = Enum.Material.Neon },
             { pos = Vector3.new(18, 0,  0), size = Vector3.new(5, 1, 5), material = Enum.Material.Neon },
         },
-        hazards    = {},
+        hazards    = { { type = "rising", speed = 1 } },
         mutations  = { "rising", "colorshift" },
         difficulty = 1,
         length     = 23,

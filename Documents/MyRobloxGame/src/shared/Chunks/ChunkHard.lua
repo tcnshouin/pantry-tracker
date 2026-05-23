@@ -30,7 +30,7 @@ local ChunkHard: { Chunk } = {
             { pos = Vector3.new(18, 0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
             { pos = Vector3.new(24, 0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
         },
-        hazards    = {},
+        hazards    = { { type = "teleporting", speed = 3 }, { type = "shrinking", speed = 2 } },
         mutations  = { "teleporting", "shrinking", "colorshift" },
         difficulty = 3,
         length     = 27,
@@ -51,13 +51,13 @@ local ChunkHard: { Chunk } = {
     {
         platforms = {
             { pos = Vector3.new(0,  0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
-            { pos = Vector3.new(16, 0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
-            { pos = Vector3.new(32, 0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
+            { pos = Vector3.new(10, 0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
+            { pos = Vector3.new(20, 0, 0), size = Vector3.new(3, 1, 3), material = Enum.Material.SmoothPlastic },
         },
-        hazards    = {},
+        hazards    = { { type = "rising", speed = 3 } },
         mutations  = { "rising", "colorshift" },
         difficulty = 3,
-        length     = 35,
+        length     = 23,
     },
     {
         platforms = {
@@ -74,7 +74,7 @@ local ChunkHard: { Chunk } = {
         platforms = {
             { pos = Vector3.new(0, 0, 0), size = Vector3.new(20, 1, 2), material = Enum.Material.SmoothPlastic },
         },
-        hazards    = {},
+        hazards    = { { type = "shrinking", speed = 3 }, { type = "rotating", speed = 3 } },
         mutations  = { "shrinking", "rotating", "colorshift" },
         difficulty = 3,
         length     = 20,
