@@ -2,8 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import TopNav from './components/ui/TopNav';
 import CourseDashboard from './components/course/CourseDashboard';
 import LessonShell from './components/course/LessonShell';
-
-const SimulatorPage = () => <div style={{padding:24,color:'#e8edf5',fontFamily:'monospace'}}>Simulator — Coming Soon</div>;
+import SimulatorPage from './components/simulator/SimulatorPage';
 
 export default function App() {
   return (
