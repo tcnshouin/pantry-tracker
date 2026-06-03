@@ -3,6 +3,7 @@ import TopNav from './components/ui/TopNav';
 import CourseDashboard from './components/course/CourseDashboard';
 import LessonShell from './components/course/LessonShell';
 import SimulatorPage from './components/simulator/SimulatorPage';
+import PlaybookPage from './pages/PlaybookPage';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
             <Route path="/dashboard"  element={<CourseDashboard />} />
             <Route path="/simulator"  element={<SimulatorPage />} />
             <Route path="/lesson/:id" element={<LessonShell />} />
+            <Route path="/playbook"   element={<PlaybookPage />} />
           </Routes>
         </main>
       </div>

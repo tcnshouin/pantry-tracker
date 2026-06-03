@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { TrendingUp, LayoutDashboard } from 'lucide-react';
+import { TrendingUp, LayoutDashboard, BookOpen } from 'lucide-react';
 
 export default function TopNav() {
   const { pathname } = useLocation();
   const tabs = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/simulator', label: 'Simulator',  icon: TrendingUp },
+    { to: '/playbook',  label: 'Playbook',   icon: BookOpen },
   ];
   return (
     <nav className="h-13 bg-surface border-b border-border flex items-center px-5 gap-0 flex-shrink-0" style={{height:52}}>
