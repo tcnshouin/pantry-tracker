@@ -12,7 +12,7 @@ export const useAppStore = create(persist(
     recordAttempt: (id) => set(state => ({
       attempts: { ...state.attempts || {}, [id]: (state.attempts?.[id] || 0) + 1 },
     })),
-    resetAll: () => set({ completed: {}, scores: {} }),
+    resetAll: () => set({ completed: {}, scores: {}, attempts: {} }),
   }),
   { name: 'edgelab-progress' }
 ));
