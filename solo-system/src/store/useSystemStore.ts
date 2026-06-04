@@ -31,7 +31,11 @@ export function createSystemStore(opts?: { clock?: Clock }) {
       const today = dayKey(now, save.settings.resetHour)
       if (!needsNewDay(save.dayKey, today)) return save
       const history = save.dayKey
-        ? [...save.history, { day: save.dayKey, completed: save.quests.filter(q => q.completed).length, issued: save.quests.length }]
+        ? [...save.history, {
+            day: save.dayKey,
+            completed: save.quests.filter(q => q.completed && !q.isRedemption).length,
+            issued: save.quests.filter(q => !q.isRedemption).length,
+          }]
         : save.history
       const quests = issueDailyQuests({
         library: questLibrary, count: balanceConfig.dailyQuestCount,

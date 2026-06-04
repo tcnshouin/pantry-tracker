@@ -11,7 +11,9 @@ export default function App() {
   const ready = useSystemStore(s => s.ready)
 
   useEffect(() => {
-    systemStore.getState().hydrate().catch(console.error)
+    systemStore.getState().hydrate()
+      .then(() => systemStore.getState().checkPenalty())
+      .catch(console.error)
     const id = setInterval(() => {
       systemStore.getState().checkPenalty()
     }, 30000)

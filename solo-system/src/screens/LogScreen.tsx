@@ -1,10 +1,13 @@
 import { useSystemStore } from '../store/useSystemStore'
 import { SystemWindow } from '../components/SystemWindow'
 import { streakMultiplier } from '../domain/streaks'
+import { questLibrary } from '../data/questLibrary'
 
 export function LogScreen() {
   const streaks = useSystemStore(s => s.save.streaks)
   const history = useSystemStore(s => s.save.history)
+
+  const titleFor = (id: string) => questLibrary.find(t => t.id === id)?.title ?? (id === 'redemption' ? 'Penalty Quest: Redemption' : id)
 
   const streakEntries = Object.values(streaks).filter(s => s.count > 0)
 
@@ -35,7 +38,7 @@ export function LogScreen() {
                 >
                   <div className="space-y-0.5">
                     <p className="font-mono text-xs text-white font-semibold tracking-wide">
-                      {rec.templateId}
+                      {titleFor(rec.templateId)}
                     </p>
                     {rec.lastCompletedDay && (
                       <p className="font-mono text-[10px] text-slate-600">
