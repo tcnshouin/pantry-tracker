@@ -489,9 +489,10 @@ import type { StreakRecord } from './types'
 function prevDay(dayKey: string): string {
   const d = new Date(dayKey + 'T12:00:00')
   d.setDate(d.getDate() - 1)
-  return dayKey.slice(0, 8) + String(d.getDate()).padStart(2, '0') === dayKey
-    ? dayKey
-    : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function bumpStreak(rec: StreakRecord | undefined, templateId: string, today: string): StreakRecord {
@@ -1021,6 +1022,19 @@ test('a passed deadline with an incomplete quest enters the penalty zone on chec
   expect(store.getState().save.penalty.active).toBe(true)
 })
 
+test('entering the penalty zone appends exactly one redemption quest', async () => {
+  const t0 = new Date('2026-06-04T08:00:00').getTime()
+  const store = createSystemStore({ clock: clock(t0) })
+  await store.getState().hydrate()
+  store.getState().__setClock(clock(t0 + 1000 * 60 * 60 * 48))
+  store.getState().checkPenalty()
+  const redemptions = store.getState().save.quests.filter(q => q.isRedemption)
+  expect(redemptions).toHaveLength(1)
+  expect(redemptions[0].completed).toBe(false)
+  store.getState().checkPenalty()
+  expect(store.getState().save.quests.filter(q => q.isRedemption)).toHaveLength(1)
+})
+
 test('allocateStatPoint spends a free point and raises the stat sub-level', async () => {
   const store = createSystemStore({ clock: clock(Date.now()) })
   await store.getState().hydrate()
@@ -1121,7 +1135,9 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         for (const m of missed) {
           if (streaks[m.templateId]) streaks[m.templateId] = resetStreak(streaks[m.templateId])
         }
-        const next: SaveState = { ...save, streaks, penalty: enterPenalty(save.penalty, clock.now()) }
+        const hasOpenRedemption = save.quests.some(q => q.isRedemption && !q.completed)
+        const quests = hasOpenRedemption ? save.quests : [...save.quests, buildRedemptionQuest(clock.now(), save.settings.resetHour)]
+        const next: SaveState = { ...save, quests, streaks, penalty: enterPenalty(save.penalty, clock.now()) }
         persist(next)
         set({ save: next })
       },
@@ -1149,6 +1165,23 @@ function hashDay(day: string): number {
   let h = 0
   for (let i = 0; i < day.length; i++) h = (h * 31 + day.charCodeAt(i)) & 0x7fffffff
   return h || 1
+}
+
+function buildRedemptionQuest(now: number, _resetHour: number): import('../domain/types').QuestInstance {
+  return {
+    instanceId: `redemption-${now}`,
+    templateId: 'redemption',
+    title: 'Penalty Quest: Redemption',
+    description: 'Clear this to escape the Penalty Zone and lift the debuff.',
+    stat: 'STR',
+    baseEXP: 80,
+    baseStatXP: 30,
+    issuedAt: now,
+    deadline: now + 24 * 60 * 60_000,
+    completed: false,
+    completedAt: null,
+    isRedemption: true,
+  }
 }
 
 export const systemStore = createSystemStore()
@@ -1214,7 +1247,7 @@ git commit -m "feat(solo-system): system window, countdown timer, stat and exp b
 
 - [ ] **Step 1: Build the screens (no new domain logic; render store state)**
 
-- `QuestCard` — `SystemWindow` containing title, stat tag, `CountdownTimer` (deadline from quest), and a checkbox/button that calls `completeQuest(instanceId)`; completed cards show a chec. Disabled when expired.
+- `QuestCard` — `SystemWindow` containing title, stat tag, `CountdownTimer` (deadline from quest), and a checkbox/button that calls `completeQuest(instanceId)`; completed cards show a check. Disabled when expired.
 - `HomeScreen` — `ExpBar` at top, list of today's `quests` as `QuestCard`s, an empty state if none.
 - `StatusScreen` — the iconic blue status window: level, class rank, five `StatBar`s, `freeStatPoints` with a `+` button per stat calling `allocateStatPoint`.
 - `LogScreen` — current per-quest streaks and the `history` list (day, completed/issued).
