@@ -74,6 +74,11 @@ go through the Supabase Edge Function proxy.
 - **Consistency multiplier:** each completion gives a *small* base stat-XP. A streak
   multiplier scales it: e.g. day 1 = ×1, day 7 = ×1.5, day 14+ = ×2. Consistent
   habits upgrade their stat far faster than sporadic bursts.
+- **Streak scope:** streaks are tracked **per-quest** (drives the per-quest
+  consistency multiplier) and aggregated **globally** (drives streak-based titles in
+  §5.6). Per-stat streaks are derived as the max active streak among that stat's
+  quests. The data model in §10 holds the per-quest counters; global and per-stat
+  are computed views.
 - **Level up:** all 5 stats +1, plus `freeStatPoints` to manually allocate (faithful
   to the System). Triggers a glowing level-up animation.
 
@@ -91,6 +96,9 @@ The category→stat assignment is editable so the user can tune it over time.
 - Fast early levels (momentum), deliberately grindy late game.
 - With realistic daily EXP (~60–100/day from a full quest set), maxing lands around
   1.5–2 years of consistent effort.
+- **The curve, consistency multiplier, and daily-EXP figures are interdependent
+  placeholders to validate, not fixed requirements.** Phase 1 ships them as defaults
+  and the ~1–2 year horizon is the target to tune toward — not a guaranteed constant.
 - **All balance constants live in one `balanceConfig` file** so pacing is tunable
   after real-world feel.
 
@@ -135,6 +143,12 @@ Core curve ships first; endless layer is a clean add-on.
 - Presented via a dramatic full-screen red "YOU HAVE ENTERED THE PENALTY ZONE"
   takeover with a countdown (full-immersion presentation; underlying mechanic is the
   streak reset + debuff + redemption quest).
+- **Interaction with daily reset:** an unresolved Penalty Zone carries across the
+  daily reset. New daily quests are still issued, but the EXP-reduction debuff stays
+  active until the redemption quest is cleared. The redemption quest does **not**
+  block completing normal quests; it only lifts the debuff. Only one Penalty Zone is
+  active at a time — additional misses while in the zone refresh/extend it rather
+  than stacking multiple debuffs.
 
 ## 7. Game layer
 
@@ -173,6 +187,10 @@ Core curve ships first; endless layer is a clean add-on.
 - **Inventory:** equip/unequip; equipped gear grants combat-stat buffs and
   **EXP/stat-XP multipliers** that make the *real* grind more rewarding (closing the
   loop back to real life).
+- **Core-principle boundary:** gear multipliers only *amplify the reward of a real
+  task completion* — they never generate EXP/stat-XP on their own and are never
+  applied to combat outcomes. Multipliers fire exclusively at the moment a real quest
+  is completed. This keeps real tasks the sole source of progress (§1).
 - **Enhancement:** spend in-game currency (from quests) to upgrade gear — a money
   sink and long-term goal.
 
