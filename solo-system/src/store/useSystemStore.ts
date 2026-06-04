@@ -3,7 +3,7 @@ import { useStore } from 'zustand'
 import { type Clock, systemClock, dayKey } from '../domain/time'
 import { balanceConfig } from '../domain/balanceConfig'
 import { completeQuest as domainComplete } from '../domain/quests'
-import { detectMissedQuests, enterPenalty, clearPenalty } from '../domain/penalty'
+import { detectMissedQuests, enterPenalty, clearPenalty, buildRedemptionQuest } from '../domain/penalty'
 import { issueDailyQuests, needsNewDay } from '../domain/issuance'
 import { resetStreak } from '../domain/streaks'
 import { questLibrary } from '../data/questLibrary'
@@ -27,14 +27,15 @@ export function createSystemStore(opts?: { clock?: Clock }) {
     const persist = (save: SaveState) => { void saveState(save) }
 
     const rolloverIfNeeded = (save: SaveState): SaveState => {
-      const today = dayKey(clock.now(), save.settings.resetHour)
+      const now = clock.now()
+      const today = dayKey(now, save.settings.resetHour)
       if (!needsNewDay(save.dayKey, today)) return save
       const history = save.dayKey
         ? [...save.history, { day: save.dayKey, completed: save.quests.filter(q => q.completed).length, issued: save.quests.length }]
         : save.history
       const quests = issueDailyQuests({
         library: questLibrary, count: balanceConfig.dailyQuestCount,
-        now: clock.now(), durationOverrideMs: null, seed: hashDay(today),
+        now, durationOverrideMs: null, seed: hashDay(today),
       })
       return { ...save, dayKey: today, quests, history }
     }
@@ -61,7 +62,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
           penalty: save.penalty, today, now: clock.now(),
         })
         let penalty = save.penalty
-        if (quest.isRedemption) penalty = clearPenalty(penalty)
+        if (quest.isRedemption && result.quest.completed) penalty = clearPenalty(penalty)
         const next: SaveState = {
           ...save,
           player: result.player,
@@ -82,7 +83,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
           if (streaks[m.templateId]) streaks[m.templateId] = resetStreak(streaks[m.templateId])
         }
         const hasOpenRedemption = save.quests.some(q => q.isRedemption && !q.completed)
-        const quests = hasOpenRedemption ? save.quests : [...save.quests, buildRedemptionQuest(clock.now(), save.settings.resetHour)]
+        const quests = hasOpenRedemption ? save.quests : [...save.quests, buildRedemptionQuest(clock.now())]
         const next: SaveState = { ...save, quests, streaks, penalty: enterPenalty(save.penalty, clock.now()) }
         persist(next)
         set({ save: next })
@@ -111,23 +112,6 @@ function hashDay(day: string): number {
   let h = 0
   for (let i = 0; i < day.length; i++) h = (h * 31 + day.charCodeAt(i)) & 0x7fffffff
   return h || 1
-}
-
-function buildRedemptionQuest(now: number, _resetHour: number): import('../domain/types').QuestInstance {
-  return {
-    instanceId: `redemption-${now}`,
-    templateId: 'redemption',
-    title: 'Penalty Quest: Redemption',
-    description: 'Clear this to escape the Penalty Zone and lift the debuff.',
-    stat: 'STR',
-    baseEXP: 80,
-    baseStatXP: 30,
-    issuedAt: now,
-    deadline: now + 24 * 60 * 60_000,
-    completed: false,
-    completedAt: null,
-    isRedemption: true,
-  }
 }
 
 export const systemStore = createSystemStore()
