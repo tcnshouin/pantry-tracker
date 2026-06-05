@@ -519,7 +519,7 @@ export function applyPlayerAction(state: CombatState, action: PlayerAction): Com
       if (skill.kind === 'damage') {
         const r = resolveAttack(player, enemy, rng, skill.attackMult ?? 1); rng = r.rngState; enemy = { ...enemy, hp: r.hp }; logs.push(`${player.name} used ${skill.name}: ${r.text}`)
       } else if (skill.kind === 'heal') {
-        const heal = Math.round(((skill.baseHeal ?? 0) + 0) * player.skillPowerMult)
+        const heal = Math.round((skill.baseHeal ?? 0) * player.skillPowerMult)
         player = { ...player, hp: Math.min(player.maxHP, player.hp + heal) }
         logs.push(`${player.name} used ${skill.name} and healed ${heal}`)
       } else if (skill.kind === 'buffCrit') {
@@ -626,7 +626,7 @@ test('a skill with insufficient MP is a no-op for resources', () => {
 })
 ```
 
-- [ ] **Step 2: Run.** If the Mend heal test fails because Task 5's heal formula differs, reconcile: the canonical Mend heal in 2a is `Math.round(baseHeal * skillPowerMult)` (INT influences via `skillPowerMult`). Update `engine.ts` Mend branch to `const heal = Math.round((skill.baseHeal ?? 0) * player.skillPowerMult)` so it matches this test. Re-run → PASS.
+- [ ] **Step 2: Run → PASS.** The canonical Mend heal in 2a is `Math.round(baseHeal * skillPowerMult)` (INT influences via `skillPowerMult`), already implemented that way in Task 5. If for any reason it differs, reconcile the `engine.ts` Mend branch to match this test.
 
 - [ ] **Step 3: Commit**
 ```bash
@@ -888,7 +888,7 @@ test('winning a gate grants gold, marks it cleared, ends combat, and does NOT ch
   const before = store.getState().save.player
   store.getState().enterGate('gate-e1')
   let guard = 0
-  while (store.getState().combat && guard++ < 500) {
+  while (store.getState().combat?.phase === 'player' && guard++ < 500) {
     store.getState().combatAction({ type: 'attack' })
   }
   const after = store.getState().save
