@@ -112,10 +112,14 @@ the run.
   phase: 'player' | 'enemy' | 'won' | 'lost', log: CombatLogEntry[], rngState }`.
 - `Combatant`: `{ name, hp, maxHP, mp, maxMP, attack, defense, speed, critChance,
   critMultiplier, dodgeChance, buffs: Buff[], isDefending }`.
-- Turn order within a round is by descending `speed`.
+- Turn order within a round is by descending `speed`. The `turnQueue` is rebuilt at the
+  start of each new round (not once per fight), so it stays correct if a speed-affecting
+  buff is added later. Within a round, defeated combatants are skipped.
 - `applyPlayerAction(state, action)` → new state + appended log entries; then enemy turn(s)
-  resolve via a simple deterministic AI (`enemyTurn`): attack, or use a telegraphed
-  heavier move on a fixed cadence (kept simple in 2a).
+  resolve via a simple deterministic AI (`enemyTurn`): a normal attack, except every
+  `combat.enemyHeavyMoveEveryNRounds` rounds (default 3) it uses a heavier telegraphed
+  hit (damage × `combat.enemyHeavyMoveMultiplier`, default 1.5). Both values live in the
+  `combat` block of `balanceConfig.ts`.
 - After each defeat, advance `currentEnemyIndex`; when the boss falls, `phase = 'won'`.
   When player HP ≤ 0, `phase = 'lost'`.
 - Buffs/debuffs decrement each round; Defend clears at the player's next turn.
