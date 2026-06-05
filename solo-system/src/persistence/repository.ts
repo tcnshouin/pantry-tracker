@@ -22,9 +22,17 @@ export function freshSaveState(resetHour: number): SaveState {
   }
 }
 
+function migrate(raw: SaveState): SaveState {
+  let s = raw
+  if (s.schemaVersion < 2) {
+    s = { ...s, gates: s.gates ?? { clearedGateIds: [] }, schemaVersion: 2 }
+  }
+  return s
+}
+
 export async function loadState(): Promise<SaveState | null> {
   const row = await db.saves.get(SAVE_KEY)
-  return row?.state ?? null
+  return row ? migrate(row.state) : null
 }
 
 export async function saveState(state: SaveState): Promise<void> {
