@@ -58,10 +58,11 @@ export function applyPlayerAction(state: CombatState, action: PlayerAction): Com
       logs.push(`${player.name} defends`)
     } else if (action.type === 'skill') {
       const skill = getSkill(action.skillId)
-      if (!skill || player.mp < skill.mpCost) { logs.push('Not enough MP'); return }
+      if (!skill) { logs.push('Unknown skill'); return }
+      if (player.mp < skill.mpCost) { logs.push('Not enough MP'); return }
       player = { ...player, mp: player.mp - skill.mpCost }
       if (skill.kind === 'damage') {
-        const r = resolveAttack(player, enemy, rng, skill.attackMult ?? 1); rng = r.rngState; enemy = { ...enemy, hp: r.hp }; logs.push(`${player.name} used ${skill.name}: ${r.text}`)
+        const r = resolveAttack({ ...player, attack: player.attack * player.skillPowerMult }, enemy, rng, skill.attackMult ?? 1); rng = r.rngState; enemy = { ...enemy, hp: r.hp }; logs.push(`${player.name} used ${skill.name}: ${r.text}`)
       } else if (skill.kind === 'heal') {
         const heal = Math.round((skill.baseHeal ?? 0) * player.skillPowerMult)
         player = { ...player, hp: Math.min(player.maxHP, player.hp + heal) }
@@ -86,7 +87,7 @@ export function applyPlayerAction(state: CombatState, action: PlayerAction): Com
 
   if (player.speed >= enemy.speed) { doPlayer(); doEnemy() } else { doEnemy(); doPlayer() }
 
-  player = { ...player, buffs: decay(player.buffs), defending: false }
+  player = { ...player, buffs: decay(player.buffs) }
   enemy = { ...enemy, buffs: decay(enemy.buffs) }
 
   const enemies = s.enemies.map((e, i) => (i === s.currentEnemyIndex ? enemy : e))

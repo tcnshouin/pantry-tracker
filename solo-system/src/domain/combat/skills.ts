@@ -10,7 +10,6 @@ export interface SkillDef {
   kind: SkillKind
   attackMult?: number
   baseHeal?: number
-  healPerInt?: number
   critBonus?: number
   attackDown?: number
   defenseDown?: number

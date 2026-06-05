@@ -23,7 +23,7 @@ export const balanceConfig = {
     enemyHeavyMoveEveryNRounds: 3, enemyHeavyMoveMultiplier: 1.5,
     skills: {
       powerStrike: { id: 'powerStrike', name: 'Power Strike', unlockLevel: 1, mpCost: 8, attackMult: 1.8 },
-      mend: { id: 'mend', name: 'Mend', unlockLevel: 3, mpCost: 12, baseHeal: 20, healPerInt: 3 },
+      mend: { id: 'mend', name: 'Mend', unlockLevel: 3, mpCost: 12, baseHeal: 20 },
       focus: { id: 'focus', name: 'Focus', unlockLevel: 5, mpCost: 10, critBonus: 0.25, turns: 3 },
       weaken: { id: 'weaken', name: 'Weaken', unlockLevel: 8, mpCost: 14, attackDown: 0.3, defenseDown: 0.3, turns: 3 },
     },

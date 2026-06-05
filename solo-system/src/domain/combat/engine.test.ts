@@ -64,3 +64,11 @@ test('enemy dodge can negate damage', () => {
   const s = applyPlayerAction(state({ enemies: [mk({ id: 'e1', hp: 30, dodgeChance: 1 })] }), { type: 'attack' })
   expect(s.enemies[0].hp).toBe(30)
 })
+
+test('Power Strike damage scales with skillPowerMult', () => {
+  const base = applyPlayerAction(state({ player: mk({ id: 'p', isPlayer: true, attack: 20, speed: 10, skillPowerMult: 1, mp: 30 }), enemies: [mk({ id: 'e1', hp: 9999 })] }), { type: 'skill', skillId: 'powerStrike' })
+  const boosted = applyPlayerAction(state({ player: mk({ id: 'p', isPlayer: true, attack: 20, speed: 10, skillPowerMult: 2, mp: 30 }), enemies: [mk({ id: 'e1', hp: 9999 })] }), { type: 'skill', skillId: 'powerStrike' })
+  const baseDmg = 9999 - base.enemies[0].hp
+  const boostedDmg = 9999 - boosted.enemies[0].hp
+  expect(boostedDmg).toBeGreaterThan(baseDmg)
+})
