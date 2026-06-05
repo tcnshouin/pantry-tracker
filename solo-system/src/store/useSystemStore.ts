@@ -9,15 +9,23 @@ import { resetStreak } from '../domain/streaks'
 import { questLibrary } from '../data/questLibrary'
 import { freshSaveState, loadState, saveState } from '../persistence/repository'
 import type { SaveState, StatType } from '../domain/types'
+import { canEnterGate, buildCombatState } from '../domain/gates'
+import { applyPlayerAction } from '../domain/combat/engine'
+import { gateLibrary } from '../data/gateLibrary'
+import type { CombatState, PlayerAction } from '../domain/combat/types'
 
 interface SystemState {
   save: SaveState
   ready: boolean
+  combat: CombatState | null
   hydrate: () => Promise<void>
   completeQuest: (instanceId: string) => Promise<void>
   checkPenalty: () => void
   allocateStatPoint: (stat: StatType) => void
   __setClock: (c: Clock) => void
+  enterGate: (gateId: string) => void
+  combatAction: (action: PlayerAction) => void
+  fleeGate: () => void
 }
 
 export function createSystemStore(opts?: { clock?: Clock }) {
@@ -47,6 +55,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
     return {
       save: freshSaveState(balanceConfig.defaultResetHour),
       ready: false,
+      combat: null,
       __setClock: (c: Clock) => { clock = c },
 
       hydrate: async () => {
@@ -108,6 +117,40 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         persist(next)
         set({ save: next })
       },
+
+      enterGate: (gateId: string) => {
+        const save = get().save
+        const gate = gateLibrary.find(g => g.id === gateId)
+        if (!gate) return
+        if (!canEnterGate(gate, save.player, save.gates.clearedGateIds)) return
+        const next: SaveState = { ...save, player: { ...save.player, gateKeys: save.player.gateKeys - gate.keyCost } }
+        persist(next)
+        const combat = buildCombatState(gate, next.player, clock.now())
+        set({ save: next, combat })
+      },
+
+      combatAction: (action: PlayerAction) => {
+        const combat = get().combat
+        if (!combat || combat.phase !== 'player') return
+        const nextCombat = applyPlayerAction(combat, action)
+        if (nextCombat.phase === 'won') {
+          const save = get().save
+          const clearedGateIds = save.gates.clearedGateIds.includes(nextCombat.gateId)
+            ? save.gates.clearedGateIds
+            : [...save.gates.clearedGateIds, nextCombat.gateId]
+          const next: SaveState = {
+            ...save,
+            player: { ...save.player, currency: save.player.currency + nextCombat.goldReward },
+            gates: { clearedGateIds },
+          }
+          persist(next)
+          set({ save: next, combat: nextCombat })
+        } else {
+          set({ combat: nextCombat })
+        }
+      },
+
+      fleeGate: () => { set({ combat: null }) },
     }
   })
 }
