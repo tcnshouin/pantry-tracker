@@ -5,14 +5,15 @@ A free, installable iPhone app (PWA) that gamifies real-life self-improvement us
 checkbox and a countdown timer. Completing them — **consistently** — earns EXP, levels
 you up, and grows your five stats. Miss a quest and you enter the Penalty Zone.
 
-This repository contains **Phase 1: the honest core.** Combat, AI-generated quests,
-cloud sync, and push notifications are planned for later phases (see below).
+This repository contains **Phase 1 (the honest core)** and **Phase 2a (combat & gates)**.
+Loot/inventory, the shadow army, AI quests, cloud sync, and push notifications are planned
+for later phases (see below).
 
 ## Core principle
 
 Completing a real-life quest is the **only** way to gain EXP and stat progress. There is
-no other path to power. The game layer (coming in Phase 2) will be a reward for real
-effort, never a substitute for it.
+no other path to power. The combat layer is a reward for real effort, never a substitute
+for it — fighting in Gates yields gold and clears, but **never** EXP or stat-XP.
 
 ## How it works
 
@@ -26,6 +27,25 @@ effort, never a substitute for it.
 - **Penalty Zone:** miss a quest's deadline and your streak resets, you get an EXP
   debuff, and a redemption Penalty Quest appears. Clear it to escape the zone.
 - All progress is stored **on-device** (IndexedDB) and survives reloads.
+
+## Combat & Gates (Phase 2a)
+
+Your hunter's combat power derives **entirely from your real stats**: STR → attack,
+VIT → HP, AGI → turn order, INT → skill power (MP + skill scaling), PER → crit & dodge.
+
+- **Gates** are dungeons: a wave of enemies, then a boss. HP/MP carry across the whole
+  run — no free heals — so it's a war of attrition.
+- **Entering costs 1 Gate Key** (earned only from completing real quests). Clearing a
+  gate grants **gold** and unlocks the next gate. Losing or fleeing grants nothing, and
+  there is **no real-life penalty** — the key was simply spent on entry.
+- **Turn-based actions:** Attack, Defend (halve the next hit, restore some MP), and MP
+  **skills** that unlock as you level: Power Strike (Lv1), Mend (Lv3), Focus (Lv5),
+  Weaken (Lv8).
+- A level-1 hunter with no allocated stats will lose early gates — that's the point.
+  Build real habits, allocate stat points, and come back stronger.
+- All combat constants live in **`src/domain/balanceConfig.ts` → `combat`** (formulas,
+  crit/dodge caps, skill costs, enemy heavy-move cadence). Enemies and gates are data in
+  `src/data/enemyLibrary.ts` and `src/data/gateLibrary.ts`.
 
 ## Run it
 
@@ -63,10 +83,16 @@ The EXP curve (`100 × level^1.6`) is intentionally steep so reaching max rank t
 around 1–2 years of consistent effort. These are placeholder defaults in `balanceConfig.ts`
 to be tuned with real-world use.
 
-## Not in Phase 1 (planned later)
+## Done so far
 
-- **Phase 2:** Gates, turn-based combat powered by your real stats, loot, inventory,
-  shadow army.
+- **Phase 1:** the honest core — daily quests, leveling, 5 stats, streaks, Penalty Zone,
+  local persistence, PWA.
+- **Phase 2a:** turn-based combat + Gates (this slice).
+
+## Planned later
+
+- **Phase 2b:** loot drops, item rarities, inventory, equipment buffs, enhancement.
+- **Phase 2c:** ARISE shadow army (collect defeated monsters as passive power).
 - **Phase 3:** AI-generated personalized quests (DeepSeek), Supabase cloud sync + login,
   push notifications.
-- **Phase 4:** Class tier-up boss dungeons, titles, endless/prestige mode, full polish.
+- **Phase 4:** class tier-up boss dungeons, titles, endless/prestige mode, full polish.
