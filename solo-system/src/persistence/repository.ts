@@ -1,7 +1,7 @@
 import { STAT_TYPES, type Player, type SaveState } from '../domain/types'
 import { db, SAVE_KEY } from './db'
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export function freshPlayer(): Player {
   const stats = Object.fromEntries(STAT_TYPES.map(t => [t, { type: t, subLevel: 0, statXP: 0 }])) as Player['stats']
@@ -18,6 +18,7 @@ export function freshSaveState(resetHour: number): SaveState {
     penalty: { active: false, debuffMultiplier: 1, enteredAt: null },
     settings: { resetHour },
     history: [],
+    gates: { clearedGateIds: [] },
   }
 }
 

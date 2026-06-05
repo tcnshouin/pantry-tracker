@@ -53,4 +53,5 @@ export interface SaveState {
   penalty: PenaltyZone
   settings: { resetHour: number }
   history: { day: string; completed: number; issued: number }[]
+  gates: { clearedGateIds: string[] }
 }
