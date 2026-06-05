@@ -1,3 +1,4 @@
+import { balanceConfig } from './balanceConfig'
 import { deriveCombatStats } from './combat/derive'
 import type { Combatant, CombatState } from './combat/types'
 import type { Player } from './types'
@@ -30,7 +31,7 @@ function enemyCombatant(id: string): Combatant {
     id: e.id, name: e.name, isPlayer: false,
     hp: e.hp, maxHP: e.hp, mp: 0, maxMP: 0,
     attack: e.attack, defense: e.defense, speed: e.speed, skillPowerMult: 1,
-    critChance: e.critChance, critMultiplier: 1.75, dodgeChance: e.dodgeChance,
+    critChance: e.critChance, critMultiplier: balanceConfig.combat.critMultiplier, dodgeChance: e.dodgeChance,
     buffs: [], defending: false,
   }
 }

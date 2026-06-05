@@ -87,7 +87,7 @@ export function applyPlayerAction(state: CombatState, action: PlayerAction): Com
 
   if (player.speed >= enemy.speed) { doPlayer(); doEnemy() } else { doEnemy(); doPlayer() }
 
-  player = { ...player, buffs: decay(player.buffs) }
+  player = { ...player, buffs: decay(player.buffs), defending: false }
   enemy = { ...enemy, buffs: decay(enemy.buffs) }
 
   const enemies = s.enemies.map((e, i) => (i === s.currentEnemyIndex ? enemy : e))

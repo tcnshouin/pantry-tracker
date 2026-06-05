@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useSystemStore } from '../store/useSystemStore'
+import { useSystemStore, systemStore } from '../store/useSystemStore'
 import { SystemWindow } from '../components/SystemWindow'
 import { gateLibrary } from '../data/gateLibrary'
 import { gateUnlocked, canEnterGate } from '../domain/gates'
@@ -20,7 +20,7 @@ export function GatesScreen() {
 
   function handleEnter(gateId: string) {
     enterGate(gateId)
-    navigate('/battle')
+    if (systemStore.getState().combat) navigate('/battle')
   }
 
   return (
