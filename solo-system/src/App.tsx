@@ -6,6 +6,8 @@ import { PenaltyZoneOverlay } from './components/PenaltyZoneOverlay'
 import { HomeScreen } from './screens/HomeScreen'
 import { StatusScreen } from './screens/StatusScreen'
 import { LogScreen } from './screens/LogScreen'
+import { GatesScreen } from './screens/GatesScreen'
+import { BattleScreen } from './screens/BattleScreen'
 
 export default function App() {
   const ready = useSystemStore(s => s.ready)
@@ -41,6 +43,8 @@ export default function App() {
         <Route path="/" element={<HomeScreen />} />
         <Route path="/status" element={<StatusScreen />} />
         <Route path="/log" element={<LogScreen />} />
+        <Route path="/gates" element={<GatesScreen />} />
+        <Route path="/battle" element={<BattleScreen />} />
       </Routes>
       <BottomNav />
     </HashRouter>
