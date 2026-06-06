@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useSystemStore } from '../store/useSystemStore'
 import { CombatantBar } from '../components/CombatantBar'
 import { SystemWindow } from '../components/SystemWindow'
+import { ItemCard } from '../components/ItemCard'
 import { listSkills, skillUnlocked } from '../domain/combat/skills'
 
 export function BattleScreen() {
@@ -141,7 +142,7 @@ export function BattleScreen() {
       {isOver && (
         <div className="absolute inset-0 bg-system-bg/90 flex flex-col items-center justify-center gap-6 z-50">
           {combat.phase === 'won' ? (
-            <div className="text-center space-y-3">
+            <div className="text-center space-y-3 px-4 w-full max-w-sm">
               <p
                 className="font-mono text-3xl font-black tracking-[0.2em] uppercase text-system-glow"
                 style={{ textShadow: '0 0 24px #38bdf8, 0 0 48px #38bdf860' }}
@@ -151,6 +152,16 @@ export function BattleScreen() {
               <p className="font-mono text-lg font-bold text-system-accent tracking-widest">
                 +{combat.goldReward} GOLD
               </p>
+              {combat.droppedItems && combat.droppedItems.length > 0 && (
+                <div className="mt-2 space-y-1 text-left">
+                  <p className="font-mono text-[10px] tracking-[0.25em] text-system-glow/60 uppercase mb-2">
+                    ▣ LOOT OBTAINED
+                  </p>
+                  {combat.droppedItems.map(item => (
+                    <ItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <p
