@@ -47,6 +47,25 @@ VIT → HP, AGI → turn order, INT → skill power (MP + skill scaling), PER �
   crit/dodge caps, skill costs, enemy heavy-move cadence). Enemies and gates are data in
   `src/data/enemyLibrary.ts` and `src/data/gateLibrary.ts`.
 
+## Loot & Inventory (Phase 2b)
+
+Clearing a Gate drops gear, which you manage on the **Items** screen.
+
+- **Drops:** the boss always drops one item on a win, plus a chance for a bonus drop;
+  rarity (Common → Uncommon → Rare → Epic → Legendary) is weighted by the gate's tier.
+  Items use templated bases with rarity-scaled rolled values and extra affixes at higher
+  rarities. Losing a gate drops nothing.
+- **Equipment (3 slots — Weapon / Armor / Accessory):** equipped gear does two things —
+  it raises your hunter's combat stats (ATK/HP/DEF/crit/skill power) in the next gate,
+  AND it multiplies the **EXP/stat-XP you earn from completing real quests**. Those
+  reward multipliers fire ONLY on a real quest completion — combat never grants real
+  progression.
+- **Enhancement:** spend gold (from gate clears) to enhance an item (+1, +2, …), growing
+  its bonuses at a rising cost — a long-term sink.
+- Loot constants live in **`src/domain/balanceConfig.ts` → `loot`** (rarity weights, bonus
+  ranges, affix counts, drop chance, enhance costs). Base items are in
+  `src/data/itemLibrary.ts`.
+
 ## Run it
 
 ```bash
@@ -87,11 +106,11 @@ to be tuned with real-world use.
 
 - **Phase 1:** the honest core — daily quests, leveling, 5 stats, streaks, Penalty Zone,
   local persistence, PWA.
-- **Phase 2a:** turn-based combat + Gates (this slice).
+- **Phase 2a:** turn-based combat + Gates.
+- **Phase 2b:** loot drops, item rarities, inventory, equipment buffs, enhancement (this slice).
 
 ## Planned later
 
-- **Phase 2b:** loot drops, item rarities, inventory, equipment buffs, enhancement.
 - **Phase 2c:** ARISE shadow army (collect defeated monsters as passive power).
 - **Phase 3:** AI-generated personalized quests (DeepSeek), Supabase cloud sync + login,
   push notifications.
