@@ -98,11 +98,19 @@ unchanged.
   (pure, in `src/domain/items/bonuses.ts`). `gates.buildCombatState` adds the combat
   totals onto the hunter combatant *after* `deriveCombatStats` (which stays stat-only and
   unchanged — preserving 2a's tested signature). `maxHP` bonus also raises starting `hp`.
-- **Real rewards:** `completeQuest` gains an optional input
-  `rewardMultipliers?: { expMult: number; statXpMult: number }` (default `{1,1}`).
-  It multiplies the computed `expGain` by `expMult` and `statGain` by `statXpMult`. The
-  store passes `aggregateEquipment(equipment).reward` (with each mult = `1 + sum of gear
-  fractions`). This is the ONLY new touch to the quest path.
+  This requires `buildCombatState`'s signature to grow an `equipment` parameter
+  (`buildCombatState(gate, player, equipment, seed)` or similar); update its one call site
+  in the store and its existing tests accordingly. The seeded RNG (`nextRandom`) used by
+  item generation already lives at `src/domain/combat/rng.ts` — reuse it.
+- **Real rewards:** extend the existing `CompleteQuestInput` interface (in
+  `domain/quests.ts`) with an optional field
+  `rewardMultipliers?: { expMult: number; statXpMult: number }` (default `{1,1}` when
+  absent). It multiplies ONLY the computed `expGain` by `expMult` and `statGain` by
+  `statXpMult`. The flat `currency + 10` and `gateKeys + 1` grants per completion are
+  **not** multiplied — they stay exactly as today. The store passes
+  `aggregateEquipment(equipment).reward` (each mult = `1 + sum of gear fractions`). This
+  multiplier is the ONLY new touch to the quest progression path; existing `completeQuest`
+  tests (which omit the field) must remain green unchanged.
 
 ## 6. Enhancement (`src/domain/items/enhance.ts`)
 
@@ -116,15 +124,22 @@ unchanged.
 
 ## 7. Data model + migration
 
-- `SaveState` gains `inventory` and `equipment` (above). `schemaVersion` bumps **2 → 3**.
-  `migrate` adds `inventory: []` and `equipment: { weapon: null, armor: null, accessory: null }`
-  to v2 saves (and the existing v1→v2 step still runs first). Unit-tested.
+- `SaveState` gains `inventory` and `equipment` (above). Three coordinated changes in
+  `repository.ts`:
+  1. Bump the `SCHEMA_VERSION` constant **2 → 3**.
+  2. Add `inventory: []` and `equipment: { weapon: null, armor: null, accessory: null }` to
+     `freshSaveState` (so new saves are valid v3).
+  3. Extend `migrate` with a `schemaVersion < 3` step that adds those two fields, composing
+     after the existing `schemaVersion < 2` step (so a v1 save flows v1→v2→v3 in one load).
+  All unit-tested (v2→v3 adds fields; v1→v3 composes both steps).
 - Item instance ids are generated from a counter/seed so saves stay deterministic in tests.
 
 ## 8. Store integration (`useSystemStore`)
 
 - The gate-win commit additionally rolls drops and appends them to `inventory`; the
-  returned combat state carries the dropped items for the overlay.
+  returned combat state carries the dropped items for the overlay. This requires adding an
+  optional `droppedItems?: Item[]` field to `CombatState` in `src/domain/combat/types.ts`,
+  populated by the store on win.
 - New actions: `equipItem(itemId)` (move from inventory to the matching slot, return any
   displaced item to inventory), `unequipItem(slot)`, `enhanceItem(itemId)`.
 - `completeQuest` call site passes `rewardMultipliers` from `aggregateEquipment`.
@@ -190,7 +205,8 @@ src/domain/items/enhance.ts      (new)
 src/data/itemLibrary.ts          (new)
 src/domain/balanceConfig.ts      (add loot block)
 src/domain/types.ts              (add inventory + equipment to SaveState)
-src/persistence/repository.ts    (migration v2->v3, freshSaveState fields)
+src/domain/combat/types.ts       (add optional droppedItems to CombatState)
+src/persistence/repository.ts    (SCHEMA_VERSION 3, freshSaveState fields, migrate v2->v3)
 src/domain/quests.ts             (optional rewardMultipliers)
 src/domain/gates.ts              (fold equipment combat bonuses into hunter)
 src/store/useSystemStore.ts      (drops on win, equip/unequip/enhance, pass multipliers)
