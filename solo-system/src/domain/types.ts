@@ -1,3 +1,5 @@
+import type { Item, Equipment } from './items/types'
+
 export type StatType = 'STR' | 'VIT' | 'AGI' | 'INT' | 'PER'
 export const STAT_TYPES: StatType[] = ['STR', 'VIT', 'AGI', 'INT', 'PER']
 
@@ -54,4 +56,6 @@ export interface SaveState {
   settings: { resetHour: number }
   history: { day: string; completed: number; issued: number }[]
   gates: { clearedGateIds: string[] }
+  inventory: Item[]
+  equipment: Equipment
 }

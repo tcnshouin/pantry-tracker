@@ -28,6 +28,32 @@ export const balanceConfig = {
       weaken: { id: 'weaken', name: 'Weaken', unlockLevel: 8, mpCost: 14, attackDown: 0.3, defenseDown: 0.3, turns: 3 },
     },
   },
+  loot: {
+    affixCountByRarity: { common: 0, uncommon: 1, rare: 1, epic: 2, legendary: 3 } as Record<string, number>,
+    rarityMultiplier: { common: 1, uncommon: 1.3, rare: 1.7, epic: 2.3, legendary: 3 } as Record<string, number>,
+    bonusRanges: {
+      attack: { min: 2, max: 5 },
+      maxHP: { min: 10, max: 25 },
+      defense: { min: 1, max: 3 },
+      critChance: { min: 0.02, max: 0.05 },
+      skillPowerMult: { min: 0.03, max: 0.08 },
+      expMult: { min: 0.03, max: 0.08 },
+      statXpMult: { min: 0.03, max: 0.08 },
+    } as Record<string, { min: number; max: number }>,
+    affixPool: ['attack', 'maxHP', 'defense', 'critChance', 'skillPowerMult', 'expMult', 'statXpMult'] as string[],
+    rarityWeightsByTier: {
+      E: { common: 70, uncommon: 25, rare: 5, epic: 0, legendary: 0 },
+      D: { common: 45, uncommon: 35, rare: 17, epic: 3, legendary: 0 },
+      C: { common: 25, uncommon: 35, rare: 28, epic: 10, legendary: 2 },
+    } as Record<string, Record<string, number>>,
+    bonusDropChance: 0.25,
+    enhance: {
+      baseCost: 25,
+      costGrowthPerLevel: 1.6,
+      rarityCostMultiplier: { common: 1, uncommon: 1.5, rare: 2.2, epic: 3, legendary: 4 } as Record<string, number>,
+      bonusGrowthPerLevel: 0.15,
+    },
+  },
   classRankThresholds: {
     E: 1, D: 13, C: 26, B: 39, A: 52, S: 65, NATIONAL: 80, MONARCH: 100,
   } as Record<ClassRank, number>,

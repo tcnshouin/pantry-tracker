@@ -1,7 +1,7 @@
 import { STAT_TYPES, type Player, type SaveState } from '../domain/types'
 import { db, SAVE_KEY } from './db'
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export function freshPlayer(): Player {
   const stats = Object.fromEntries(STAT_TYPES.map(t => [t, { type: t, subLevel: 0, statXP: 0 }])) as Player['stats']
@@ -19,6 +19,8 @@ export function freshSaveState(resetHour: number): SaveState {
     settings: { resetHour },
     history: [],
     gates: { clearedGateIds: [] },
+    inventory: [],
+    equipment: { weapon: null, armor: null, accessory: null },
   }
 }
 
@@ -26,6 +28,14 @@ function migrate(raw: SaveState): SaveState {
   let s = raw
   if (s.schemaVersion < 2) {
     s = { ...s, gates: s.gates ?? { clearedGateIds: [] }, schemaVersion: 2 }
+  }
+  if (s.schemaVersion < 3) {
+    s = {
+      ...s,
+      inventory: (s as any).inventory ?? [],
+      equipment: (s as any).equipment ?? { weapon: null, armor: null, accessory: null },
+      schemaVersion: 3,
+    }
   }
   return s
 }

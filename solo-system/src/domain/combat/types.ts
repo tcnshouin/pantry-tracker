@@ -1,3 +1,5 @@
+import type { Item } from '../items/types'
+
 export interface DerivedCombatStats {
   maxHP: number
   maxMP: number
@@ -48,6 +50,7 @@ export interface CombatState {
   log: CombatLogEntry[]
   rngState: number
   nextLogId: number
+  droppedItems?: Item[]
 }
 
 export type PlayerAction =
