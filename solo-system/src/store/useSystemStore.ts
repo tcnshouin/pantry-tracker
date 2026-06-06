@@ -13,6 +13,10 @@ import { canEnterGate, buildCombatState } from '../domain/gates'
 import { applyPlayerAction } from '../domain/combat/engine'
 import { gateLibrary } from '../data/gateLibrary'
 import type { CombatState, PlayerAction } from '../domain/combat/types'
+import { aggregateEquipment } from '../domain/items/bonuses'
+import { enhanceCost, enhanceItem as enhanceItemDomain } from '../domain/items/enhance'
+import { rollGateDrop } from '../domain/items/generation'
+import type { ItemSlot } from '../domain/items/types'
 
 interface SystemState {
   save: SaveState
@@ -26,6 +30,9 @@ interface SystemState {
   enterGate: (gateId: string) => void
   combatAction: (action: PlayerAction) => void
   fleeGate: () => void
+  equipItem: (itemId: string) => void
+  unequipItem: (slot: ItemSlot) => void
+  enhanceItem: (itemId: string) => void
 }
 
 export function createSystemStore(opts?: { clock?: Clock }) {
@@ -73,6 +80,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         const result = domainComplete({
           player: save.player, quest, streak: save.streaks[quest.templateId],
           penalty: save.penalty, today, now: clock.now(),
+          rewardMultipliers: aggregateEquipment(save.equipment).reward,
         })
         let penalty = save.penalty
         if (quest.isRedemption && result.quest.completed) penalty = clearPenalty(penalty)
@@ -135,6 +143,8 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         const nextCombat = applyPlayerAction(combat, action)
         if (nextCombat.phase === 'won') {
           const save = get().save
+          const gate = gateLibrary.find(g => g.id === nextCombat.gateId)
+          const drops = gate ? rollGateDrop(gate, clock.now()) : []
           const clearedGateIds = save.gates.clearedGateIds.includes(nextCombat.gateId)
             ? save.gates.clearedGateIds
             : [...save.gates.clearedGateIds, nextCombat.gateId]
@@ -142,12 +152,53 @@ export function createSystemStore(opts?: { clock?: Clock }) {
             ...save,
             player: { ...save.player, currency: save.player.currency + nextCombat.goldReward },
             gates: { clearedGateIds },
+            inventory: [...save.inventory, ...drops],
           }
           persist(next)
-          set({ save: next, combat: nextCombat })
+          set({ save: next, combat: { ...nextCombat, droppedItems: drops } })
         } else {
           set({ combat: nextCombat })
         }
+      },
+
+      equipItem: (itemId: string) => {
+        const save = get().save
+        const item = save.inventory.find(i => i.id === itemId)
+        if (!item) return
+        const prev = save.equipment[item.slot]
+        const inventory = save.inventory.filter(i => i.id !== itemId)
+        if (prev) inventory.push(prev)
+        const next: SaveState = { ...save, inventory, equipment: { ...save.equipment, [item.slot]: item } }
+        persist(next)
+        set({ save: next })
+      },
+
+      unequipItem: (slot: ItemSlot) => {
+        const save = get().save
+        const item = save.equipment[slot]
+        if (!item) return
+        const next: SaveState = { ...save, inventory: [...save.inventory, item], equipment: { ...save.equipment, [slot]: null } }
+        persist(next)
+        set({ save: next })
+      },
+
+      enhanceItem: (itemId: string) => {
+        const save = get().save
+        const inInv = save.inventory.find(i => i.id === itemId)
+        const slot = (['weapon', 'armor', 'accessory'] as ItemSlot[]).find(s => save.equipment[s]?.id === itemId)
+        const item = inInv ?? (slot ? save.equipment[slot] : undefined)
+        if (!item) return
+        const cost = enhanceCost(item)
+        if (save.player.currency < cost) return
+        const upgraded = enhanceItemDomain(item)
+        const next: SaveState = {
+          ...save,
+          player: { ...save.player, currency: save.player.currency - cost },
+          inventory: inInv ? save.inventory.map(i => i.id === itemId ? upgraded : i) : save.inventory,
+          equipment: slot ? { ...save.equipment, [slot]: upgraded } : save.equipment,
+        }
+        persist(next)
+        set({ save: next })
       },
 
       fleeGate: () => { set({ combat: null }) },
