@@ -10,6 +10,7 @@ export interface CompleteQuestInput {
   penalty: PenaltyZone
   today: string
   now: number
+  rewardMultipliers?: { expMult: number; statXpMult: number }
 }
 export interface CompleteQuestResult {
   player: Player
@@ -26,8 +27,9 @@ export function completeQuest(input: CompleteQuestInput): CompleteQuestResult {
   const newStreak = bumpStreak(streak, quest.templateId, today)
   const mult = streakMultiplier(newStreak.count)
 
-  const expGain = quest.baseEXP * debuff
-  const statGain = quest.baseStatXP * mult * debuff
+  const rm = input.rewardMultipliers ?? { expMult: 1, statXpMult: 1 }
+  const expGain = quest.baseEXP * debuff * rm.expMult
+  const statGain = quest.baseStatXP * mult * debuff * rm.statXpMult
 
   let next = addExp(player, expGain)
   next = { ...next, stats: { ...next.stats, [quest.stat]: applyStatXP(next.stats[quest.stat], statGain) } }
