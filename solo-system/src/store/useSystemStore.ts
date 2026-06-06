@@ -166,8 +166,10 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         const item = save.inventory.find(i => i.id === itemId)
         if (!item) return
         const prev = save.equipment[item.slot]
-        const inventory = save.inventory.filter(i => i.id !== itemId)
-        if (prev) inventory.push(prev)
+        const inventory = [
+          ...save.inventory.filter(i => i.id !== itemId),
+          ...(prev ? [prev] : []),
+        ]
         const next: SaveState = { ...save, inventory, equipment: { ...save.equipment, [item.slot]: item } }
         persist(next)
         set({ save: next })

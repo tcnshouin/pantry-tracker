@@ -64,6 +64,15 @@ test('enhanceItem spends gold and upgrades; insufficient gold is a no-op', async
   expect(store.getState().save.inventory[0].enhanceLevel).toBe(lvl)
 })
 
+test('enhanceItem works on an equipped item and updates the equipment slot', async () => {
+  const store = await ready()
+  const it = { id: 'eq1', baseId: 'b', name: 'W', slot: 'weapon' as const, rarity: 'common' as const, enhanceLevel: 0, bonuses: [{ kind: 'attack' as const, value: 10 }] }
+  store.setState(s => ({ save: { ...s.save, equipment: { weapon: it, armor: null, accessory: null }, player: { ...s.save.player, currency: 1000 } } }))
+  store.getState().enhanceItem('eq1')
+  expect(store.getState().save.equipment.weapon?.enhanceLevel).toBe(1)
+  expect(store.getState().save.player.currency).toBeLessThan(1000)
+})
+
 test('equipped reward gear multiplies real quest EXP', async () => {
   const store = await ready()
   const charm = { id: 'c', baseId: 'b', name: 'Charm', slot: 'accessory' as const, rarity: 'rare' as const, enhanceLevel: 0, bonuses: [{ kind: 'expMult' as const, value: 1 }] }
