@@ -8,6 +8,7 @@ function player(over: Partial<Player>): Player {
 }
 const gateE1 = gateLibrary.find(g => g.id === 'gate-e1')!
 const gateE2 = gateLibrary.find(g => g.id === 'gate-e2')!
+const emptyEquipment = { weapon: null, armor: null, accessory: null }
 
 test('first gate is unlocked; later gate needs its predecessor cleared', () => {
   expect(gateUnlocked(gateE1, [])).toBe(true)
@@ -21,8 +22,17 @@ test('canEnterGate requires unlock + enough keys', () => {
   expect(canEnterGate(gateE2, player({ gateKeys: 3 }), [])).toBe(false)
 })
 
+test('equipped gear raises the hunter combat stats', () => {
+  const eq = { weapon: { id: 'w', baseId: 'b', name: 'W', slot: 'weapon' as const, rarity: 'common' as const, enhanceLevel: 0, bonuses: [{ kind: 'attack' as const, value: 10 }, { kind: 'maxHP' as const, value: 40 }] }, armor: null, accessory: null }
+  const bare = buildCombatState(gateE1, player({}), { weapon: null, armor: null, accessory: null }, 1)
+  const geared = buildCombatState(gateE1, player({}), eq, 1)
+  expect(geared.player.attack).toBe(bare.player.attack + 10)
+  expect(geared.player.maxHP).toBe(bare.player.maxHP + 40)
+  expect(geared.player.hp).toBe(geared.player.maxHP)
+})
+
 test('buildCombatState creates a player combatant and the enemy sequence at full HP', () => {
-  const cs = buildCombatState(gateE1, player({}), 12345)
+  const cs = buildCombatState(gateE1, player({}), emptyEquipment, 12345)
   expect(cs.player.isPlayer).toBe(true)
   expect(cs.player.hp).toBe(cs.player.maxHP)
   expect(cs.enemies).toHaveLength(gateE1.enemyIds.length)

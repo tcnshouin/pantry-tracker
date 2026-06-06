@@ -1,6 +1,8 @@
 import { balanceConfig } from './balanceConfig'
 import { deriveCombatStats } from './combat/derive'
 import type { Combatant, CombatState } from './combat/types'
+import { aggregateEquipment } from './items/bonuses'
+import type { Equipment } from './items/types'
 import type { Player } from './types'
 import { enemyLibrary } from '../data/enemyLibrary'
 import type { GateDef } from '../data/gateLibrary'
@@ -13,13 +15,18 @@ export function canEnterGate(gate: GateDef, player: Player, clearedGateIds: stri
   return gateUnlocked(gate, clearedGateIds) && player.gateKeys >= gate.keyCost
 }
 
-function playerCombatant(player: Player): Combatant {
+function playerCombatant(player: Player, equipment: Equipment): Combatant {
   const d = deriveCombatStats(player)
+  const t = aggregateEquipment(equipment).combat
+  const maxHP = d.maxHP + t.maxHP
+  const maxMP = d.maxMP
   return {
     id: 'player', name: 'Hunter', isPlayer: true,
-    hp: d.maxHP, maxHP: d.maxHP, mp: d.maxMP, maxMP: d.maxMP,
-    attack: d.attack, defense: d.defense, speed: d.speed, skillPowerMult: d.skillPowerMult,
-    critChance: d.critChance, critMultiplier: d.critMultiplier, dodgeChance: d.dodgeChance,
+    hp: maxHP, maxHP, mp: maxMP, maxMP,
+    attack: d.attack + t.attack, defense: d.defense + t.defense, speed: d.speed,
+    skillPowerMult: d.skillPowerMult + t.skillPowerMult,
+    critChance: Math.min(1, d.critChance + t.critChance), critMultiplier: d.critMultiplier,
+    dodgeChance: d.dodgeChance,
     buffs: [], defending: false,
   }
 }
@@ -36,11 +43,11 @@ function enemyCombatant(id: string): Combatant {
   }
 }
 
-export function buildCombatState(gate: GateDef, player: Player, seed: number): CombatState {
+export function buildCombatState(gate: GateDef, player: Player, equipment: Equipment, seed: number): CombatState {
   return {
     gateId: gate.id,
     goldReward: gate.goldReward,
-    player: playerCombatant(player),
+    player: playerCombatant(player, equipment),
     enemies: gate.enemyIds.map(enemyCombatant),
     currentEnemyIndex: 0,
     round: 1,
