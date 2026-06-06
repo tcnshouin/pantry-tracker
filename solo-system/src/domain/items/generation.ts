@@ -15,8 +15,9 @@ function rollBonus(kind: BonusKind, rarityMult: number, state: number): { bonus:
   return { bonus: { kind, value: roundBonusValue(kind, raw) }, state: r.state }
 }
 
-function pickAffix(state: number, exclude: BonusKind): { kind: BonusKind; state: number } {
-  const pool = balanceConfig.loot.affixPool.filter(k => k !== exclude) as BonusKind[]
+function pickAffix(state: number, exclude: BonusKind[]): { kind: BonusKind; state: number } | null {
+  const pool = (balanceConfig.loot.affixPool as BonusKind[]).filter(k => !exclude.includes(k))
+  if (pool.length === 0) return null
   const r = nextRandom(state)
   return { kind: pool[Math.floor(r.value * pool.length)], state: r.state }
 }
@@ -27,8 +28,12 @@ export function generateItem(template: ItemTemplate, rarity: Rarity, seed: numbe
   const primary = rollBonus(template.primaryBonus, rarityMult, state); state = primary.state
   const bonuses: ItemBonus[] = [primary.bonus]
   const affixCount = balanceConfig.loot.affixCountByRarity[rarity]
+  const chosen: BonusKind[] = [template.primaryBonus]
   for (let i = 0; i < affixCount; i++) {
-    const pick = pickAffix(state, template.primaryBonus); state = pick.state
+    const pick = pickAffix(state, chosen)
+    if (!pick) break
+    state = pick.state
+    chosen.push(pick.kind)
     const b = rollBonus(pick.kind, rarityMult, state); state = b.state
     bonuses.push(b.bonus)
   }

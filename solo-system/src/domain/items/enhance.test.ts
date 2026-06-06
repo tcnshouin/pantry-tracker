@@ -16,3 +16,13 @@ test('enhanceItem raises level and grows bonus values', () => {
   expect(e.enhanceLevel).toBe(1)
   expect(e.bonuses[0].value).toBeGreaterThan(10)
 })
+
+test('a small integer bonus still grows by at least 1 per enhance', () => {
+  const e = enhanceItem(item({ bonuses: [{ kind: 'defense', value: 2 }] }))
+  expect(e.bonuses[0].value).toBeGreaterThanOrEqual(3)
+})
+
+test('a fractional bonus grows multiplicatively', () => {
+  const e = enhanceItem(item({ bonuses: [{ kind: 'critChance', value: 0.04 }] }))
+  expect(e.bonuses[0].value).toBeCloseTo(0.046)
+})

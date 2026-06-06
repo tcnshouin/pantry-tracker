@@ -73,6 +73,32 @@ test('enhanceItem works on an equipped item and updates the equipment slot', asy
   expect(store.getState().save.player.currency).toBeLessThan(1000)
 })
 
+test('combat + equip + enhance never change level/EXP/statXP/subLevel', async () => {
+  const store = await ready()
+  const before = { level: store.getState().save.player.level, exp: store.getState().save.player.currentEXP, statXP: store.getState().save.player.stats.STR.statXP, sub: store.getState().save.player.stats.STR.subLevel }
+  const it = { id: 'g1', baseId: 'b', name: 'W', slot: 'weapon' as const, rarity: 'common' as const, enhanceLevel: 0, bonuses: [{ kind: 'attack' as const, value: 5 }] }
+  store.setState(s => ({ save: { ...s.save, inventory: [it], player: { ...s.save.player, currency: 1000 } } }))
+  store.getState().equipItem('g1')
+  store.getState().enhanceItem('g1')
+  store.getState().enterGate('gate-e1')
+  let guard = 0
+  while (store.getState().combat?.phase === 'player' && guard++ < 500) store.getState().combatAction({ type: 'attack' })
+  const p = store.getState().save.player
+  expect(p.level).toBe(before.level)
+  expect(p.currentEXP).toBe(before.exp)
+  expect(p.stats.STR.statXP).toBe(before.statXP)
+  expect(p.stats.STR.subLevel).toBe(before.sub)
+})
+
+test('losing or fleeing a gate adds no items to inventory', async () => {
+  const store = await ready()
+  store.setState(s => ({ save: { ...s.save, player: { ...s.save.player, gateKeys: 5, stats: Object.fromEntries(Object.entries(s.save.player.stats).map(([k, v]) => [k, { ...v, subLevel: 0 }])) as typeof s.save.player.stats } } }))
+  const invBefore = store.getState().save.inventory.length
+  store.getState().enterGate('gate-e1')
+  store.getState().fleeGate()
+  expect(store.getState().save.inventory.length).toBe(invBefore)
+})
+
 test('equipped reward gear multiplies real quest EXP', async () => {
   const store = await ready()
   const charm = { id: 'c', baseId: 'b', name: 'Charm', slot: 'accessory' as const, rarity: 'rare' as const, enhanceLevel: 0, bonuses: [{ kind: 'expMult' as const, value: 1 }] }

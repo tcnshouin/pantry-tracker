@@ -1,5 +1,6 @@
 import { balanceConfig } from '../balanceConfig'
 import { roundBonusValue } from './generation'
+import { FRACTIONAL_BONUSES } from './types'
 import type { Item } from './types'
 
 export function enhanceCost(item: Item): number {
@@ -12,6 +13,11 @@ export function enhanceItem(item: Item): Item {
   return {
     ...item,
     enhanceLevel: item.enhanceLevel + 1,
-    bonuses: item.bonuses.map(b => ({ ...b, value: roundBonusValue(b.kind, b.value * (1 + g)) })),
+    bonuses: item.bonuses.map(b => ({
+      ...b,
+      value: FRACTIONAL_BONUSES.includes(b.kind)
+        ? roundBonusValue(b.kind, b.value * (1 + g))
+        : Math.max(b.value + 1, Math.round(b.value * (1 + g))),
+    })),
   }
 }

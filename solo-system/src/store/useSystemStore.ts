@@ -144,7 +144,8 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         if (nextCombat.phase === 'won') {
           const save = get().save
           const gate = gateLibrary.find(g => g.id === nextCombat.gateId)
-          const drops = gate ? rollGateDrop(gate, clock.now()) : []
+          const rolled = gate ? rollGateDrop(gate, clock.now()) : []
+          const drops = rolled.map((d, i) => ({ ...d, id: `item-${clock.now()}-${i}-${Math.random().toString(36).slice(2, 8)}` }))
           const clearedGateIds = save.gates.clearedGateIds.includes(nextCombat.gateId)
             ? save.gates.clearedGateIds
             : [...save.gates.clearedGateIds, nextCombat.gateId]
