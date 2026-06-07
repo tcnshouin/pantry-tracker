@@ -9,7 +9,7 @@ export function HomeScreen() {
   const quests = useSystemStore(s => s.save.quests)
 
   return (
-    <div className="min-h-screen bg-system-bg pb-24 px-4 pt-6 space-y-6">
+    <div className="min-h-screen bg-system-bg pb-8 px-4 pt-6 space-y-6">
       <div className="space-y-1">
         <p className="font-mono text-[10px] tracking-[0.25em] text-system-glow/60 uppercase">
           ▣ SYSTEM NOTIFICATION

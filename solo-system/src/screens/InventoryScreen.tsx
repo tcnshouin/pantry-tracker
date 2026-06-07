@@ -27,7 +27,7 @@ export function InventoryScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-system-bg px-4 pt-6 pb-24 flex flex-col gap-4">
+    <div className="min-h-screen bg-system-bg px-4 pt-6 pb-8 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="font-mono text-[10px] tracking-[0.25em] text-system-glow/60 uppercase">
           ▣ INVENTORY

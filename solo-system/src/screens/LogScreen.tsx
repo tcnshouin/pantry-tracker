@@ -12,7 +12,7 @@ export function LogScreen() {
   const streakEntries = Object.values(streaks).filter(s => s.count > 0)
 
   return (
-    <div className="min-h-screen bg-system-bg pb-24 px-4 pt-6 space-y-5">
+    <div className="min-h-screen bg-system-bg pb-8 px-4 pt-6 space-y-5">
       <div className="space-y-0.5">
         <p className="font-mono text-[10px] tracking-[0.25em] text-system-glow/60 uppercase">
           ▣ ACTIVITY LOG

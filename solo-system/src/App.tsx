@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { useSystemStore, systemStore } from './store/useSystemStore'
-import { BottomNav } from './components/BottomNav'
+import { TopBar } from './components/TopBar'
+import { NavDrawer } from './components/NavDrawer'
 import { PenaltyZoneOverlay } from './components/PenaltyZoneOverlay'
 import { HomeScreen } from './screens/HomeScreen'
 import { StatusScreen } from './screens/StatusScreen'
@@ -12,33 +13,29 @@ import { InventoryScreen } from './screens/InventoryScreen'
 
 export default function App() {
   const ready = useSystemStore(s => s.ready)
+  const [navOpen, setNavOpen] = useState(false)
 
   useEffect(() => {
     systemStore.getState().hydrate()
       .then(() => systemStore.getState().checkPenalty())
       .catch(console.error)
-    const id = setInterval(() => {
-      systemStore.getState().checkPenalty()
-    }, 30000)
+    const id = setInterval(() => { systemStore.getState().checkPenalty() }, 30000)
     return () => clearInterval(id)
   }, [])
 
   if (!ready) {
     return (
       <div className="min-h-screen bg-system-bg flex flex-col items-center justify-center gap-4">
-        <div
-          className="w-12 h-12 rounded-full border-2 border-system-glow/30 border-t-system-glow animate-spin"
-          style={{ boxShadow: '0 0 16px #38bdf8' }}
-        />
-        <p className="font-mono text-system-glow text-sm tracking-[0.3em] uppercase animate-pulse">
-          INITIALIZING SYSTEM…
-        </p>
+        <div className="w-12 h-12 rounded-full border-2 border-system-glow/30 border-t-system-glow animate-spin" style={{ boxShadow: '0 0 16px #38bdf8' }} />
+        <p className="font-mono text-system-glow text-sm tracking-[0.3em] uppercase animate-pulse">INITIALIZING SYSTEM…</p>
       </div>
     )
   }
 
   return (
     <HashRouter>
+      <TopBar onMenu={() => setNavOpen(true)} />
+      <NavDrawer open={navOpen} onClose={() => setNavOpen(false)} />
       <PenaltyZoneOverlay />
       <Routes>
         <Route path="/" element={<HomeScreen />} />
@@ -48,7 +45,6 @@ export default function App() {
         <Route path="/battle" element={<BattleScreen />} />
         <Route path="/inventory" element={<InventoryScreen />} />
       </Routes>
-      <BottomNav />
     </HashRouter>
   )
 }

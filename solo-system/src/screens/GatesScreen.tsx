@@ -24,7 +24,7 @@ export function GatesScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-system-bg pb-24 px-4 pt-6 space-y-4">
+    <div className="min-h-screen bg-system-bg pb-8 px-4 pt-6 space-y-4">
       <SystemWindow title="GATE SELECTION">
         <div className="flex gap-4">
           <div className="flex items-center gap-2">
