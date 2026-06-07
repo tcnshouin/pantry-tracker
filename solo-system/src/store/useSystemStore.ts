@@ -17,6 +17,9 @@ import { aggregateEquipment } from '../domain/items/bonuses'
 import { enhanceCost, enhanceItem as enhanceItemDomain } from '../domain/items/enhance'
 import { rollGateDrop } from '../domain/items/generation'
 import type { ItemSlot } from '../domain/items/types'
+import { ariseFromEnemy, rollArise, deployCap, deployedShadowPower } from '../domain/shadows/army'
+import { nextRandom } from '../domain/combat/rng'
+import type { Shadow } from '../domain/shadows/types'
 
 interface SystemState {
   save: SaveState
@@ -33,6 +36,8 @@ interface SystemState {
   equipItem: (itemId: string) => void
   unequipItem: (slot: ItemSlot) => void
   enhanceItem: (itemId: string) => void
+  deployShadow: (id: string) => void
+  undeployShadow: (id: string) => void
 }
 
 export function createSystemStore(opts?: { clock?: Clock }) {
@@ -131,9 +136,10 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         const gate = gateLibrary.find(g => g.id === gateId)
         if (!gate) return
         if (!canEnterGate(gate, save.player, save.gates.clearedGateIds)) return
+        const sp = deployedShadowPower(save.shadows, save.deployedShadowIds) * balanceConfig.shadows.shadowStrikeFactor
         const next: SaveState = { ...save, player: { ...save.player, gateKeys: save.player.gateKeys - gate.keyCost } }
         persist(next)
-        const combat = buildCombatState(gate, next.player, next.equipment, 0, clock.now())
+        const combat = buildCombatState(gate, next.player, next.equipment, sp, clock.now())
         set({ save: next, combat })
       },
 
@@ -149,14 +155,28 @@ export function createSystemStore(opts?: { clock?: Clock }) {
           const clearedGateIds = save.gates.clearedGateIds.includes(nextCombat.gateId)
             ? save.gates.clearedGateIds
             : [...save.gates.clearedGateIds, nextCombat.gateId]
+          const cfg = balanceConfig.shadows.arise
+          let astate = (clock.now() & 0x7fffffff) || 1
+          const risen: Shadow[] = []
+          if (gate) {
+            gate.enemyIds.forEach((eid, i) => {
+              const chance = i === gate.enemyIds.length - 1 ? cfg.bossChance : cfg.normalChance
+              const r = rollArise(chance, astate); astate = r.state
+              if (r.raised) {
+                const base = ariseFromEnemy(eid, astate); astate = nextRandom(astate).state
+                risen.push({ ...base, id: `shadow-${clock.now()}-${i}-${Math.random().toString(36).slice(2, 6)}` })
+              }
+            })
+          }
           const next: SaveState = {
             ...save,
             player: { ...save.player, currency: save.player.currency + nextCombat.goldReward },
             gates: { clearedGateIds },
             inventory: [...save.inventory, ...drops],
+            shadows: [...save.shadows, ...risen],
           }
           persist(next)
-          set({ save: next, combat: { ...nextCombat, droppedItems: drops } })
+          set({ save: next, combat: { ...nextCombat, droppedItems: drops, risenShadows: risen } })
         } else {
           set({ combat: nextCombat })
         }
@@ -200,6 +220,24 @@ export function createSystemStore(opts?: { clock?: Clock }) {
           inventory: inInv ? save.inventory.map(i => i.id === itemId ? upgraded : i) : save.inventory,
           equipment: slot ? { ...save.equipment, [slot]: upgraded } : save.equipment,
         }
+        persist(next)
+        set({ save: next })
+      },
+
+      deployShadow: (id: string) => {
+        const save = get().save
+        if (save.deployedShadowIds.includes(id)) return
+        if (!save.shadows.some(s => s.id === id)) return
+        if (save.deployedShadowIds.length >= deployCap(save.player.level)) return
+        const next: SaveState = { ...save, deployedShadowIds: [...save.deployedShadowIds, id] }
+        persist(next)
+        set({ save: next })
+      },
+
+      undeployShadow: (id: string) => {
+        const save = get().save
+        if (!save.deployedShadowIds.includes(id)) return
+        const next: SaveState = { ...save, deployedShadowIds: save.deployedShadowIds.filter(x => x !== id) }
         persist(next)
         set({ save: next })
       },
