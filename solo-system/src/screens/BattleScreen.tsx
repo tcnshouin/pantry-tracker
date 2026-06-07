@@ -4,6 +4,7 @@ import { useSystemStore } from '../store/useSystemStore'
 import { CombatantBar } from '../components/CombatantBar'
 import { SystemWindow } from '../components/SystemWindow'
 import { ItemCard } from '../components/ItemCard'
+import { ShadowCard } from '../components/ShadowCard'
 import { listSkills, skillUnlocked } from '../domain/combat/skills'
 
 export function BattleScreen() {
@@ -160,6 +161,21 @@ export function BattleScreen() {
                   {combat.droppedItems.map(item => (
                     <ItemCard key={item.id} item={item} />
                   ))}
+                </div>
+              )}
+              {combat.risenShadows && combat.risenShadows.length > 0 && (
+                <div className="mt-4 space-y-2 text-left">
+                  <p
+                    className="font-mono text-lg font-black tracking-[0.3em] uppercase text-system-glow text-center"
+                    style={{ textShadow: '0 0 20px #38bdf8, 0 0 40px #38bdf880' }}
+                  >
+                    ARISE!
+                  </p>
+                  <div className="space-y-1.5">
+                    {combat.risenShadows.map(shadow => (
+                      <ShadowCard key={shadow.id} shadow={shadow} deployed={false} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

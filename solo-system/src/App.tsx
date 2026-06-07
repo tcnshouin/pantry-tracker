@@ -10,6 +10,7 @@ import { LogScreen } from './screens/LogScreen'
 import { GatesScreen } from './screens/GatesScreen'
 import { BattleScreen } from './screens/BattleScreen'
 import { InventoryScreen } from './screens/InventoryScreen'
+import { ShadowArmyScreen } from './screens/ShadowArmyScreen'
 
 export default function App() {
   const ready = useSystemStore(s => s.ready)
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/gates" element={<GatesScreen />} />
         <Route path="/battle" element={<BattleScreen />} />
         <Route path="/inventory" element={<InventoryScreen />} />
+        <Route path="/shadows" element={<ShadowArmyScreen />} />
       </Routes>
     </HashRouter>
   )
