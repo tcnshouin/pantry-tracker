@@ -52,3 +52,21 @@ test('fleeing raises no shadows', async () => {
   store.getState().fleeGate()
   expect(store.getState().save.shadows.length).toBe(n)
 })
+
+test('losing a gate raises no shadows', async () => {
+  const store = await ready()
+  store.setState(s => ({ save: { ...s.save, player: { ...s.save.player, gateKeys: 5, stats: Object.fromEntries(Object.entries(s.save.player.stats).map(([k, v]) => [k, { ...v, subLevel: 0 }])) as typeof s.save.player.stats } } }))
+  const n = store.getState().save.shadows.length
+  store.getState().enterGate('gate-e1')
+  let guard = 0
+  while (store.getState().combat?.phase === 'player' && guard++ < 1000) store.getState().combatAction({ type: 'attack' })
+  if (store.getState().combat?.phase === 'lost') {
+    expect(store.getState().save.shadows.length).toBe(n)
+  }
+})
+
+test('deployShadow ignores an unknown shadow id', async () => {
+  const store = await ready()
+  store.getState().deployShadow('does-not-exist')
+  expect(store.getState().save.deployedShadowIds).toEqual([])
+})
