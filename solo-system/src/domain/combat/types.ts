@@ -1,4 +1,5 @@
 import type { Item } from '../items/types'
+import type { Shadow } from '../shadows/types'
 
 export interface DerivedCombatStats {
   maxHP: number
@@ -51,6 +52,8 @@ export interface CombatState {
   rngState: number
   nextLogId: number
   droppedItems?: Item[]
+  shadowPower?: number
+  risenShadows?: Shadow[]
 }
 
 export type PlayerAction =

@@ -1,4 +1,5 @@
 import type { Item, Equipment } from './items/types'
+import type { Shadow } from './shadows/types'
 
 export type StatType = 'STR' | 'VIT' | 'AGI' | 'INT' | 'PER'
 export const STAT_TYPES: StatType[] = ['STR', 'VIT', 'AGI', 'INT', 'PER']
@@ -58,4 +59,6 @@ export interface SaveState {
   gates: { clearedGateIds: string[] }
   inventory: Item[]
   equipment: Equipment
+  shadows: Shadow[]
+  deployedShadowIds: string[]
 }

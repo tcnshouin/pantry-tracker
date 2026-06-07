@@ -54,6 +54,13 @@ export const balanceConfig = {
       bonusGrowthPerLevel: 0.15,
     },
   },
+  shadows: {
+    arise: { normalChance: 0.2, bossChance: 0.6 },
+    powerPerSourceFactor: 0.5,
+    shadowStrikeFactor: 1,
+    baseDeployCap: 3,
+    deployCapPerLevels: 10,
+  },
   classRankThresholds: {
     E: 1, D: 13, C: 26, B: 39, A: 52, S: 65, NATIONAL: 80, MONARCH: 100,
   } as Record<ClassRank, number>,
