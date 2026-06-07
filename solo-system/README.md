@@ -66,6 +66,26 @@ Clearing a Gate drops gear, which you manage on the **Items** screen.
   ranges, affix counts, drop chance, enhance costs). Base items are in
   `src/data/itemLibrary.ts`.
 
+## Shadow Army (Phase 2c)
+
+ARISE — raise the fallen to fight beside you. Managed on the **Shadows** screen.
+
+- **ARISE:** on a gate win, each defeated enemy has a chance to be raised as a shadow
+  (the boss is more likely); raised shadows appear in the win overlay ("ARISE!") and join
+  your army. Losing or fleeing raises nothing. A shadow's power derives from its source
+  enemy (bosses make far stronger shadows).
+- **Shadow Strike:** you deploy a capped squad (the cap rises with your level). Deployed
+  shadows deal a combined Shadow Strike to the enemy each combat round — it shows in the
+  combat log and can finish enemies. Only deployed shadows contribute.
+- Like everything in the game layer, shadows **never** grant real EXP/stat-XP — they only
+  help you win gates. Shadow constants live in **`src/domain/balanceConfig.ts` → `shadows`**.
+
+## Navigation
+
+The app uses a **top bar with a hamburger (☰)** that opens a slide-in **sidebar drawer**
+listing every destination (Home, Status, Gates, Items, Shadows, Log). It closes when you
+pick one.
+
 ## Run it
 
 ```bash
@@ -107,11 +127,11 @@ to be tuned with real-world use.
 - **Phase 1:** the honest core — daily quests, leveling, 5 stats, streaks, Penalty Zone,
   local persistence, PWA.
 - **Phase 2a:** turn-based combat + Gates.
-- **Phase 2b:** loot drops, item rarities, inventory, equipment buffs, enhancement (this slice).
+- **Phase 2b:** loot drops, item rarities, inventory, equipment buffs, enhancement.
+- **Phase 2c:** ARISE shadow army + sidebar navigation (this slice). **Phase 2 complete.**
 
 ## Planned later
 
-- **Phase 2c:** ARISE shadow army (collect defeated monsters as passive power).
 - **Phase 3:** AI-generated personalized quests (DeepSeek), Supabase cloud sync + login,
   push notifications.
 - **Phase 4:** class tier-up boss dungeons, titles, endless/prestige mode, full polish.
