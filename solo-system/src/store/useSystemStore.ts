@@ -133,7 +133,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         if (!canEnterGate(gate, save.player, save.gates.clearedGateIds)) return
         const next: SaveState = { ...save, player: { ...save.player, gateKeys: save.player.gateKeys - gate.keyCost } }
         persist(next)
-        const combat = buildCombatState(gate, next.player, next.equipment, clock.now())
+        const combat = buildCombatState(gate, next.player, next.equipment, 0, clock.now())
         set({ save: next, combat })
       },
 

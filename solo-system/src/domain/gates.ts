@@ -43,7 +43,7 @@ function enemyCombatant(id: string): Combatant {
   }
 }
 
-export function buildCombatState(gate: GateDef, player: Player, equipment: Equipment, seed: number): CombatState {
+export function buildCombatState(gate: GateDef, player: Player, equipment: Equipment, shadowPower: number, seed: number): CombatState {
   return {
     gateId: gate.id,
     goldReward: gate.goldReward,
@@ -55,5 +55,6 @@ export function buildCombatState(gate: GateDef, player: Player, equipment: Equip
     log: [{ id: 0, text: `You enter ${gate.name}` }],
     rngState: (seed & 0x7fffffff) || 1,
     nextLogId: 1,
+    shadowPower,
   }
 }
