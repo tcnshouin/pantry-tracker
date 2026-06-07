@@ -94,8 +94,17 @@ export function applyPlayerAction(state: CombatState, action: PlayerAction): Com
   s = { ...s, player, enemies, rngState: rng, round: s.round + 1 }
   for (const t of logs) s = log(s, t)
 
-  if (player.hp <= 0) return { ...s, phase: 'lost' }
-  if (enemy.hp <= 0) {
+  const shadowPower = s.shadowPower ?? 0
+  const current = s.enemies[s.currentEnemyIndex]
+  if (shadowPower > 0 && current.hp > 0) {
+    const dmg = Math.max(1, shadowPower)
+    s = { ...s, enemies: s.enemies.map((e, i) => i === s.currentEnemyIndex ? { ...e, hp: Math.max(0, e.hp - dmg) } : e) }
+    s = log(s, `Your shadows strike ${current.name} for ${dmg}`)
+  }
+
+  if (s.player.hp <= 0) return { ...s, phase: 'lost' }
+  const finalEnemy = s.enemies[s.currentEnemyIndex]
+  if (finalEnemy.hp <= 0) {
     if (s.currentEnemyIndex >= s.enemies.length - 1) return { ...s, phase: 'won' }
     s = { ...s, currentEnemyIndex: s.currentEnemyIndex + 1 }
     return log(s, `${s.enemies[s.currentEnemyIndex].name} appears`)
