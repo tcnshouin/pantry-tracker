@@ -26,6 +26,7 @@ test('deployShadow respects the cap; undeploy frees a slot', async () => {
 test('winning a gate can raise shadows and never changes level/EXP/statXP', async () => {
   const store = await ready()
   const before = store.getState().save.player
+  store.setState(s => ({ save: { ...s.save, shadows: [{ id: 'keep', sourceEnemyId: 'goblin', name: 'G', power: 5 }], deployedShadowIds: ['keep'] } }))
   store.getState().enterGate('gate-e1')
   let guard = 0
   while (store.getState().combat?.phase === 'player' && guard++ < 500) store.getState().combatAction({ type: 'attack' })
@@ -34,6 +35,7 @@ test('winning a gate can raise shadows and never changes level/EXP/statXP', asyn
   expect(after.player.currentEXP).toBe(before.currentEXP)
   expect(after.player.stats.STR.statXP).toBe(before.stats.STR.statXP)
   expect(after.player.stats.STR.subLevel).toBe(before.stats.STR.subLevel)
+  expect(store.getState().save.deployedShadowIds).toContain('keep')
 })
 
 test('deployed shadows deal damage in the next gate (combat log shows a shadow strike)', async () => {

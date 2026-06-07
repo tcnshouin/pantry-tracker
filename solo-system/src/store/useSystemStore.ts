@@ -174,6 +174,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
             gates: { clearedGateIds },
             inventory: [...save.inventory, ...drops],
             shadows: [...save.shadows, ...risen],
+            deployedShadowIds: save.deployedShadowIds,
           }
           persist(next)
           set({ save: next, combat: { ...nextCombat, droppedItems: drops, risenShadows: risen } })
