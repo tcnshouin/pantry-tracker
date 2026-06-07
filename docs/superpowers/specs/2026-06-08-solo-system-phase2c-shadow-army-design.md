@@ -73,14 +73,22 @@ level/currentEXP/statXP/subLevel unchanged.
   shadow `power`). The store multiplies by `shadows.shadowStrikeFactor` to get per-round
   strike damage and provides it to combat.
 - `CombatState` gains `shadowPower: number` (0 when none deployed) and an optional
-  `risenShadows?: Shadow[]`. `gates.buildCombatState` takes a `shadowPower` argument and
-  sets it on the state (keeping the engine pure — shadowPower is plain data).
-- The **engine** (`applyPlayerAction`): after the player and enemy resolve their actions
-  and buffs decay, if `shadowPower > 0` and the current enemy is still alive, apply a
-  Shadow Strike to the current enemy: `damage = max(1, shadowPower)` (flat bonus damage,
-  logged as "Your shadows strike {enemy} for {n}"). The strike happens before the
-  death/advance/win checks, so it can finish an enemy. It applies once per round, to the
-  current enemy only. No randomness (deterministic), no MP cost.
+  `risenShadows?: Shadow[]`. `gates.buildCombatState` takes a `shadowPower` argument
+  (an ADDITIONAL param beyond the existing `(gate, player, equipment, seed)` — proposed
+  order `(gate, player, equipment, shadowPower, seed)`) and sets it on the state (keeping
+  the engine pure — shadowPower is plain data). The one existing call site in
+  `useSystemStore.enterGate` must be updated to pass the computed shadowPower, and the
+  existing `gates.test.ts` calls updated to pass `0`.
+- The **engine** (`applyPlayerAction`): the Shadow Strike block must be inserted **between
+  the `enemies = s.enemies.map(...)` reconstruction line and the `if (player.hp <= 0)`
+  death check** — i.e. after the player/enemy actions resolve and buffs decay, but before
+  any death/advance/win checks. If `shadowPower > 0` and the current enemy is still alive
+  (hp > 0), apply a Shadow Strike to the current enemy: `damage = max(1, shadowPower)`
+  (flat bonus damage; update the enemy in the `enemies` array and append a log entry "Your
+  shadows strike {enemy} for {n}"). Because it runs before the death checks, it can finish
+  an enemy (triggering advance/win in the existing checks below). It applies once per
+  round, to the current enemy only. Deterministic — no randomness, no MP cost. (`rollArise`
+  uses the existing `rollChance` helper in `rng.ts`; the Strike itself uses no RNG.)
 
 ## 7. Store / data flow
 
