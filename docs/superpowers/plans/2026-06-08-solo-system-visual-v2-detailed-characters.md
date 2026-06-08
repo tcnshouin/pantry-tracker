@@ -21,7 +21,7 @@ Each sprite stays a React component returning an `<svg>` (root inside the existi
 
 **Files:** modify `src/components/sprites/EnemySprite.tsx`, `src/components/sprites/spriteRegistry.ts`. (Existing test `src/components/sprites/spriteRegistry.test.tsx` must keep passing — do not change it.)
 
-- [ ] **Step 1: Update the Stone Golem tint** in `spriteRegistry.ts`: change `gate_d_boss`'s tint from the red `#ef4444` to a stone grey (e.g. `#a8a29e`) so it reads apart from the red Gatekeeper. Leave `HUNTER_TINT`, `SHADOW_TINT`, and the other enemy tints/exported function signatures unchanged.
+- [ ] **Step 1: Update the Stone Golem tint in BOTH places.** The golem color `#ef4444` appears (a) in the `ENEMY_TINTS` record for `gate_d_boss` in `spriteRegistry.ts` AND (b) hard-coded inside the `StoneGolem` sub-function in `EnemySprite.tsx`. Change BOTH to a stone grey (e.g. `#a8a29e`) so the golem reads apart from the red Gatekeeper (changing only the registry has no visual effect because the component hard-codes its color). Leave `HUNTER_TINT`, `SHADOW_TINT`, the other enemy tints, and all exported signatures unchanged. (When you redraw `StoneGolem` in Step 3, use this stone grey as its base.)
 
 - [ ] **Step 2: Run the existing sprite test to confirm baseline still green**
 
