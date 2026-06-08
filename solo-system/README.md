@@ -80,27 +80,29 @@ ARISE — raise the fallen to fight beside you. Managed on the **Shadows** scree
 - Like everything in the game layer, shadows **never** grant real EXP/stat-XP — they only
   help you win gates. Shadow constants live in **`src/domain/balanceConfig.ts` → `shadows`**.
 
-## Battle visuals (Visual V1)
+## Battle visuals (code-drawn, Visual V1 + V2)
 
-The Battle screen is a **staged scene of holographic SVG fighters** — no bitmap art, all
-drawn in code:
+The Battle screen is a **staged scene of code-drawn characters** — no bitmap art, all SVG:
 
-- **Hunter** (cyan) holding the **equipped weapon**, vs the **current enemy** with the
+- **Hunter** — a detailed, shaded anime-style figure (black spiky hair, blue jacket,
+  Jin-Woo-inspired) holding the **equipped weapon**, vs the **current enemy** with the
   **rest of the wave queued** behind it; your **deployed shadow squad** ranks up beside the
   hunter (responsive, with a "+N" badge when the squad is large).
-- Every enemy has its **own SVG sprite and attack animation** (goblin, imp, wolf, orc,
-  Gatekeeper, Stone Golem), with a heavier red variant on heavy turns.
+- Every enemy is a **distinct detailed sprite** (goblin, imp, wolf, orc, red **Gatekeeper**,
+  stone-grey **Stone Golem**) with its **own attack animation** (heavier variant on heavy
+  turns).
 - The hunter's **attack motion matches the equipped weapon** (blade / dagger / shadow-edge
-  / unarmed).
+  / unarmed), and a **blue slash arc** sweeps the enemy on each hit.
 - **Hit/damage animations both ways:** the struck fighter shakes/flashes and a **floating
   damage number** rises off it (crit = gold/larger, dodge = "MISS"); Shadow Strike, skill,
   defend, and defeat effects all animate.
-- It's a **pure presentation layer** — it reads the existing combat state (HP deltas + log
-  cues) and changes no gameplay. Lives in `src/components/sprites/` and
-  `src/components/battle/`.
+- **Pure presentation** — reads the existing combat state (HP deltas + log cues), changes no
+  gameplay. Lives in `src/components/sprites/` and `src/components/battle/`.
 
-(Coming in Visual V2: armor + accessory drawn on the hunter as a paper-doll, on Status and
-in battle.)
+Visual V1 introduced the staged scene + outline sprites; **Visual V2** upgraded every
+character to detailed, shaded, colored vector art and added the slash FX. A separate
+*realistic pixel-art sprite-sheet* path is documented in `VISUALS.md` (needs supplied image
+assets). Still planned: armor/accessory drawn on the hunter as a paper-doll.
 
 ## Navigation
 
