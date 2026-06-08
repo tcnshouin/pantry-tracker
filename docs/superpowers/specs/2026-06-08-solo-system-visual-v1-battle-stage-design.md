@@ -71,8 +71,9 @@ The stage must not break at the largest counts:
   SVG: `goblin`, `imp`, `wolf`, `orc`, `gate_e_boss` (Gatekeeper), `gate_d_boss` (Stone
   Golem), each tinted/shaped to read as that creature; a **fallback** sprite for unknown
   ids.
-- **WeaponSprite** — maps each weapon `baseId` (`rusted-blade`, `hunters-dagger`,
-  `shadow-edge`, …) to a vector weapon shape; a default "unarmed" (no weapon equipped).
+- **WeaponSprite** — maps each weapon `baseId` to a vector weapon shape. The current
+  weapons are exactly `rusted-blade`, `hunters-dagger`, `shadow-edge`; any unknown id and
+  the no-weapon case fall back to a default "unarmed" hand-strike.
 - **ShadowSprite** — a dark-violet silhouette used for the deployed squad and the ARISE
   overlay; can take a source-enemy hint for subtle shape variation (optional; a generic
   shadow is acceptable).
@@ -105,10 +106,13 @@ The stage must not break at the largest counts:
 in a `useRef` and, on each `combat` change, **diffs** to emit animation events:
 - **HP decrease** on a fighter → that fighter plays the hit/flash/shake and floats the
   delta as a damage number (enemy delta and player delta computed separately each round).
-- **New log lines** since the last snapshot are scanned for cues: contains `"(CRIT)"` →
-  crit styling; `"dodged"` → MISS; `"shadows strike"` → Shadow Strike effect; `"unleashes
-  a heavy strike"` → enemy heavy variant; `"used "` → skill burst; the acting side (player
-  vs enemy) is inferred from the line / HP deltas to choose which attack motion to play.
+- **New log lines** since the last snapshot are scanned for these exact substrings, which
+  match the engine's real output (verified against `engine.ts`): `"(CRIT)"` → crit styling;
+  `"dodged"` → MISS; `"shadows strike"` (the full line is `"Your shadows strike …"`) →
+  Shadow Strike effect; `"unleashes a heavy strike"` → enemy heavy variant; `"used "`
+  (covers all four skill log forms) → skill burst. The acting side (player vs enemy) is
+  inferred from the line text / which fighter's HP dropped, to choose which attack motion
+  to play.
 - **`currentEnemyIndex` increases** → current enemy defeat-dissolve, then the next queued
   enemy advances into the active spot.
 - **`phase` → 'won' / 'lost'** → final defeat animation + existing overlay.
