@@ -14,7 +14,9 @@ test('enemy hp drop -> enemyHit with amount', () => {
   expect(ev).toContainEqual<CombatEvent>({ kind: 'enemyHit', amount: 24, crit: false })
 })
 test('crit flag from log', () => {
-  const ev = diffCombat(st({}), withLog(st({ enemies: [mk({ id: 'e1', hp: 60 })] }), ['Hunter hit X for 40 (CRIT)']))
+  const prev = st({ player: mk({ id: 'p', name: 'Hunter', isPlayer: true }) })
+  const next = withLog(st({ player: mk({ id: 'p', name: 'Hunter', isPlayer: true }), enemies: [mk({ id: 'e1', hp: 60 })] }), ['Hunter hit X for 40 (CRIT)'])
+  const ev = diffCombat(prev, next)
   expect(ev).toContainEqual<CombatEvent>({ kind: 'enemyHit', amount: 40, crit: true })
 })
 test('player hp drop -> playerHit', () => {
@@ -38,4 +40,19 @@ test('shadow strike, heavy, skill, dodge, win cues', () => {
   expect(ev.some(e => e.kind === 'playerSkill')).toBe(true)
   expect(ev.some(e => e.kind === 'dodge')).toBe(true)
   expect(ev.some(e => e.kind === 'won')).toBe(true)
+})
+
+test('crit is attributed to the correct side when both are hit', () => {
+  const prev = st({ player: mk({ id: 'p', name: 'Hunter', isPlayer: true }), enemies: [mk({ id: 'e1', name: 'Goblin' })] })
+  const next = withLog(st({ player: mk({ id: 'p', name: 'Hunter', isPlayer: true, hp: 90 }), enemies: [mk({ id: 'e1', name: 'Goblin', hp: 60 })] }), [
+    'Goblin hit Hunter for 10', 'Hunter hit Goblin for 40 (CRIT)',
+  ])
+  const ev = diffCombat(prev, next)
+  expect(ev).toContainEqual({ kind: 'enemyHit', amount: 40, crit: true })
+  expect(ev).toContainEqual({ kind: 'playerHit', amount: 10, crit: false })
+})
+
+test('defend cue emits a defend event', () => {
+  const ev = diffCombat(st({}), withLog(st({}), ['Hunter defends']))
+  expect(ev.some(e => e.kind === 'defend')).toBe(true)
 })

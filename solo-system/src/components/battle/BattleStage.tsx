@@ -30,8 +30,6 @@ interface Floater {
 const DISPLAY_CAP = 8
 const QUEUED_CAP = 5
 
-let floaterCounter = 0
-
 export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch }: Props) {
   const currentEnemy = combat.enemies[combat.currentEnemyIndex]
   const queuedEnemies = combat.enemies.slice(combat.currentEnemyIndex + 1)
@@ -41,6 +39,8 @@ export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch 
   const shadowOverflow = deployed.length - DISPLAY_CAP
   const shadowSize = deployed.length > 5 ? 22 : 30
 
+  const floaterCounter = useRef(0)
+
   const [floaters, setFloaters] = useState<Floater[]>([])
   const [enemyAnim, setEnemyAnim] = useState<TargetAndTransition | null>(null)
   const [hunterAnim, setHunterAnim] = useState<TargetAndTransition | null>(null)
@@ -49,104 +49,116 @@ export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch 
   const [shadowOverlay, setShadowOverlay] = useState(false)
   const [enemyFade, setEnemyFade] = useState(false)
   const [playerFade, setPlayerFade] = useState(false)
+  const [defendGlow, setDefendGlow] = useState(false)
   const prevBatchId = useRef(0)
 
   useEffect(() => {
     if (batch.id === 0 || batch.id === prevBatchId.current) return
     prevBatchId.current = batch.id
 
-    const newFloaters: Floater[] = []
-    let doEnemyFlash = false
-    let doPlayerFlash = false
-    let doShadowOverlay = false
-    let doEnemyFade = false
-    let doPlayerFade = false
-    let triggerEnemyAnim = false
-    let triggerHunterAnim = false
-    let enemyHeavy = false
-    let playerSkill = false
+    const timers: ReturnType<typeof setTimeout>[] = []
 
-    for (const ev of batch.events) {
-      if (ev.kind === 'enemyHit') {
-        floaterCounter++
-        newFloaters.push({ key: floaterCounter, side: 'enemy', amount: ev.amount, crit: ev.crit, miss: false })
-        doEnemyFlash = true
-        triggerHunterAnim = true
-      } else if (ev.kind === 'playerHit') {
-        floaterCounter++
-        newFloaters.push({ key: floaterCounter, side: 'player', amount: ev.amount, crit: ev.crit, miss: false })
-        doPlayerFlash = true
-        triggerEnemyAnim = true
-      } else if (ev.kind === 'dodge') {
-        floaterCounter++
-        newFloaters.push({ key: floaterCounter, side: ev.target, amount: 0, crit: false, miss: true })
-      } else if (ev.kind === 'shadowStrike') {
-        doShadowOverlay = true
-        doEnemyFlash = true
-      } else if (ev.kind === 'enemyHeavy') {
-        enemyHeavy = true
-        triggerEnemyAnim = true
-      } else if (ev.kind === 'playerSkill') {
-        playerSkill = true
-        triggerHunterAnim = true
-      } else if (ev.kind === 'won' || ev.kind === 'enemyAdvance') {
-        doEnemyFade = true
-      } else if (ev.kind === 'lost') {
-        doPlayerFade = true
+    timers.push(setTimeout(() => {
+      const newFloaters: Floater[] = []
+      let doEnemyFlash = false
+      let doPlayerFlash = false
+      let doShadowOverlay = false
+      let doEnemyFade = false
+      let doPlayerFade = false
+      let triggerEnemyAnim = false
+      let triggerHunterAnim = false
+      let enemyHeavy = false
+      let doDefendGlow = false
+
+      for (const ev of batch.events) {
+        if (ev.kind === 'enemyHit') {
+          floaterCounter.current++
+          newFloaters.push({ key: floaterCounter.current, side: 'enemy', amount: ev.amount, crit: ev.crit, miss: false })
+          doEnemyFlash = true
+          triggerHunterAnim = true
+        } else if (ev.kind === 'playerHit') {
+          floaterCounter.current++
+          newFloaters.push({ key: floaterCounter.current, side: 'player', amount: ev.amount, crit: ev.crit, miss: false })
+          doPlayerFlash = true
+          triggerEnemyAnim = true
+        } else if (ev.kind === 'dodge') {
+          floaterCounter.current++
+          newFloaters.push({ key: floaterCounter.current, side: ev.target, amount: 0, crit: false, miss: true })
+        } else if (ev.kind === 'shadowStrike') {
+          doShadowOverlay = true
+          doEnemyFlash = true
+        } else if (ev.kind === 'enemyHeavy') {
+          enemyHeavy = true
+          triggerEnemyAnim = true
+        } else if (ev.kind === 'playerSkill') {
+          triggerHunterAnim = true
+        } else if (ev.kind === 'defend') {
+          doDefendGlow = true
+        } else if (ev.kind === 'won' || ev.kind === 'enemyAdvance') {
+          doEnemyFade = true
+        } else if (ev.kind === 'lost') {
+          doPlayerFade = true
+        }
       }
-    }
 
-    if (newFloaters.length > 0) {
-      setFloaters(prev => [...prev, ...newFloaters])
-      const keys = newFloaters.map(f => f.key)
-      setTimeout(() => {
-        setFloaters(prev => prev.filter(f => !keys.includes(f.key)))
-      }, 1100)
-    }
+      if (newFloaters.length > 0) {
+        setFloaters(prev => [...prev, ...newFloaters])
+        const keys = newFloaters.map(f => f.key)
+        timers.push(setTimeout(() => {
+          setFloaters(prev => prev.filter(f => !keys.includes(f.key)))
+        }, 1100))
+      }
 
-    if (triggerEnemyAnim) {
-      const kf = getEnemyAttack(currentEnemy?.id ?? 'default', enemyHeavy)
-      const anim: TargetAndTransition = {}
-      if (kf.x) anim.x = kf.x
-      if (kf.y) anim.y = kf.y
-      if (kf.scale) anim.scale = kf.scale
-      if (kf.rotate) anim.rotate = kf.rotate
-      setEnemyAnim(anim)
-      setTimeout(() => setEnemyAnim(null), ((kf.transition?.duration ?? 0.35) * 1000) + 50)
-    }
+      if (triggerEnemyAnim) {
+        const kf = getEnemyAttack(currentEnemy?.id ?? 'default', enemyHeavy)
+        const anim: TargetAndTransition = {}
+        if (kf.x) anim.x = kf.x
+        if (kf.y) anim.y = kf.y
+        if (kf.scale) anim.scale = kf.scale
+        if (kf.rotate) anim.rotate = kf.rotate
+        setEnemyAnim(anim)
+        timers.push(setTimeout(() => setEnemyAnim(null), ((kf.transition?.duration ?? 0.35) * 1000) + 50))
+      }
 
-    if (triggerHunterAnim || playerSkill) {
-      const kf = getWeaponAttack(weaponBaseId)
-      const anim: TargetAndTransition = {}
-      if (kf.x) anim.x = kf.x
-      if (kf.y) anim.y = kf.y
-      if (kf.scale) anim.scale = kf.scale
-      if (kf.rotate) anim.rotate = kf.rotate
-      setHunterAnim(anim)
-      setTimeout(() => setHunterAnim(null), ((kf.transition?.duration ?? 0.35) * 1000) + 50)
-    }
+      if (triggerHunterAnim) {
+        const kf = getWeaponAttack(weaponBaseId)
+        const anim: TargetAndTransition = {}
+        if (kf.x) anim.x = kf.x
+        if (kf.y) anim.y = kf.y
+        if (kf.scale) anim.scale = kf.scale
+        if (kf.rotate) anim.rotate = kf.rotate
+        setHunterAnim(anim)
+        timers.push(setTimeout(() => setHunterAnim(null), ((kf.transition?.duration ?? 0.35) * 1000) + 50))
+      }
 
-    if (doEnemyFlash) {
-      setEnemyFlash(true)
-      setTimeout(() => setEnemyFlash(false), 300)
-    }
-    if (doPlayerFlash) {
-      setPlayerFlash(true)
-      setTimeout(() => setPlayerFlash(false), 300)
-    }
-    if (doShadowOverlay) {
-      setShadowOverlay(true)
-      setTimeout(() => setShadowOverlay(false), 400)
-    }
-    if (doEnemyFade) {
-      setEnemyFade(true)
-      setTimeout(() => setEnemyFade(false), 500)
-    }
-    if (doPlayerFade) {
-      setPlayerFade(true)
-      setTimeout(() => setPlayerFade(false), 500)
-    }
-  }, [batch.id])
+      if (doEnemyFlash) {
+        setEnemyFlash(true)
+        timers.push(setTimeout(() => setEnemyFlash(false), 300))
+      }
+      if (doPlayerFlash) {
+        setPlayerFlash(true)
+        timers.push(setTimeout(() => setPlayerFlash(false), 300))
+      }
+      if (doShadowOverlay) {
+        setShadowOverlay(true)
+        timers.push(setTimeout(() => setShadowOverlay(false), 400))
+      }
+      if (doEnemyFade) {
+        setEnemyFade(true)
+        timers.push(setTimeout(() => setEnemyFade(false), 500))
+      }
+      if (doPlayerFade) {
+        setPlayerFade(true)
+        timers.push(setTimeout(() => setPlayerFade(false), 500))
+      }
+      if (doDefendGlow) {
+        setDefendGlow(true)
+        timers.push(setTimeout(() => setDefendGlow(false), 400))
+      }
+    }, 0))
+
+    return () => timers.forEach(clearTimeout)
+  }, [batch.id, batch.events, currentEnemy?.id, weaponBaseId])
 
   const enemyFloaters = floaters.filter(f => f.side === 'enemy')
   const playerFloaters = floaters.filter(f => f.side === 'player')
@@ -176,7 +188,12 @@ export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch 
             <motion.div
               animate={hunterAnim ?? { x: 0, y: 0, scale: 1, rotate: 0 }}
               transition={{ duration: 0.35 }}
-              style={{ display: 'inline-block' }}
+              style={{
+                display: 'inline-block',
+                boxShadow: defendGlow ? '0 0 0 3px rgba(34,211,238,0.8), 0 0 16px rgba(34,211,238,0.4)' : undefined,
+                borderRadius: defendGlow ? '50%' : undefined,
+                transition: 'box-shadow 0.1s, border-radius 0.1s',
+              }}
             >
               <HunterSprite
                 size={96}
