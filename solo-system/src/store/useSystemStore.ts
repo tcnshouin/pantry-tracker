@@ -5,10 +5,11 @@ import { balanceConfig } from '../domain/balanceConfig'
 import { completeQuest as domainComplete } from '../domain/quests'
 import { detectMissedQuests, enterPenalty, clearPenalty, buildRedemptionQuest } from '../domain/penalty'
 import { issueDailyQuests, needsNewDay } from '../domain/issuance'
+import { issueRitualQuests } from '../domain/rituals'
 import { resetStreak } from '../domain/streaks'
 import { questLibrary } from '../data/questLibrary'
 import { freshSaveState, loadState, saveState } from '../persistence/repository'
-import type { SaveState, StatType } from '../domain/types'
+import type { SaveState, StatType, RitualTemplate, RitualDifficulty } from '../domain/types'
 import { canEnterGate, buildCombatState } from '../domain/gates'
 import { applyPlayerAction } from '../domain/combat/engine'
 import { gateLibrary } from '../data/gateLibrary'
@@ -38,6 +39,9 @@ interface SystemState {
   enhanceItem: (itemId: string) => void
   deployShadow: (id: string) => void
   undeployShadow: (id: string) => void
+  addRitual: (input: { title: string; description: string; stat: StatType; difficulty: RitualDifficulty; durationMinutes: number }) => void
+  updateRitual: (id: string, patch: Partial<Omit<RitualTemplate, 'id'>>) => void
+  deleteRitual: (id: string) => void
 }
 
 export function createSystemStore(opts?: { clock?: Clock }) {
@@ -57,10 +61,10 @@ export function createSystemStore(opts?: { clock?: Clock }) {
             issued: save.quests.filter(q => !q.isRedemption).length,
           }]
         : save.history
-      const quests = issueDailyQuests({
-        library: questLibrary, count: balanceConfig.dailyQuestCount,
-        now, durationOverrideMs: null, seed: hashDay(today),
-      })
+      const quests = [
+        ...issueRitualQuests(save.rituals, now),
+        ...issueDailyQuests({ library: questLibrary, count: balanceConfig.dailyQuestCount, now, durationOverrideMs: null, seed: hashDay(today) }),
+      ]
       return { ...save, dayKey: today, quests, history }
     }
 
@@ -239,6 +243,38 @@ export function createSystemStore(opts?: { clock?: Clock }) {
         const save = get().save
         if (!save.deployedShadowIds.includes(id)) return
         const next: SaveState = { ...save, deployedShadowIds: save.deployedShadowIds.filter(x => x !== id) }
+        persist(next)
+        set({ save: next })
+      },
+
+      addRitual: (input) => {
+        const save = get().save
+        if (!input.title.trim()) return
+        if (save.rituals.length >= balanceConfig.rituals.maxRituals) return
+        const ritual: RitualTemplate = {
+          id: `ritual-${clock.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          title: input.title.trim(), description: input.description,
+          stat: input.stat, difficulty: input.difficulty, durationMinutes: input.durationMinutes,
+        }
+        const alreadyToday = save.quests.some(q => q.templateId === ritual.id)
+        const quests = alreadyToday ? save.quests : [...save.quests, ...issueRitualQuests([ritual], clock.now())]
+        const next: SaveState = { ...save, rituals: [...save.rituals, ritual], quests }
+        persist(next)
+        set({ save: next })
+      },
+
+      updateRitual: (id, patch) => {
+        const save = get().save
+        if (!save.rituals.some(r => r.id === id)) return
+        const next: SaveState = { ...save, rituals: save.rituals.map(r => r.id === id ? { ...r, ...patch } : r) }
+        persist(next)
+        set({ save: next })
+      },
+
+      deleteRitual: (id) => {
+        const save = get().save
+        if (!save.rituals.some(r => r.id === id)) return
+        const next: SaveState = { ...save, rituals: save.rituals.filter(r => r.id !== id) }
         persist(next)
         set({ save: next })
       },
