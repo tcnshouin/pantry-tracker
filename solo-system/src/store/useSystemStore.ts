@@ -256,8 +256,7 @@ export function createSystemStore(opts?: { clock?: Clock }) {
           title: input.title.trim(), description: input.description,
           stat: input.stat, difficulty: input.difficulty, durationMinutes: input.durationMinutes,
         }
-        const alreadyToday = save.quests.some(q => q.templateId === ritual.id)
-        const quests = alreadyToday ? save.quests : [...save.quests, ...issueRitualQuests([ritual], clock.now())]
+        const quests = [...save.quests, ...issueRitualQuests([ritual], clock.now())]
         const next: SaveState = { ...save, rituals: [...save.rituals, ritual], quests }
         persist(next)
         set({ save: next })

@@ -33,6 +33,7 @@ test('deleteRitual removes the template', async () => {
   const id = store.getState().save.rituals[0].id
   store.getState().deleteRitual(id)
   expect(store.getState().save.rituals).toHaveLength(0)
+  expect(store.getState().save.quests.some(q => q.templateId === id)).toBe(true)
 })
 
 test('updateRitual edits the template', async () => {
@@ -54,6 +55,15 @@ test('a rolled-over day issues all rituals plus library quests', async () => {
   const libraryCount = store.getState().save.quests.filter(q => q.source === 'library').length
   expect(ritualCount).toBe(1)
   expect(libraryCount).toBeGreaterThan(0)
+})
+
+test('calling hydrate twice on the same day does not duplicate ritual quests', async () => {
+  const store = await ready()
+  store.getState().addRitual({ title: 'Stretch', description: '', stat: 'AGI', difficulty: 'easy', durationMinutes: 600 })
+  const before = store.getState().save.quests.filter(q => q.source === 'ritual').length
+  await store.getState().hydrate()
+  const after = store.getState().save.quests.filter(q => q.source === 'ritual').length
+  expect(after).toBe(before)
 })
 
 test('a missed ritual enters the penalty zone', async () => {
