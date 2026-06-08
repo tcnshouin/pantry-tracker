@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, BarChart3, Swords, Backpack, Ghost, History } from 'lucide-react'
+import { Home, BarChart3, Swords, Backpack, Ghost, History, Repeat } from 'lucide-react'
 
 const links = [
   { to: '/', label: 'HOME', Icon: Home },
+  { to: '/rituals', label: 'RITUALS', Icon: Repeat },
   { to: '/status', label: 'STATUS', Icon: BarChart3 },
   { to: '/gates', label: 'GATES', Icon: Swords },
   { to: '/inventory', label: 'ITEMS', Icon: Backpack },

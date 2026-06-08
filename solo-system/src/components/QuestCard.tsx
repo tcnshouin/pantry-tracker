@@ -32,6 +32,13 @@ export function QuestCard({ quest, onComplete }: Props) {
                 </span>
               </div>
             )}
+            {quest.source === 'ritual' && !isRedemption && (
+              <div className="mb-1">
+                <span className="font-mono text-[10px] tracking-widest text-sky-400 uppercase bg-sky-400/10 border border-sky-400/40 px-2 py-0.5 rounded">
+                  ◆ RITUAL
+                </span>
+              </div>
+            )}
             <h3
               className={`font-mono font-bold text-sm tracking-wide uppercase leading-tight ${
                 quest.completed
