@@ -28,6 +28,23 @@ for it — fighting in Gates yields gold and clears, but **never** EXP or stat-X
   debuff, and a redemption Penalty Quest appears. Clear it to escape the zone.
 - All progress is stored **on-device** (IndexedDB) and survives reloads.
 
+## Rituals (fixed daily quests)
+
+Beyond the rotating library quests, you can define your own **Rituals** — habits you must do
+**every day**.
+
+- A ritual auto-appears in the daily list every day (and immediately when you create it),
+  tagged **◆ RITUAL** on Home, on top of the rotating library quests.
+- You pick its **stat** (STR/VIT/AGI/INT/PER), a **difficulty** (Easy/Medium/Hard → preset
+  EXP/stat-XP), and a **duration** (how long into the day it's due).
+- Because rituals are real quests, **missing one sends you to the Penalty Zone** — that's the
+  stakes that make them stick. Completing one grants its rewards and builds its streak.
+- Manage them on the **Rituals** screen (sidebar). Constants live in
+  `src/domain/balanceConfig.ts → rituals`.
+
+(AI-generated personalized quests via DeepSeek are a later slice; they need an API key + a
+small server-side proxy.)
+
 ## Combat & Gates (Phase 2a)
 
 Your hunter's combat power derives **entirely from your real stats**: STR → attack,
