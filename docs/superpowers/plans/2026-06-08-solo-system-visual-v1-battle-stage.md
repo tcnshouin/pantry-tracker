@@ -235,7 +235,11 @@ export function diffCombat(prev: CombatState, next: CombatState): CombatEvent[] 
   const dPlayer = prev.player.hp - next.player.hp
   if (dPlayer > 0) events.push({ kind: 'playerHit', amount: dPlayer, crit })
 
-  if (newText.includes('dodged')) events.push({ kind: 'dodge', target: dPlayer > 0 ? 'enemy' : 'player' })
+  if (newText.includes('dodged')) {
+    const enemyName = next.enemies[next.currentEnemyIndex]?.name ?? ''
+    const enemyDodged = enemyName !== '' && newText.includes(`${enemyName} dodged`)
+    events.push({ kind: 'dodge', target: enemyDodged ? 'enemy' : 'player' })
+  }
   if (newText.includes('shadows strike')) events.push({ kind: 'shadowStrike' })
   if (newText.includes('unleashes a heavy strike')) events.push({ kind: 'enemyHeavy' })
   if (newText.includes('used ')) events.push({ kind: 'playerSkill' })
