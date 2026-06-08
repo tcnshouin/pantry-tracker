@@ -21,7 +21,7 @@ test('a v1 save composes all migrations to v4', async () => {
   v1.schemaVersion = 1
   await db.saves.put({ key: SAVE_KEY, state: v1 })
   const loaded = await loadState()
-  expect(loaded?.schemaVersion).toBe(4)
+  expect(loaded?.schemaVersion).toBe(5)
   expect(loaded?.gates).toEqual({ clearedGateIds: [] })
   expect(loaded?.inventory).toEqual([])
   expect(loaded?.shadows).toEqual([])

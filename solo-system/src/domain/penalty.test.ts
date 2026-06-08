@@ -3,7 +3,7 @@ import type { PenaltyZone, QuestInstance } from './types'
 
 const q = (over: Partial<QuestInstance>): QuestInstance => ({
   instanceId: 'i', templateId: 't', title: '', description: '', stat: 'STR',
-  baseEXP: 10, baseStatXP: 5, issuedAt: 0, deadline: 100, completed: false, completedAt: null, isRedemption: false, ...over,
+  baseEXP: 10, baseStatXP: 5, issuedAt: 0, deadline: 100, completed: false, completedAt: null, isRedemption: false, source: 'library', ...over,
 })
 const inactive: PenaltyZone = { active: false, debuffMultiplier: 1, enteredAt: null }
 

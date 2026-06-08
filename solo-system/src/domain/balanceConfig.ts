@@ -61,6 +61,15 @@ export const balanceConfig = {
     baseDeployCap: 3,
     deployCapPerLevels: 10,
   },
+  rituals: {
+    difficulties: {
+      easy:   { baseEXP: 25, baseStatXP: 12 },
+      medium: { baseEXP: 45, baseStatXP: 22 },
+      hard:   { baseEXP: 70, baseStatXP: 35 },
+    } as Record<string, { baseEXP: number; baseStatXP: number }>,
+    defaultDurationMinutes: 16 * 60,
+    maxRituals: 12,
+  },
   classRankThresholds: {
     E: 1, D: 13, C: 26, B: 39, A: 52, S: 65, NATIONAL: 80, MONARCH: 100,
   } as Record<ClassRank, number>,

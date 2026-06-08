@@ -39,5 +39,6 @@ export function issueDailyQuests(input: IssueInput): QuestInstance[] {
     completed: false,
     completedAt: null,
     isRedemption: false,
+    source: 'library' as const,
   }))
 }

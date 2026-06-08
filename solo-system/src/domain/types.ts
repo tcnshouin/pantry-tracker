@@ -2,6 +2,17 @@ import type { Item, Equipment } from './items/types'
 import type { Shadow } from './shadows/types'
 
 export type StatType = 'STR' | 'VIT' | 'AGI' | 'INT' | 'PER'
+
+export type RitualDifficulty = 'easy' | 'medium' | 'hard'
+
+export interface RitualTemplate {
+  id: string
+  title: string
+  description: string
+  stat: StatType
+  difficulty: RitualDifficulty
+  durationMinutes: number
+}
 export const STAT_TYPES: StatType[] = ['STR', 'VIT', 'AGI', 'INT', 'PER']
 
 export type ClassRank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S' | 'NATIONAL' | 'MONARCH'
@@ -41,6 +52,7 @@ export interface QuestInstance {
   completed: boolean
   completedAt: number | null
   isRedemption: boolean
+  source: 'ritual' | 'library' | 'redemption'
 }
 
 export interface StreakRecord { templateId: string; count: number; lastCompletedDay: string | null }
@@ -61,4 +73,5 @@ export interface SaveState {
   equipment: Equipment
   shadows: Shadow[]
   deployedShadowIds: string[]
+  rituals: RitualTemplate[]
 }

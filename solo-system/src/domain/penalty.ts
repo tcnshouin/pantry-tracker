@@ -27,5 +27,6 @@ export function buildRedemptionQuest(now: number): QuestInstance {
     completed: false,
     completedAt: null,
     isRedemption: true,
+    source: 'redemption' as const,
   }
 }

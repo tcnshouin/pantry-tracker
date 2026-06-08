@@ -7,7 +7,7 @@ function freshPlayer(): Player {
 }
 const quest = (): QuestInstance => ({
   instanceId: 'i1', templateId: 'q1', title: 'Push-ups', description: '', stat: 'STR',
-  baseEXP: 50, baseStatXP: 20, issuedAt: 0, deadline: 999, completed: false, completedAt: null, isRedemption: false,
+  baseEXP: 50, baseStatXP: 20, issuedAt: 0, deadline: 999, completed: false, completedAt: null, isRedemption: false, source: 'library',
 })
 const noPenalty: PenaltyZone = { active: false, debuffMultiplier: 1, enteredAt: null }
 

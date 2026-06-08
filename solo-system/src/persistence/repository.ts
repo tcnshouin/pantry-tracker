@@ -1,7 +1,7 @@
-import { STAT_TYPES, type Player, type SaveState } from '../domain/types'
+import { STAT_TYPES, type Player, type QuestInstance, type SaveState } from '../domain/types'
 import { db, SAVE_KEY } from './db'
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 export function freshPlayer(): Player {
   const stats = Object.fromEntries(STAT_TYPES.map(t => [t, { type: t, subLevel: 0, statXP: 0 }])) as Player['stats']
@@ -23,6 +23,7 @@ export function freshSaveState(resetHour: number): SaveState {
     equipment: { weapon: null, armor: null, accessory: null },
     shadows: [],
     deployedShadowIds: [],
+    rituals: [],
   }
 }
 
@@ -45,6 +46,17 @@ function migrate(raw: SaveState): SaveState {
       shadows: (s as any).shadows ?? [],
       deployedShadowIds: (s as any).deployedShadowIds ?? [],
       schemaVersion: 4,
+    }
+  }
+  if (s.schemaVersion < 5) {
+    s = {
+      ...s,
+      rituals: (s as { rituals?: SaveState['rituals'] }).rituals ?? [],
+      quests: (s.quests ?? []).map(q => ({
+        ...q,
+        source: (q as { source?: QuestInstance['source'] }).source ?? (q.isRedemption ? 'redemption' : 'library'),
+      })),
+      schemaVersion: 5,
     }
   }
   return s

@@ -5,7 +5,7 @@ function freshPlayer(): Player {
   const stats = Object.fromEntries(STAT_TYPES.map(t => [t, { type: t, subLevel: 0, statXP: 0 }])) as Player['stats']
   return { level: 1, currentEXP: 0, freeStatPoints: 0, classRank: 'E', currency: 0, gateKeys: 0, stats }
 }
-const quest = (): QuestInstance => ({ instanceId: 'i', templateId: 'q', title: '', description: '', stat: 'STR', baseEXP: 40, baseStatXP: 20, issuedAt: 0, deadline: 999, completed: false, completedAt: null, isRedemption: false })
+const quest = (): QuestInstance => ({ instanceId: 'i', templateId: 'q', title: '', description: '', stat: 'STR', baseEXP: 40, baseStatXP: 20, issuedAt: 0, deadline: 999, completed: false, completedAt: null, isRedemption: false, source: 'library' })
 const noPenalty: PenaltyZone = { active: false, debuffMultiplier: 1, enteredAt: null }
 
 test('reward multipliers scale EXP and stat-XP', () => {
