@@ -47,7 +47,9 @@ Each a distinct, shaded, colored body (same prop `{ enemyId, size, className? }`
 - **wolf** — grey furred quadruped, bristled back, fangs, tail.
 - **orc** — bulky olive body, tusks, shoulder armor, club/fist.
 - **gate_e_boss** (Gatekeeper) — tall red-armored knight, helm, greatsword.
-- **gate_d_boss** (Stone Golem) — massive cracked-rock body with a glowing core.
+- **gate_d_boss** (Stone Golem) — massive cracked-rock body with a glowing core; use a
+  distinct **stone/grey** tint (not the Gatekeeper's red) so the two bosses read apart —
+  update its `enemyTint` accordingly.
 - `default` fallback — a shaded red wraith.
 
 ## 6. Weapons (`WeaponSprite`)
@@ -58,9 +60,11 @@ blade); `null`/unknown → unarmed. Same prop `{ baseId, size, className? }`.
 ## 7. Slash FX (`SlashFx`, new)
 A lightweight overlay component that draws a **blue crescent arc** sweeping across a target,
 animated with Framer Motion (quick scale/opacity/rotate sweep, ~300ms). `BattleStage` mounts
-it over the **current enemy** when the player attacks/uses a damage skill (driven by the
-existing `enemyHit` / player-attack animation events — no new combat data). Enemies keep a
-brief impact flash (already present from V1). Optional: a faint slash on heavy enemy hits.
+it over the **current enemy** when the player attacks **or uses a damage skill** — i.e. on
+the same condition that already sets `triggerHunterAnim` in BattleStage's per-batch effect
+(`enemyHit` / `playerSkill` events; no new combat data). Enemies keep their brief impact
+flash (already present from V1). A faint slash on heavy enemy hits is explicitly **optional
+and NOT part of the definition of done** — skip unless trivial.
 
 ## 8. Integration points (minimal)
 - `HunterSprite.tsx`, `EnemySprite.tsx`, `WeaponSprite.tsx` — internals redrawn; **interfaces
