@@ -10,6 +10,7 @@ import { ShadowSprite } from '../sprites/ShadowSprite'
 import { FloatingDamage } from './FloatingDamage'
 import { CombatantBar } from '../CombatantBar'
 import { getEnemyAttack, getWeaponAttack } from './animations'
+import { SlashFx } from './SlashFx'
 
 interface Props {
   combat: CombatState
@@ -47,6 +48,8 @@ export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch 
   const [enemyFlash, setEnemyFlash] = useState(false)
   const [playerFlash, setPlayerFlash] = useState(false)
   const [shadowOverlay, setShadowOverlay] = useState(false)
+  const [showSlash, setShowSlash] = useState(false)
+  const [slashKey, setSlashKey] = useState(0)
   const [enemyFade, setEnemyFade] = useState(false)
   const [playerFade, setPlayerFade] = useState(false)
   const [defendGlow, setDefendGlow] = useState(false)
@@ -129,6 +132,9 @@ export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch 
         if (kf.rotate) anim.rotate = kf.rotate
         setHunterAnim(anim)
         timers.push(setTimeout(() => setHunterAnim(null), ((kf.transition?.duration ?? 0.35) * 1000) + 50))
+        setShowSlash(true)
+        setSlashKey(k => k + 1)
+        timers.push(setTimeout(() => setShowSlash(false), 400))
       }
 
       if (doEnemyFlash) {
@@ -257,6 +263,7 @@ export function BattleStage({ combat, weaponBaseId, shadows, deployedIds, batch 
                     }}
                   />
                 )}
+                {showSlash && <SlashFx key={slashKey} size={110} className="absolute inset-0 m-auto" />}
                 <AnimatePresence>
                   {enemyFloaters.map(f => (
                     <FloatingDamage key={f.key} amount={f.amount} crit={f.crit} miss={f.miss} />
