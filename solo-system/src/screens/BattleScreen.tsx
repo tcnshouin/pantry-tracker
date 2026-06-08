@@ -1,11 +1,12 @@
 import { useRef, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useSystemStore } from '../store/useSystemStore'
-import { CombatantBar } from '../components/CombatantBar'
 import { SystemWindow } from '../components/SystemWindow'
 import { ItemCard } from '../components/ItemCard'
 import { ShadowCard } from '../components/ShadowCard'
 import { listSkills, skillUnlocked } from '../domain/combat/skills'
+import { BattleStage } from '../components/battle/BattleStage'
+import { useCombatAnimations } from '../components/battle/useCombatAnimations'
 
 export function BattleScreen() {
   const combat = useSystemStore(s => s.combat)
@@ -14,6 +15,7 @@ export function BattleScreen() {
   const fleeGate = useSystemStore(s => s.fleeGate)
   const navigate = useNavigate()
   const logRef = useRef<HTMLDivElement>(null)
+  const batch = useCombatAnimations(combat)
 
   useEffect(() => {
     if (logRef.current) {
@@ -25,7 +27,6 @@ export function BattleScreen() {
     return <Navigate to="/gates" replace />
   }
 
-  const currentEnemy = combat.enemies[combat.currentEnemyIndex]
   const isPlayerTurn = combat.phase === 'player'
   const isOver = combat.phase === 'won' || combat.phase === 'lost'
   const visibleLog = combat.log.slice(-8)
@@ -47,13 +48,12 @@ export function BattleScreen() {
         </span>
       </div>
 
-      <CombatantBar
-        name={currentEnemy.name}
-        hp={currentEnemy.hp}
-        maxHP={currentEnemy.maxHP}
-        mp={currentEnemy.mp}
-        maxMP={currentEnemy.maxMP}
-        isPlayer={false}
+      <BattleStage
+        combat={combat}
+        weaponBaseId={save.equipment.weapon?.baseId ?? null}
+        shadows={save.shadows}
+        deployedIds={save.deployedShadowIds}
+        batch={batch}
       />
 
       <SystemWindow title="COMBAT LOG">
@@ -71,15 +71,6 @@ export function BattleScreen() {
           ))}
         </div>
       </SystemWindow>
-
-      <CombatantBar
-        name={combat.player.name}
-        hp={combat.player.hp}
-        maxHP={combat.player.maxHP}
-        mp={combat.player.mp}
-        maxMP={combat.player.maxMP}
-        isPlayer={true}
-      />
 
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-2">
