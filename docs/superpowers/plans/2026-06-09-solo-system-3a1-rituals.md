@@ -89,7 +89,12 @@ Add to `SaveState`: `rituals: RitualTemplate[]`.
 ```
 (Import `QuestInstance` type in repository.ts if not already; or use `as any` consistent with the existing v2/v3 cast style.)
 
-- [ ] **Step 6: Verify** — `npx vitest run` (existing 142 pass; the added required `source` now compiles because all three creation sites set it and migrate backfills) and `npm run build` clean. Fix any type errors (e.g. a test that constructs a `QuestInstance` literal without `source` — add `source: 'library'` to such test fixtures; do NOT weaken assertions).
+- [ ] **Step 6: Fix the known fallout, then verify.** Adding the required `source` breaks compilation in exactly three existing test factories that build `QuestInstance` literals without it — add `source: 'library'` to each:
+  - `src/domain/quests.test.ts` (the `quest()` factory)
+  - `src/domain/quests_multipliers.test.ts` (its `quest()` factory)
+  - `src/domain/penalty.test.ts` (the `q()` factory)
+  Also, bumping `SCHEMA_VERSION` to 5 breaks one hardcoded assertion: in `src/persistence/migration_v4.test.ts`, the "v1 save composes all migrations to v4" test asserts `expect(loaded?.schemaVersion).toBe(4)` — change that `4` to `5` (the chain now migrates through v5). Do NOT weaken any assertions otherwise.
+  Then run `npx vitest run` (all green) and `npm run build` (clean).
 
 - [ ] **Step 7: Commit**
 ```bash
