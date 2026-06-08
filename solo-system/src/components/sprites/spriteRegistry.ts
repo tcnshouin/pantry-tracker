@@ -7,7 +7,7 @@ const ENEMY_TINTS: Record<string, string> = {
   wolf: '#94a3b8',
   orc: '#65a30d',
   gate_e_boss: '#ef4444',
-  gate_d_boss: '#ef4444',
+  gate_d_boss: '#a8a29e',
 }
 
 export function enemyTint(enemyId: string): string {
