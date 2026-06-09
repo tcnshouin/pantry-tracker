@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { useSystemStore } from '../store/useSystemStore'
 import { SystemWindow } from '../components/SystemWindow'
 import { balanceConfig } from '../domain/balanceConfig'
-import type { StatType, RitualDifficulty } from '../domain/types'
+import { STAT_TYPES, type StatType, type RitualDifficulty } from '../domain/types'
 
-const STATS: StatType[] = ['STR', 'VIT', 'AGI', 'INT', 'PER']
 const DIFFICULTIES: { value: RitualDifficulty; label: string }[] = [
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
@@ -187,7 +186,7 @@ export function RitualsScreen() {
               Stat
             </label>
             <div className="flex gap-2 flex-wrap">
-              {STATS.map(s => (
+              {STAT_TYPES.map(s => (
                 <button
                   key={s}
                   onClick={() => setForm(f => ({ ...f, stat: s }))}

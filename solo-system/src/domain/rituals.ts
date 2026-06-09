@@ -17,7 +17,7 @@ export function issueRitualQuests(rituals: RitualTemplate[], now: number, durati
       completed: false,
       completedAt: null,
       isRedemption: false,
-      source: 'ritual',
+      source: 'ritual' as const,
     }
   })
 }

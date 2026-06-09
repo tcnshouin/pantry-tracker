@@ -15,7 +15,7 @@ test('a v3 save gains shadows + deployedShadowIds and becomes v4', async () => {
   expect(loaded?.deployedShadowIds).toEqual([])
 })
 
-test('a v1 save composes all migrations to v4', async () => {
+test('a v1 save composes all migrations to v5', async () => {
   const v1: any = freshSaveState(4)
   delete v1.gates; delete v1.inventory; delete v1.equipment; delete v1.shadows; delete v1.deployedShadowIds
   v1.schemaVersion = 1
