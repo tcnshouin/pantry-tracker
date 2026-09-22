@@ -9,15 +9,96 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h1 class="h3 mb-2">Dashboard</h1>
-    <p class="mb-4">
-        Signed in as <strong sec:authentication="name">user@example.com</strong>.
-    </p>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <p class="mb-0 text-muted">
-                Your pantry is empty. Inventory, categories, and grocery lists arrive in later phases.
-            </p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Dashboard</h1>
+        <span class="text-muted small">Signed in as <strong sec:authentication="name">user</strong></span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="h2 mb-0" th:text="${dashboard.counts().totalItems()}">0</div>
+                    <div class="text-muted small">Total items</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="h2 mb-0" style="color: var(--pt-accent);"
+                         th:text="${dashboard.counts().expiringThisWeek()}">0</div>
+                    <div class="text-muted small">Expiring this week</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="h2 mb-0" style="color: var(--pt-warning);"
+                         th:text="${dashboard.counts().lowStock()}">0</div>
+                    <div class="text-muted small">Low / out of stock</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="h2 mb-0" th:text="${dashboard.counts().grocerySuggestions()}">0</div>
+                    <div class="text-muted small">On grocery list</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">By location</h2>
+                    <div th:if="${dashboard.byLocation().isEmpty()}" class="text-muted small">
+                        No items yet. <a th:href="@{/inventory}">Add some</a>.
+                    </div>
+                    <ul class="list-group list-group-flush" th:unless="${dashboard.byLocation().isEmpty()}">
+                        <li class="list-group-item d-flex justify-content-between px-0 bg-transparent"
+                            th:each="loc : ${dashboard.byLocation()}">
+                            <span th:text="${loc.name()}">Location</span>
+                            <span class="badge pt-badge pt-badge-muted" th:text="${loc.itemCount()}">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Expiring soon</h2>
+                    <div th:if="${dashboard.expiringSoon().isEmpty()}" class="text-muted small">
+                        Nothing expiring within the week. Nice.
+                    </div>
+                    <table class="table table-sm mb-0" th:unless="${dashboard.expiringSoon().isEmpty()}">
+                        <thead>
+                        <tr>
+                            <th scope="col">Item</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Expires</th>
+                            <th scope="col"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="e : ${dashboard.expiringSoon()}">
+                            <td th:text="${e.itemName()}">Item</td>
+                            <td class="text-muted" th:text="${e.locationName()}">Location</td>
+                            <td th:text="${e.expirationDate()}">2026-01-01</td>
+                            <td>
+                                <span class="badge rounded-pill" th:classappend="${e.freshnessCssClass()}"
+                                      th:text="${e.freshnessLabel()}">Expiring soon</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
