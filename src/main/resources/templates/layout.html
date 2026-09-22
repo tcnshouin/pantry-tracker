@@ -56,6 +56,7 @@
     <div class="container">
         <a class="navbar-brand fw-semibold" th:href="@{/}">Pantry Tracker</a>
         <div class="d-flex align-items-center gap-3">
+            <a class="nav-link" th:href="@{/categories}" sec:authorize="isAuthenticated()">Categories</a>
             <span class="navbar-text" sec:authorize="isAuthenticated()"
                   sec:authentication="name">user@example.com</span>
             <form th:action="@{/logout}" method="post" class="m-0" sec:authorize="isAuthenticated()">
