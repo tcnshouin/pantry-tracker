@@ -3,6 +3,7 @@ package com.pantry.tracker.inventory;
 import com.pantry.tracker.category.CategoryService;
 import com.pantry.tracker.inventory.InventoryExceptions.DuplicateGroupNameException;
 import com.pantry.tracker.inventory.InventoryExceptions.GroupNotEmptyException;
+import com.pantry.tracker.inventory.InventoryExceptions.NoExpiryReferenceException;
 import com.pantry.tracker.inventory.InventoryViews.DuplicatePrompt;
 import com.pantry.tracker.inventory.InventoryViews.ItemView;
 import com.pantry.tracker.inventory.InventoryViews.LocationGroupView;
@@ -95,6 +96,7 @@ public class InventoryController {
                           @RequestParam(required = false) Long categoryId,
                           @RequestParam(defaultValue = "1") int quantity,
                           @RequestParam(required = false) String expirationDate,
+                          @RequestParam(defaultValue = "false") boolean autoExpiry,
                           Model model) {
         User user = currentUser.require();
         String trimmed = name == null ? "" : name.trim();
@@ -104,19 +106,26 @@ public class InventoryController {
         Optional<Item> duplicate = itemService.findDuplicate(user, trimmed, categoryId, id);
         if (duplicate.isPresent()) {
             DuplicatePrompt prompt = new DuplicatePrompt(itemService.view(user, duplicate.get().getId()),
-                    trimmed, categoryId, quantity, expirationDate == null ? "" : expirationDate);
+                    trimmed, categoryId, quantity, expirationDate == null ? "" : expirationDate, autoExpiry);
             return renderGroupBody(user, id, model, prompt, null);
         }
-        itemService.createItemWithBatch(user, id, trimmed, categoryId, Math.max(0, quantity),
-                parseDate(expirationDate));
+        try {
+            itemService.createItemWithBatch(user, id, trimmed, categoryId, Math.max(0, quantity),
+                    parseDate(expirationDate), autoExpiry);
+        } catch (NoExpiryReferenceException ex) {
+            return renderGroupBody(user, id, model, null, ex.getMessage());
+        }
         return renderGroupBody(user, id, model, null, null);
     }
 
     @PostMapping("/items/{id}")
     public String editItem(@PathVariable Long id, @RequestParam String name,
-                           @RequestParam Long categoryId, Model model) {
+                           @RequestParam Long categoryId,
+                           @RequestParam(defaultValue = "false") boolean lowStockEnabled,
+                           @RequestParam(required = false) Integer lowStockThreshold, Model model) {
         User user = currentUser.require();
-        Long groupId = itemService.updateItem(user, id, name, categoryId);
+        Long groupId = itemService.updateItem(user, id, name, categoryId, lowStockEnabled,
+                lowStockThreshold);
         return renderGroupBody(user, groupId, model, null, null);
     }
 
@@ -129,20 +138,31 @@ public class InventoryController {
 
     @PostMapping("/items/{id}/batches")
     public String addBatch(@PathVariable Long id, @RequestParam(defaultValue = "1") int quantity,
-                           @RequestParam(required = false) String expirationDate, Model model) {
+                           @RequestParam(required = false) String expirationDate,
+                           @RequestParam(defaultValue = "false") boolean autoExpiry, Model model) {
         User user = currentUser.require();
-        Long groupId = batchService.addBatch(user, id, Math.max(0, quantity), parseDate(expirationDate));
-        return renderGroupBody(user, groupId, model, null, null);
+        try {
+            Long groupId = batchService.addBatch(user, id, Math.max(0, quantity),
+                    parseDate(expirationDate), autoExpiry);
+            return renderGroupBody(user, groupId, model, null, null);
+        } catch (NoExpiryReferenceException ex) {
+            return renderGroupBody(user, itemService.groupIdOfItem(user, id), model, null, ex.getMessage());
+        }
     }
 
     @PostMapping("/batches/{id}")
     public String updateBatch(@PathVariable Long id, @RequestParam int quantity,
                               @RequestParam(required = false) String expirationDate,
-                              @RequestParam(required = false) String dateAdded, Model model) {
+                              @RequestParam(required = false) String dateAdded,
+                              @RequestParam(defaultValue = "false") boolean autoExpiry, Model model) {
         User user = currentUser.require();
-        Long groupId = batchService.updateBatch(user, id, quantity, parseDate(expirationDate),
-                parseDate(dateAdded));
-        return renderGroupBody(user, groupId, model, null, null);
+        try {
+            Long groupId = batchService.updateBatch(user, id, quantity, parseDate(expirationDate),
+                    parseDate(dateAdded), autoExpiry);
+            return renderGroupBody(user, groupId, model, null, null);
+        } catch (NoExpiryReferenceException ex) {
+            return renderGroupBody(user, batchService.groupIdOfBatch(user, id), model, null, ex.getMessage());
+        }
     }
 
     @PostMapping("/batches/{id}/quantity")

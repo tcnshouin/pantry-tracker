@@ -84,6 +84,30 @@
 - Phase 5: purge sweep consuming empty_since + purge_override, grocery list,
   dashboard, undo stack.
 
+## Phase 4 — Expiry engine + freshness + low stock ✅
+- [x] CategoryExpiryReferenceRepository (shelf-life days by category)
+- [x] FreshnessStatus + StockStatus enums (palette label + cssClass)
+- [x] ExpiryCalculator + InventoryStatusCalculator + tests
+- [x] Auto-calc wiring in ItemService.create / BatchService.add/update (autoExpiry)
+- [x] updateItem gains lowStockEnabled + threshold
+- [x] ItemView/BatchView carry statuses; toView takes calculator
+- [x] Controller: autoExpiry + low-stock params + NoExpiryReference handling
+- [x] Fragments: auto-calc checkbox, freshness badge, stock badge, low-stock toggle
+- [x] Palette badge CSS + delegated auto-calc JS (works across HTMX swaps)
+- [x] application.properties: pantry.expiring-soon-days=7
+- [x] Verify: mvnw test green (26/26)
+- [x] Verify: browser — auto-fill (Bread→today+3), expired/expiring/fresh colors, low/out-of-stock
+- [ ] Commit Phase 4
+
+### Phase 4 notes
+- Freshness/stock statuses computed at query time in InventoryStatusCalculator;
+  item roll-up = earliest-expiring in-stock batch (empty batches ignored).
+- Auto-calc is per-batch via an "Auto expiry" checkbox (default on); the manual
+  date input is disabled by a delegated JS hook using checkbox.form + form.elements
+  (so it also drives batch-row inputs associated via the form= attribute).
+- Rice-style spec inconsistency N/A here. All 15 categories have references, so
+  the NoExpiryReference path is defensive only.
+
 ## Review
 
 ### Phase 1 outcome

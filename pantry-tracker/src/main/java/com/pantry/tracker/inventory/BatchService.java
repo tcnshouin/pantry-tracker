@@ -1,5 +1,7 @@
 package com.pantry.tracker.inventory;
 
+import com.pantry.tracker.category.CategoryExpiryReferenceRepository;
+import com.pantry.tracker.inventory.InventoryExceptions.NoExpiryReferenceException;
 import com.pantry.tracker.inventory.InventoryExceptions.ResourceNotFoundException;
 import com.pantry.tracker.user.User;
 import java.time.Instant;
@@ -12,17 +14,24 @@ public class BatchService {
 
     private final ItemRepository itemRepository;
     private final BatchRepository batchRepository;
+    private final CategoryExpiryReferenceRepository expiryReferenceRepository;
 
-    public BatchService(ItemRepository itemRepository, BatchRepository batchRepository) {
+    public BatchService(ItemRepository itemRepository, BatchRepository batchRepository,
+                        CategoryExpiryReferenceRepository expiryReferenceRepository) {
         this.itemRepository = itemRepository;
         this.batchRepository = batchRepository;
+        this.expiryReferenceRepository = expiryReferenceRepository;
     }
 
     @Transactional
-    public Long addBatch(User user, Long itemId, int quantity, LocalDate expirationDate) {
+    public Long addBatch(User user, Long itemId, int quantity, LocalDate expirationDate,
+                         boolean autoExpiry) {
         Item item = itemRepository.findByIdAndUser(itemId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Item"));
-        Batch batch = new Batch(item, Math.max(0, quantity), expirationDate);
+        LocalDate dateAdded = LocalDate.now();
+        LocalDate resolved = resolveExpiry(item, dateAdded, expirationDate, autoExpiry);
+        Batch batch = new Batch(item, Math.max(0, quantity), resolved);
+        batch.setAutoExpiry(autoExpiry);
         applyEmptySince(batch);
         BatchSorter.insertSorted(item.getBatches(), batch);
         refreshItemEmptySince(item);
@@ -32,16 +41,29 @@ public class BatchService {
 
     @Transactional
     public Long updateBatch(User user, Long batchId, int quantity, LocalDate expirationDate,
-                            LocalDate dateAdded) {
+                            LocalDate dateAdded, boolean autoExpiry) {
         Batch batch = require(user, batchId);
         batch.setQuantity(Math.max(0, quantity));
-        batch.setExpirationDate(expirationDate);
         if (dateAdded != null) {
             batch.setDateAdded(dateAdded);
         }
+        batch.setAutoExpiry(autoExpiry);
+        batch.setExpirationDate(resolveExpiry(batch.getItem(), batch.getDateAdded(), expirationDate,
+                autoExpiry));
         applyEmptySince(batch);
         refreshItemEmptySince(batch.getItem());
         return batch.getItem().getLocationGroup().getId();
+    }
+
+    private LocalDate resolveExpiry(Item item, LocalDate dateAdded, LocalDate manualDate,
+                                    boolean autoExpiry) {
+        if (!autoExpiry) {
+            return manualDate;
+        }
+        Integer days = expiryReferenceRepository
+                .findShelfLifeDaysByCategoryId(item.getCategory().getId())
+                .orElseThrow(NoExpiryReferenceException::new);
+        return ExpiryCalculator.compute(days, dateAdded);
     }
 
     @Transactional
@@ -68,6 +90,11 @@ public class BatchService {
     public Batch require(User user, Long batchId) {
         return batchRepository.findByIdAndItemUser(batchId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch"));
+    }
+
+    @Transactional(readOnly = true)
+    public Long groupIdOfBatch(User user, Long batchId) {
+        return require(user, batchId).getItem().getLocationGroup().getId();
     }
 
     private void applyEmptySince(Batch batch) {

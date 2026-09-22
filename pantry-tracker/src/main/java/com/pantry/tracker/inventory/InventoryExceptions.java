@@ -22,4 +22,10 @@ public final class InventoryExceptions {
             super(what + " not found");
         }
     }
+
+    public static class NoExpiryReferenceException extends RuntimeException {
+        public NoExpiryReferenceException() {
+            super("This category has no shelf-life reference; enter an expiration date manually");
+        }
+    }
 }

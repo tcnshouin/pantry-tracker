@@ -15,6 +15,7 @@
               hx-swap="innerHTML" class="mb-3">
             <input type="hidden" name="quantity" th:value="${prompt.quantity()}">
             <input type="hidden" name="expirationDate" th:value="${prompt.expirationDate()}">
+            <input type="hidden" name="autoExpiry" th:value="${prompt.autoExpiry()}">
             <button type="submit" class="btn btn-sm btn-pt">Add as new batch</button>
         </form>
         <p class="mb-1 small text-muted">Existing batches (by date added):</p>
@@ -70,6 +71,11 @@
             <label class="form-label small mb-1">Expiration</label>
             <input type="date" name="expirationDate" class="form-control form-control-sm">
         </div>
+        <div class="col-md-2 form-check ms-2 mb-2">
+            <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry" value="true"
+                   checked th:id="'ai-auto-' + ${group.id()}">
+            <label class="form-check-label small" th:for="'ai-auto-' + ${group.id()}">Auto expiry</label>
+        </div>
         <div class="col-md-1 d-grid">
             <button type="submit" class="btn btn-sm btn-pt">Add</button>
         </div>
@@ -86,9 +92,11 @@
                 <span class="badge text-bg-light" th:text="${it.categoryName()}">Category</span>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="badge rounded-pill"
-                      th:classappend="${it.totalQuantity() == 0} ? 'text-bg-danger' : 'text-bg-success'"
-                      th:text="'Qty ' + ${it.totalQuantity()}">Qty 0</span>
+                <span class="text-muted small" th:text="'Qty ' + ${it.totalQuantity()}">Qty 0</span>
+                <span class="badge rounded-pill" th:classappend="${it.stockStatus().cssClass()}"
+                      th:text="${it.stockStatus().label()}">In stock</span>
+                <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK'}" class="badge rounded-pill"
+                      th:classappend="${it.freshness().cssClass()}" th:text="${it.freshness().label()}">Fresh</span>
                 <button class="btn btn-sm btn-outline-secondary" type="button"
                         data-bs-toggle="collapse" th:data-bs-target="'#edit-' + ${it.id()}">Edit</button>
                 <button class="btn btn-sm btn-outline-danger" type="button"
@@ -111,6 +119,16 @@
                         <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}"
                                 th:selected="${c.name() == it.categoryName()}">Category</option>
                     </select>
+                </div>
+                <div class="col-md-3 form-check ms-2 mt-2">
+                    <input class="form-check-input" type="checkbox" name="lowStockEnabled" value="true"
+                           th:checked="${it.lowStockEnabled()}" th:id="'low-' + ${it.id()}">
+                    <label class="form-check-label small" th:for="'low-' + ${it.id()}">Low-stock alerts</label>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Threshold</label>
+                    <input type="number" name="lowStockThreshold" min="0" class="form-control form-control-sm"
+                           th:value="${it.lowStockThreshold()}">
                 </div>
                 <div class="col-md-2 d-grid">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Save item</button>
@@ -145,6 +163,8 @@
                     <td>
                         <input type="date" name="expirationDate" class="form-control form-control-sm"
                                th:value="${b.expirationDate()}" th:attr="form='bf-' + ${b.id()}">
+                        <span class="badge rounded-pill mt-1" th:classappend="${b.freshness().cssClass()}"
+                              th:text="${b.freshness().label()}">Fresh</span>
                     </td>
                     <td>
                         <input type="date" name="dateAdded" class="form-control form-control-sm"
@@ -154,6 +174,11 @@
                         <form th:id="'bf-' + ${b.id()}" class="d-inline"
                               th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
                             <input type="hidden" name="quantity" th:value="${b.quantity()}">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
+                                       value="true" th:checked="${b.autoExpiry()}" th:id="'auto-' + ${b.id()}">
+                                <label class="form-check-label small" th:for="'auto-' + ${b.id()}">Auto</label>
+                            </div>
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
                         </form>
                         <button type="button" class="btn btn-sm btn-outline-danger"
@@ -173,6 +198,11 @@
                 <div class="col-auto">
                     <label class="form-label small mb-1">Expiration</label>
                     <input type="date" name="expirationDate" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto form-check mt-4">
+                    <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry" value="true"
+                           checked th:id="'ab-auto-' + ${it.id()}">
+                    <label class="form-check-label small" th:for="'ab-auto-' + ${it.id()}">Auto expiry</label>
                 </div>
                 <div class="col-auto">
                     <button type="submit" class="btn btn-sm btn-pt">Add batch</button>
