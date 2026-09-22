@@ -12,12 +12,14 @@ public final class InventoryViews {
     }
 
     public record BatchView(Long id, int quantity, LocalDate expirationDate, LocalDate dateAdded,
-                            boolean autoExpiry, FreshnessStatus freshness) {
+                            boolean autoExpiry, FreshnessStatus freshness,
+                            boolean purgeOverride, Integer daysUntilPurge) {
     }
 
     public record ItemView(Long id, String name, String categoryName, int totalQuantity,
                            FreshnessStatus freshness, StockStatus stockStatus,
                            boolean lowStockEnabled, Integer lowStockThreshold,
+                           boolean purgeOverride, Integer daysUntilPurge,
                            List<BatchView> batches) {
     }
 

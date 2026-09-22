@@ -3,6 +3,7 @@ package com.pantry.tracker.inventory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.pantry.tracker.undo.UndoService;
 import com.pantry.tracker.user.User;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -21,6 +22,9 @@ class BatchServiceTest {
     @Mock
     private BatchRepository batchRepository;
 
+    @Mock
+    private UndoService undoService;
+
     @InjectMocks
     private BatchService service;
 
@@ -30,6 +34,7 @@ class BatchServiceTest {
         LocationGroup group = new LocationGroup();
         group.setId(1L);
         Item item = new Item();
+        item.setName("Rice");
         item.setLocationGroup(group);
         item.setBatches(new ArrayList<>());
         Batch batch = new Batch(item, quantity, null);

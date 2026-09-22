@@ -130,6 +130,28 @@
 - Split: 5a (grocery+dashboard) then STOP; 5b (purge + undo) after continue.
 - Undo scope: full snapshot-based, incl. field edits (5b).
 
+## Phase 5b — Auto-purge sweep + undo stack ✅
+- [x] PurgeService.sweep (7d item / 3d batch, overrides) + PurgeServiceIntegrationTest (real DB)
+- [x] PurgeCalculator (days-until) ; ItemView/BatchView gain purgeOverride+daysUntilPurge
+- [x] @EnableScheduling + PurgeSchedule daily job
+- [x] Keep endpoints (item/batch set purge_override) + countdown UI + Keep buttons
+- [x] UndoEntry sealed records + UndoService (session Stack) + UndoExecutor
+- [x] Services record inverse on each mutation; /undo endpoint + OOB Undo control + toast
+- [x] UndoServiceTest (LIFO) + UndoExecutorTest
+- [x] Verify: mvnw test green (38/38)
+- [x] Verify: browser — countdown flags, Keep→Kept, undo rename + undo batch delete, OOB undo
+- [ ] Commit 5b; Phase 5 complete
+
+### Phase 5b notes
+- Undo covers item+batch add/edit/delete + quantity (snapshot-based, incl. edits).
+  Recording is in the services (entities in hand); UndoExecutor reverses via
+  repositories directly (no recursion). UndoService is @SessionScope.
+- Keep (purge_override) is deliberately NOT undoable (safety action).
+- OOB gotcha: the undo control must not live inside groupBody (it renders inline
+  per group on full load → duplicate ids). Split into a groupBodyResponse wrapper
+  that only HTMX mutations return; the page keeps a single #undo-slot.
+- Boot 4 test package: TestEntityManager → org.springframework.boot.jpa.test.autoconfigure.
+
 ## Review
 
 ### Phase 1 outcome

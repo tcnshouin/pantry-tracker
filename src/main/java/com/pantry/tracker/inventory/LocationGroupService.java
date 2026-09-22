@@ -7,6 +7,7 @@ import com.pantry.tracker.inventory.InventoryViews.GroupWithItems;
 import com.pantry.tracker.inventory.InventoryViews.ItemView;
 import com.pantry.tracker.inventory.InventoryViews.LocationGroupView;
 import com.pantry.tracker.user.User;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -37,10 +38,11 @@ public class LocationGroupService {
     @Transactional(readOnly = true)
     public List<GroupWithItems> listGroupsWithItems(User user) {
         LocalDate today = LocalDate.now();
+        Instant now = Instant.now();
         return groupRepository.findByUserOrderByNameAsc(user).stream()
                 .map(group -> {
                     List<ItemView> items = itemRepository.findByLocationGroupOrderByNameAsc(group)
-                            .stream().map(item -> ItemService.toView(item, statusCalculator, today)).toList();
+                            .stream().map(item -> ItemService.toView(item, statusCalculator, today, now)).toList();
                     return new GroupWithItems(
                             new LocationGroupView(group.getId(), group.getName(), items.size()),
                             items);

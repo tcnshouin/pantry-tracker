@@ -1,6 +1,7 @@
 package com.pantry.tracker.inventory;
 
 import com.pantry.tracker.user.User;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ItemRepository extends JpaRepository<Item, Long> {
 
     List<Item> findByUser(User user);
+
+    List<Item> findByPurgeOverrideFalseAndEmptySinceBefore(Instant cutoff);
 
     List<Item> findByLocationGroupOrderByNameAsc(LocationGroup locationGroup);
 

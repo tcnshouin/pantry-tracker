@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
+<th:block th:fragment="groupBodyResponse(group, items, categories, prompt, addError, undoLabel)">
+    <div th:replace="~{inventory/fragments :: groupBody(${group}, ${items}, ${categories}, ${prompt}, ${addError})}"></div>
+    <div id="undo-slot" hx-swap-oob="true">
+        <form th:if="${undoLabel}" th:action="@{/undo}" method="post" class="mb-3">
+            <button type="submit" class="btn btn-sm btn-outline-dark">
+                ↶ Undo: <span th:text="${undoLabel}">last action</span>
+            </button>
+        </form>
+    </div>
+</th:block>
+
 <div th:fragment="groupBody(group, items, categories, prompt, addError)"
      th:with="target='#group-body-' + ${group.id()}">
 
@@ -97,6 +108,13 @@
                       th:text="${it.stockStatus().label()}">In stock</span>
                 <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK'}" class="badge rounded-pill"
                       th:classappend="${it.freshness().cssClass()}" th:text="${it.freshness().label()}">Fresh</span>
+                <span th:if="${it.purgeOverride()}" class="badge rounded-pill pt-badge pt-badge-muted">Kept</span>
+                <span th:if="${it.daysUntilPurge() != null}"
+                      class="badge rounded-pill pt-badge pt-badge-warning"
+                      th:text="${it.daysUntilPurge() == 0} ? 'Purges today' : 'Purges in ' + ${it.daysUntilPurge()} + ' days'">Purges soon</span>
+                <button th:if="${it.daysUntilPurge() != null}" type="button" class="btn btn-sm btn-outline-secondary"
+                        th:attr="hx-post=@{/items/{id}/keep(id=${it.id()})},hx-target=${target}"
+                        hx-swap="innerHTML">Keep item</button>
                 <div class="input-group input-group-sm" style="width: 9.5rem;">
                     <input type="number" name="quantity" min="1" value="1" class="form-control"
                            th:id="'gq-' + ${it.id()}">
@@ -192,6 +210,14 @@
                         <button type="button" class="btn btn-sm btn-outline-danger"
                                 th:attr="hx-post=@{/batches/{id}/delete(id=${b.id()})},hx-target=${target}"
                                 hx-swap="innerHTML">Delete</button>
+                        <span th:if="${b.purgeOverride()}" class="badge rounded-pill pt-badge pt-badge-muted ms-1">Kept</span>
+                        <span th:if="${b.daysUntilPurge() != null}"
+                              class="badge rounded-pill pt-badge pt-badge-warning ms-1"
+                              th:text="${b.daysUntilPurge() == 0} ? 'Purges today' : 'Purges in ' + ${b.daysUntilPurge()} + ' d'">Purges soon</span>
+                        <button th:if="${b.daysUntilPurge() != null}" type="button"
+                                class="btn btn-sm btn-outline-secondary ms-1"
+                                th:attr="hx-post=@{/batches/{id}/keep(id=${b.id()})},hx-target=${target}"
+                                hx-swap="innerHTML">Keep batch</button>
                     </td>
                 </tr>
                 </tbody>
