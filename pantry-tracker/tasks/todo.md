@@ -26,6 +26,30 @@
 - [x] Verify: app_user row has BCrypt hash
 - [ ] Commit Phase 1
 
+## Phase 2 — Categories + expiry reference ✅
+- [x] Flyway V2: create category + category_expiry_reference, seed 15 rows
+- [x] Category + CategoryExpiryReference entities + repositories
+- [x] CategoryOption DTO + CategoryService.listOptions()
+- [x] CategoryController (GET /categories reference page)
+- [x] Searchable category dropdown fragment (client-side filter)
+- [x] /categories page: dropdown + table of categories w/ shelf-life
+- [x] CategorySeedTest (@DataJpaTest, real Postgres): 15 categories, each w/ ref
+- [x] Verify: mvnw test green (9/9)
+- [x] Verify: browser — dropdown filters, shows shelf-life per category
+- [ ] Commit Phase 2
+
+### Phase 2 notes
+- Seeded the spec's "Stored (lower bound)" column verbatim. Note the spec's
+  Rice row is internally inconsistent (range 1,460–1,825 but Stored = 730);
+  followed the Stored column (730) as authoritative rather than inventing a
+  number. Flag if you want Rice corrected to 1,460.
+- Boot 4 test package moves: `@DataJpaTest` →
+  `org.springframework.boot.data.jpa.test.autoconfigure`; `@AutoConfigureTestDatabase`
+  → `org.springframework.boot.jdbc.test.autoconfigure`.
+- Category dropdown is a reusable fragment (`fragments/category-select ::
+  categorySelect(options, fieldName)` + `:: categorySelectScript`) so Phase 3's
+  add-item form can drop it straight in.
+
 ## Review
 
 ### Phase 1 outcome

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}"
+      lang="en">
+<head>
+    <title>Categories</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1 class="h3 mb-3">Categories</h1>
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <label class="form-label fw-semibold">Category picker</label>
+                    <div th:replace="~{fragments/category-select :: categorySelect(${categories}, 'categoryId')}"></div>
+                    <p class="form-text mb-0">Type to filter. The badge shows the shelf-life estimate.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Reference list</h2>
+                    <table class="table table-sm mb-0">
+                        <thead>
+                        <tr>
+                            <th scope="col">Category</th>
+                            <th scope="col" class="text-end">Shelf life (days)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="opt : ${categories}">
+                            <td th:text="${opt.name()}">Category</td>
+                            <td class="text-end" th:text="${opt.shelfLifeDays()}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/category-select :: categorySelectScript}"></div>
+</div>
+</body>
+</html>
