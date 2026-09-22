@@ -51,6 +51,22 @@
             background-color: var(--pt-bg);
             border-color: var(--pt-surface);
         }
+        .pt-badge {
+            color: var(--pt-bg);
+        }
+        .pt-badge-warning {
+            background-color: var(--pt-warning);
+        }
+        .pt-badge-accent {
+            background-color: var(--pt-accent);
+        }
+        .pt-badge-fresh {
+            background-color: var(--pt-fresh);
+        }
+        .pt-badge-muted {
+            background-color: var(--pt-surface);
+            color: var(--pt-text);
+        }
     </style>
 </head>
 <body>
@@ -79,6 +95,30 @@
             event.detail.headers[header.getAttribute('content')] = token.getAttribute('content');
         }
     });
+
+    function ptApplyAutoCalc(checkbox) {
+        var form = checkbox.form || checkbox.closest('form');
+        if (!form) {
+            return;
+        }
+        var dateInput = form.elements['expirationDate'];
+        if (dateInput) {
+            dateInput.disabled = checkbox.checked;
+        }
+    }
+
+    function ptSyncAllAutoCalc() {
+        document.querySelectorAll('.pt-autocalc').forEach(ptApplyAutoCalc);
+    }
+
+    document.addEventListener('change', function (event) {
+        if (event.target.classList.contains('pt-autocalc')) {
+            ptApplyAutoCalc(event.target);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', ptSyncAllAutoCalc);
+    document.body.addEventListener('htmx:afterSwap', ptSyncAllAutoCalc);
 </script>
 </body>
 </html>
