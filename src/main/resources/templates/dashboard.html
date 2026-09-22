@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}"
+      lang="en">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1 class="h3 mb-2">Dashboard</h1>
+    <p class="mb-4">
+        Signed in as <strong sec:authentication="name">user@example.com</strong>.
+    </p>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p class="mb-0 text-muted">
+                Your pantry is empty. Inventory, categories, and grocery lists arrive in later phases.
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
