@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+<div th:fragment="groceryBody(list)" class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Suggested</h2>
+                <div th:if="${list.suggested().isEmpty()}" class="text-muted small">
+                    Nothing suggested. Items appear here when they run low or out.
+                </div>
+                <ul class="list-group list-group-flush" th:unless="${list.suggested().isEmpty()}">
+                    <th:block th:each="row : ${list.suggested()}">
+                        <li th:replace="~{grocery/fragments :: groceryRow(${row})}"></li>
+                    </th:block>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Added by you</h2>
+                <div th:if="${list.manual().isEmpty()}" class="text-muted small">
+                    Use "Add to list" on an inventory item to add it here.
+                </div>
+                <ul class="list-group list-group-flush" th:unless="${list.manual().isEmpty()}">
+                    <th:block th:each="row : ${list.manual()}">
+                        <li th:replace="~{grocery/fragments :: groceryRow(${row})}"></li>
+                    </th:block>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<li th:fragment="groceryRow(row)"
+    class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+    <div class="d-flex align-items-center">
+        <input type="checkbox" class="form-check-input me-2" th:checked="${row.purchased()}"
+               hx-target="#grocery-body" hx-swap="innerHTML"
+               th:attr="hx-post=@{/grocery/{id}/purchase(id=${row.id()})}">
+        <span th:classappend="${row.purchased()} ? 'text-decoration-line-through text-muted' : ''"
+              th:text="${row.itemName()}">Item</span>
+        <span class="text-muted small ms-2" th:text="'× ' + ${row.quantityNeeded()}">× 1</span>
+    </div>
+    <div class="d-flex gap-2">
+        <button th:if="${row.purchased() and row.linked()}" type="button" class="btn btn-sm btn-pt"
+                hx-target="#grocery-body" hx-swap="innerHTML"
+                th:attr="hx-post=@{/grocery/{id}/restock(id=${row.id()})}">Add to inventory</button>
+        <button type="button" class="btn btn-sm btn-outline-danger"
+                hx-target="#grocery-body" hx-swap="innerHTML"
+                th:attr="hx-post=@{/grocery/{id}/remove(id=${row.id()})}">Remove</button>
+    </div>
+</li>
+
+<span th:fragment="addedBadge" class="badge pt-badge pt-badge-fresh">On list ✓</span>
+</body>
+</html>

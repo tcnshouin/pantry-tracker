@@ -108,6 +108,28 @@
 - Rice-style spec inconsistency N/A here. All 15 categories have references, so
   the NoExpiryReference path is defensive only.
 
+## Phase 5a — Grocery list + inventory loop + dashboard ✅
+- [x] Flyway V4: grocery_list_item + item.low_stock_suggested
+- [x] GroceryListItem entity + GrocerySource enum + repository; Item.lowStockSuggested
+- [x] ExpiringSoonHeap (min-heap) + test
+- [x] GroceryListService (sync anti-spam, addManual, list, togglePurchased, remove) + test
+- [x] DashboardService + DashboardView (uses min-heap)
+- [x] GroceryController + rewrite DashboardController (GET /)
+- [x] grocery.html + fragments; dashboard.html rewrite; Add-to-list on inventory rows; nav links
+- [x] GrocerySecurityTest (anon redirect)
+- [x] Verify: mvnw test green (33/33)
+- [x] Verify: browser — auto-suggest+anti-spam, manual add, check-off loop, dashboard min-heap
+- [ ] Commit 5a, STOP for review
+
+### Phase 5a note
+- Thymeleaf gotcha: th:replace has higher precedence than th:each, so combining
+  them on one element makes the loop var null. Wrap iteration in <th:block th:each>
+  with th:replace on the inner element.
+
+### Phase 5 decisions (user)
+- Split: 5a (grocery+dashboard) then STOP; 5b (purge + undo) after continue.
+- Undo scope: full snapshot-based, incl. field edits (5b).
+
 ## Review
 
 ### Phase 1 outcome

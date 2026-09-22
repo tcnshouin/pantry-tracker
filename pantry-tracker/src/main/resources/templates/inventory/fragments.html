@@ -97,6 +97,14 @@
                       th:text="${it.stockStatus().label()}">In stock</span>
                 <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK'}" class="badge rounded-pill"
                       th:classappend="${it.freshness().cssClass()}" th:text="${it.freshness().label()}">Fresh</span>
+                <div class="input-group input-group-sm" style="width: 9.5rem;">
+                    <input type="number" name="quantity" min="1" value="1" class="form-control"
+                           th:id="'gq-' + ${it.id()}">
+                    <button type="button" class="btn btn-outline-secondary" hx-swap="outerHTML"
+                            th:attr="hx-post=@{/items/{id}/grocery(id=${it.id()})},hx-include='#gq-' + ${it.id()}">
+                        Add to list
+                    </button>
+                </div>
                 <button class="btn btn-sm btn-outline-secondary" type="button"
                         data-bs-toggle="collapse" th:data-bs-target="'#edit-' + ${it.id()}">Edit</button>
                 <button class="btn btn-sm btn-outline-danger" type="button"

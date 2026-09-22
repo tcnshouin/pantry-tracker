@@ -57,6 +57,9 @@ public class Item {
     @Column(name = "purge_override", nullable = false)
     private boolean purgeOverride = false;
 
+    @Column(name = "low_stock_suggested", nullable = false)
+    private boolean lowStockSuggested = false;
+
     @Column(name = "empty_since")
     private Instant emptySince;
 
