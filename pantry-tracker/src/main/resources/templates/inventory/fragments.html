@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+<div th:fragment="groupBody(group, items, categories, prompt, addError)"
+     th:with="target='#group-body-' + ${group.id()}">
+
+    <div th:if="${addError}" class="alert alert-danger py-2" th:text="${addError}">Error</div>
+
+    <div th:if="${prompt}" class="alert alert-warning">
+        <p class="fw-semibold mb-2">
+            "<span th:text="${prompt.existing().name()}">Item</span>" already exists in this group.
+            Add it as a new batch, or edit one of its existing batches.
+        </p>
+        <form th:attr="hx-post=@{/items/{id}/batches(id=${prompt.existing().id()})},hx-target=${target}"
+              hx-swap="innerHTML" class="mb-3">
+            <input type="hidden" name="quantity" th:value="${prompt.quantity()}">
+            <input type="hidden" name="expirationDate" th:value="${prompt.expirationDate()}">
+            <button type="submit" class="btn btn-sm btn-pt">Add as new batch</button>
+        </form>
+        <p class="mb-1 small text-muted">Existing batches (by date added):</p>
+        <table class="table table-sm mb-0 bg-white">
+            <thead>
+            <tr>
+                <th scope="col">Added</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Expiration</th>
+                <th scope="col"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="b : ${prompt.existing().batches()}">
+                <td th:text="${b.dateAdded()}">2026-01-01</td>
+                <td>
+                    <input type="number" name="quantity" min="0" class="form-control form-control-sm"
+                           style="width: 6rem;" th:value="${b.quantity()}" th:attr="form='pf-' + ${b.id()}">
+                </td>
+                <td>
+                    <input type="date" name="expirationDate" class="form-control form-control-sm"
+                           th:value="${b.expirationDate()}" th:attr="form='pf-' + ${b.id()}">
+                </td>
+                <td>
+                    <form th:id="'pf-' + ${b.id()}"
+                          th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <form th:attr="hx-post=@{/locations/{id}/items(id=${group.id()})},hx-target=${target}"
+          hx-swap="innerHTML" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Item name</label>
+            <input type="text" name="name" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Category</label>
+            <select name="categoryId" class="form-select form-select-sm" required>
+                <option value="" selected>Choose…</option>
+                <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}">Category</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Quantity</label>
+            <input type="number" name="quantity" min="0" value="1" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Expiration</label>
+            <input type="date" name="expirationDate" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-sm btn-pt">Add</button>
+        </div>
+    </form>
+
+    <div th:if="${items.isEmpty()}" class="text-muted small">No items in this group yet.</div>
+
+    <div th:each="it : ${items}" class="border rounded mb-2 p-2 bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-link text-decoration-none p-0" type="button"
+                        data-bs-toggle="collapse" th:data-bs-target="'#batches-' + ${it.id()}">▸</button>
+                <span class="fw-semibold" th:text="${it.name()}">Item</span>
+                <span class="badge text-bg-light" th:text="${it.categoryName()}">Category</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-pill"
+                      th:classappend="${it.totalQuantity() == 0} ? 'text-bg-danger' : 'text-bg-success'"
+                      th:text="'Qty ' + ${it.totalQuantity()}">Qty 0</span>
+                <button class="btn btn-sm btn-outline-secondary" type="button"
+                        data-bs-toggle="collapse" th:data-bs-target="'#edit-' + ${it.id()}">Edit</button>
+                <button class="btn btn-sm btn-outline-danger" type="button"
+                        th:attr="hx-post=@{/items/{id}/delete(id=${it.id()})},hx-target=${target}"
+                        hx-swap="innerHTML" hx-confirm="Delete this item and all its batches?">Delete</button>
+            </div>
+        </div>
+
+        <div th:id="'edit-' + ${it.id()}" class="collapse mt-2">
+            <form th:attr="hx-post=@{/items/{id}(id=${it.id()})},hx-target=${target}"
+                  hx-swap="innerHTML" class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label small mb-1">Name</label>
+                    <input type="text" name="name" class="form-control form-control-sm"
+                           th:value="${it.name()}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Category</label>
+                    <select name="categoryId" class="form-select form-select-sm" required>
+                        <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}"
+                                th:selected="${c.name() == it.categoryName()}">Category</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Save item</button>
+                </div>
+            </form>
+        </div>
+
+        <div th:id="'batches-' + ${it.id()}" class="collapse mt-2">
+            <table class="table table-sm align-middle mb-2">
+                <thead>
+                <tr>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Expiration</th>
+                    <th scope="col">Added</th>
+                    <th scope="col"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="b : ${it.batches()}">
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary"
+                                    th:disabled="${b.quantity() == 0}"
+                                    th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
+                                    hx-swap="innerHTML" hx-vals='{"delta": -1}'>−</button>
+                            <span class="btn btn-outline-secondary disabled" th:text="${b.quantity()}">0</span>
+                            <button type="button" class="btn btn-outline-secondary"
+                                    th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
+                                    hx-swap="innerHTML" hx-vals='{"delta": 1}'>+</button>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="date" name="expirationDate" class="form-control form-control-sm"
+                               th:value="${b.expirationDate()}" th:attr="form='bf-' + ${b.id()}">
+                    </td>
+                    <td>
+                        <input type="date" name="dateAdded" class="form-control form-control-sm"
+                               th:value="${b.dateAdded()}" th:attr="form='bf-' + ${b.id()}">
+                    </td>
+                    <td class="text-nowrap">
+                        <form th:id="'bf-' + ${b.id()}" class="d-inline"
+                              th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
+                            <input type="hidden" name="quantity" th:value="${b.quantity()}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                th:attr="hx-post=@{/batches/{id}/delete(id=${b.id()})},hx-target=${target}"
+                                hx-swap="innerHTML">Delete</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <form th:attr="hx-post=@{/items/{id}/batches(id=${it.id()})},hx-target=${target}"
+                  hx-swap="innerHTML" class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label small mb-1">New batch qty</label>
+                    <input type="number" name="quantity" min="0" value="1"
+                           class="form-control form-control-sm" style="width: 7rem;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small mb-1">Expiration</label>
+                    <input type="date" name="expirationDate" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-pt">Add batch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
