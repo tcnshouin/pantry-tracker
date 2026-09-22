@@ -7,6 +7,9 @@ import com.pantry.tracker.inventory.InventoryExceptions.NoExpiryReferenceExcepti
 import com.pantry.tracker.inventory.InventoryViews.DuplicatePrompt;
 import com.pantry.tracker.inventory.InventoryViews.ItemView;
 import com.pantry.tracker.inventory.InventoryViews.LocationGroupView;
+import com.pantry.tracker.undo.UndoEntry;
+import com.pantry.tracker.undo.UndoExecutor;
+import com.pantry.tracker.undo.UndoService;
 import com.pantry.tracker.user.User;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,22 +25,27 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class InventoryController {
 
-    private static final String GROUP_BODY = "inventory/fragments :: groupBody";
+    private static final String GROUP_BODY = "inventory/fragments :: groupBodyResponse";
 
     private final CurrentUserService currentUser;
     private final LocationGroupService groupService;
     private final ItemService itemService;
     private final BatchService batchService;
     private final CategoryService categoryService;
+    private final UndoService undoService;
+    private final UndoExecutor undoExecutor;
 
     public InventoryController(CurrentUserService currentUser, LocationGroupService groupService,
                                ItemService itemService, BatchService batchService,
-                               CategoryService categoryService) {
+                               CategoryService categoryService, UndoService undoService,
+                               UndoExecutor undoExecutor) {
         this.currentUser = currentUser;
         this.groupService = groupService;
         this.itemService = itemService;
         this.batchService = batchService;
         this.categoryService = categoryService;
+        this.undoService = undoService;
+        this.undoExecutor = undoExecutor;
     }
 
     @GetMapping("/inventory")
@@ -45,7 +53,33 @@ public class InventoryController {
         User user = currentUser.require();
         model.addAttribute("groups", groupService.listGroupsWithItems(user));
         model.addAttribute("categories", categoryService.listOptions());
+        model.addAttribute("undoLabel", undoService.peekLabel().orElse(null));
         return "inventory/inventory";
+    }
+
+    @PostMapping("/items/{id}/keep")
+    public String keepItem(@PathVariable Long id, Model model) {
+        User user = currentUser.require();
+        Long groupId = itemService.keep(user, id);
+        return renderGroupBody(user, groupId, model, null, null);
+    }
+
+    @PostMapping("/batches/{id}/keep")
+    public String keepBatch(@PathVariable Long id, Model model) {
+        User user = currentUser.require();
+        Long groupId = batchService.keep(user, id);
+        return renderGroupBody(user, groupId, model, null, null);
+    }
+
+    @PostMapping("/undo")
+    public String undo(RedirectAttributes ra) {
+        User user = currentUser.require();
+        Optional<UndoEntry> entry = undoService.pop();
+        if (entry.isPresent()) {
+            undoExecutor.apply(user, entry.get());
+            ra.addFlashAttribute("undone", entry.get().label());
+        }
+        return "redirect:/inventory";
     }
 
     @PostMapping("/locations")
@@ -188,6 +222,7 @@ public class InventoryController {
         model.addAttribute("categories", categoryService.listOptions());
         model.addAttribute("prompt", prompt);
         model.addAttribute("addError", addError);
+        model.addAttribute("undoLabel", undoService.peekLabel().orElse(null));
         return GROUP_BODY;
     }
 

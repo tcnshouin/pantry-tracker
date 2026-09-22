@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.pantry.tracker.category.CategoryService;
 import com.pantry.tracker.config.SecurityConfig;
+import com.pantry.tracker.undo.UndoExecutor;
+import com.pantry.tracker.undo.UndoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -34,6 +36,12 @@ class InventorySecurityTest {
 
     @MockitoBean
     private CategoryService categoryService;
+
+    @MockitoBean
+    private UndoService undoService;
+
+    @MockitoBean
+    private UndoExecutor undoExecutor;
 
     @Test
     void anonymousInventoryRedirectsToLogin() throws Exception {

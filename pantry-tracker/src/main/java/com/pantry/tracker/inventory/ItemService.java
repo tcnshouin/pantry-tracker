@@ -7,7 +7,12 @@ import com.pantry.tracker.inventory.InventoryExceptions.NoExpiryReferenceExcepti
 import com.pantry.tracker.inventory.InventoryExceptions.ResourceNotFoundException;
 import com.pantry.tracker.inventory.InventoryViews.BatchView;
 import com.pantry.tracker.inventory.InventoryViews.ItemView;
+import com.pantry.tracker.undo.Snapshots.BatchSnapshot;
+import com.pantry.tracker.undo.Snapshots.ItemSnapshot;
+import com.pantry.tracker.undo.UndoEntry;
+import com.pantry.tracker.undo.UndoService;
 import com.pantry.tracker.user.User;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -22,29 +27,32 @@ public class ItemService {
     private final CategoryRepository categoryRepository;
     private final CategoryExpiryReferenceRepository expiryReferenceRepository;
     private final InventoryStatusCalculator statusCalculator;
+    private final UndoService undoService;
 
     public ItemService(ItemRepository itemRepository, LocationGroupRepository groupRepository,
                        CategoryRepository categoryRepository,
                        CategoryExpiryReferenceRepository expiryReferenceRepository,
-                       InventoryStatusCalculator statusCalculator) {
+                       InventoryStatusCalculator statusCalculator, UndoService undoService) {
         this.itemRepository = itemRepository;
         this.groupRepository = groupRepository;
         this.categoryRepository = categoryRepository;
         this.expiryReferenceRepository = expiryReferenceRepository;
         this.statusCalculator = statusCalculator;
+        this.undoService = undoService;
     }
 
     @Transactional(readOnly = true)
     public List<ItemView> listItems(User user, LocationGroup group) {
         LocalDate today = LocalDate.now();
+        Instant now = Instant.now();
         return itemRepository.findByLocationGroupOrderByNameAsc(group).stream()
-                .map(item -> toView(item, statusCalculator, today))
+                .map(item -> toView(item, statusCalculator, today, now))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ItemView view(User user, Long itemId) {
-        return toView(require(user, itemId), statusCalculator, LocalDate.now());
+        return toView(require(user, itemId), statusCalculator, LocalDate.now(), Instant.now());
     }
 
     @Transactional(readOnly = true)
@@ -77,13 +85,18 @@ public class ItemService {
         Batch batch = new Batch(item, Math.max(0, quantity), resolved);
         batch.setAutoExpiry(autoExpiry);
         BatchSorter.insertSorted(item.getBatches(), batch);
-        return itemRepository.save(item);
+        Item saved = itemRepository.save(item);
+        undoService.push(new UndoEntry.DeleteItem(saved.getId(), "Add item \"" + saved.getName() + "\""));
+        return saved;
     }
 
     @Transactional
     public Long updateItem(User user, Long itemId, String name, Long categoryId,
                            boolean lowStockEnabled, Integer lowStockThreshold) {
         Item item = require(user, itemId);
+        undoService.push(new UndoEntry.RestoreItemFields(item.getId(), item.getName(),
+                item.getCategory().getId(), item.isLowStockEnabled(), item.getLowStockThreshold(),
+                "Edit item \"" + item.getName() + "\""));
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category"));
         item.setName(name.trim());
@@ -94,9 +107,24 @@ public class ItemService {
     }
 
     @Transactional
+    public Long keep(User user, Long itemId) {
+        Item item = require(user, itemId);
+        item.setPurgeOverride(true);
+        return item.getLocationGroup().getId();
+    }
+
+    @Transactional
     public Long deleteItem(User user, Long itemId) {
         Item item = require(user, itemId);
         Long groupId = item.getLocationGroup().getId();
+        List<BatchSnapshot> batchSnapshots = item.getBatches().stream()
+                .map(b -> new BatchSnapshot(b.getQuantity(), b.getExpirationDate(), b.getDateAdded(),
+                        b.isAutoExpiry(), b.isPurgeOverride()))
+                .toList();
+        ItemSnapshot snapshot = new ItemSnapshot(item.getName(), item.getCategory().getId(), groupId,
+                item.isLowStockEnabled(), item.getLowStockThreshold(), item.isPurgeOverride(),
+                batchSnapshots);
+        undoService.push(new UndoEntry.RecreateItem(snapshot, "Delete item \"" + item.getName() + "\""));
         itemRepository.delete(item);
         return groupId;
     }
@@ -111,13 +139,15 @@ public class ItemService {
         return ExpiryCalculator.compute(days, dateAdded);
     }
 
-    static ItemView toView(Item item, InventoryStatusCalculator calc, LocalDate today) {
+    static ItemView toView(Item item, InventoryStatusCalculator calc, LocalDate today, Instant now) {
         List<BatchView> batches = item.getBatches().stream()
                 .map(b -> new BatchView(b.getId(), b.getQuantity(), b.getExpirationDate(),
-                        b.getDateAdded(), b.isAutoExpiry(), calc.batchFreshness(b.getExpirationDate(), today)))
+                        b.getDateAdded(), b.isAutoExpiry(), calc.batchFreshness(b.getExpirationDate(), today),
+                        b.isPurgeOverride(), PurgeCalculator.daysUntilBatchPurge(b, now)))
                 .toList();
         return new ItemView(item.getId(), item.getName(), item.getCategory().getName(),
                 item.totalQuantity(), calc.itemFreshness(item, today), calc.stockStatus(item),
-                item.isLowStockEnabled(), item.getLowStockThreshold(), batches);
+                item.isLowStockEnabled(), item.getLowStockThreshold(),
+                item.isPurgeOverride(), PurgeCalculator.daysUntilItemPurge(item, now), batches);
     }
 }
