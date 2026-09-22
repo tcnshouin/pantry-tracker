@@ -50,6 +50,40 @@
   categorySelect(options, fieldName)` + `:: categorySelectScript`) so Phase 3's
   add-item form can drop it straight in.
 
+## Phase 3 — Location groups + inventory ✅
+- [x] Flyway V3: location_group, item, batch (full columns + indexes)
+- [x] Entities LocationGroup/Item/Batch + repositories
+- [x] DSA: DuplicateIndex (HashMap) + BatchSorter (insertion sort) + tests
+- [x] CurrentUserService
+- [x] LocationGroupService (create dup-reject, delete non-empty-reject) + test
+- [x] ItemService (findDuplicate, create, update, delete)
+- [x] BatchService (add, update, adjustQuantity clamp>=0 + empty_since, delete) + test
+- [x] InventoryController (all inventory/group/item/batch routes, HTMX fragments)
+- [x] inventory.html + fragments (groupBody, add-item, duplicate-prompt, item card, batch row, stepper)
+- [x] Inventory nav link + htmx CSRF header wiring
+- [x] InventorySecurityTest (anon redirect)
+- [x] Verify: mvnw test green (20/20)
+- [x] Verify: browser — group/item/batch/duplicate/stepper/delete flows
+- [ ] Commit Phase 3
+
+### Phase 3 notes
+- HTML gotcha fixed: a <form> cannot wrap <td>s inside a <tr>; associated the
+  cross-cell inputs to their form via the `form=` attribute instead.
+- HTMX posts carry CSRF via a global htmx:configRequest header hook (meta tags
+  in layout) so no per-form hidden token is needed.
+- Whole test run needs a live Postgres (context + @DataJpaTest); Docker Desktop
+  quitting mid-run caused a false failure once — restart + rerun was clean.
+
+### Phase 3 deferrals (columns/logic intentionally left; tracked here, no code comments)
+- Inventory view is eager server-rendered per group; per-group HTMX lazy-load /
+  pagination not yet wired (GET /locations/{id}/items fragment endpoint exists).
+- Item edit is rename + category only; moving an item between groups inline not
+  built (delete + re-add for now).
+- Phase 4: expiry auto-calc from category ref (auto_expiry), freshness status,
+  low_stock_enabled/low_stock_threshold UI.
+- Phase 5: purge sweep consuming empty_since + purge_override, grocery list,
+  dashboard, undo stack.
+
 ## Review
 
 ### Phase 1 outcome
