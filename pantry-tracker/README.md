@@ -352,11 +352,31 @@ per-brand expiry validation, automatic partial-consumption detection.
 
 ---
 
-## Running locally (Phase 0 skeleton)
+## Running the app
 
-Configuration is externalized — the app reads the database connection from
-environment variables (`application.properties` supplies dev-safe defaults for
-the URL and username, but **no password default**):
+### Option A — Docker Compose (recommended, no local Java/Postgres needed)
+
+From the `pantry-tracker/` directory:
+
+```bash
+docker compose up --build
+```
+
+This builds the app image and starts both the app and a PostgreSQL 16 database,
+wired together automatically. Open <http://localhost:8080>, then register an
+account and log in. Data persists in a named volume across restarts.
+
+- Stop: `Ctrl+C`, then `docker compose down` (add `-v` to also wipe the database).
+- The first build downloads Maven dependencies and takes a few minutes; later
+  builds are cached and fast.
+- The DB password defaults to `pantry`; override it by exporting `DB_PASSWORD`
+  before `docker compose up` (both services read it).
+
+### Option B — Run natively (faster edit/reload while coding)
+
+Needs JDK 25 and a reachable PostgreSQL. Configuration is externalized — the app
+reads the database connection from environment variables (`application.properties`
+supplies dev-safe defaults for the URL and username, but **no password default**):
 
 | Variable      | Default (dev)                                | Required |
 | ------------- | -------------------------------------------- | -------- |
@@ -364,7 +384,7 @@ the URL and username, but **no password default**):
 | `DB_USERNAME` | `pantry`                                      | no       |
 | `DB_PASSWORD` | (none)                                        | **yes**  |
 
-A throwaway Postgres for local runs (Docker Compose arrives in Phase 6):
+Start a throwaway Postgres and run with the Maven wrapper:
 
 ```bash
 docker run -d --name pantry-pg \
@@ -372,6 +392,12 @@ docker run -d --name pantry-pg \
   -p 5432:5432 postgres:16
 
 DB_PASSWORD=devpw ./mvnw spring-boot:run
+```
+
+Run the tests (needs a reachable Postgres as above):
+
+```bash
+DB_PASSWORD=devpw ./mvnw test
 ```
 
 ---

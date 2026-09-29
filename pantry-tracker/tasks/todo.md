@@ -152,6 +152,14 @@
   that only HTMX mutations return; the page keeps a single #undo-slot.
 - Boot 4 test package: TestEntityManager → org.springframework.boot.jpa.test.autoconfigure.
 
+## Phase 6 — Packaging + polish (in progress)
+- [x] Dockerfile (multi-stage: temurin 25-jdk build -> 25-jre runtime)
+- [x] docker-compose.yml (app + postgres:16, healthcheck, named volume)
+- [x] .dockerignore
+- [x] README run instructions (Docker Compose + native)
+- [x] Verified `docker compose up --build` boots the full stack (Flyway V1-V4, GET / -> 302)
+- [ ] Empty states polish, change-password/profile page, broader test pass (remaining Phase 6)
+
 ## Review
 
 ### Phase 1 outcome
