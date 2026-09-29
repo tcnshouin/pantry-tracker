@@ -25,14 +25,6 @@
             background-color: var(--pt-bg);
             color: var(--pt-text);
         }
-        .navbar-pt {
-            background-color: var(--pt-surface);
-        }
-        .navbar-pt .navbar-brand,
-        .navbar-pt .nav-link,
-        .navbar-pt .navbar-text {
-            color: var(--pt-text);
-        }
         .btn-pt {
             background-color: var(--pt-accent);
             border-color: var(--pt-accent);
@@ -67,28 +59,150 @@
             background-color: var(--pt-surface);
             color: var(--pt-text);
         }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .pt-topbar {
+            background-color: var(--pt-surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.7rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            box-shadow: 0 1px 4px rgba(58, 52, 43, 0.12);
+        }
+        .pt-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--pt-text);
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+        .pt-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            min-width: 0;
+        }
+        .pt-topbar-right .pt-user {
+            max-width: 16rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pt-shell {
+            display: flex;
+            align-items: stretch;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        .pt-sidebar {
+            width: 232px;
+            flex-shrink: 0;
+            background-color: var(--pt-surface);
+            display: flex;
+            flex-direction: column;
+            padding: 1.1rem 0.8rem;
+        }
+        .pt-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex: 1 1 auto;
+        }
+        .pt-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.62rem 0.9rem;
+            border-radius: 0.65rem;
+            color: var(--pt-text);
+            text-decoration: none;
+            font-weight: 500;
+            line-height: 1.1;
+            transition: background-color 0.15s ease, transform 0.12s ease, color 0.15s ease;
+        }
+        .pt-nav a .pt-ico {
+            font-size: 1.05rem;
+            width: 1.4rem;
+            text-align: center;
+        }
+        .pt-nav a:hover {
+            background-color: rgba(219, 149, 88, 0.20);
+            color: var(--pt-text);
+            transform: translateX(3px);
+        }
+        .pt-nav a.active {
+            background-color: var(--pt-accent);
+            color: var(--pt-bg);
+            box-shadow: 0 2px 6px rgba(58, 52, 43, 0.18);
+        }
+        .pt-nav a.active:hover {
+            transform: none;
+            background-color: var(--pt-accent);
+            color: var(--pt-bg);
+        }
+        .pt-main {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 1.6rem 1.9rem;
+        }
+        @media (max-width: 767.98px) {
+            .pt-shell {
+                flex-direction: column;
+            }
+            .pt-sidebar {
+                width: auto;
+                flex-direction: row;
+                align-items: center;
+                gap: 0.5rem;
+                overflow-x: auto;
+                padding: 0.6rem 0.8rem;
+            }
+            .pt-nav {
+                flex-direction: row;
+                flex: 1 1 auto;
+            }
+            .pt-nav a:hover {
+                transform: none;
+            }
+            .pt-main {
+                padding: 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-pt shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-semibold" th:href="@{/}">Pantry Tracker</a>
-        <div class="d-flex align-items-center gap-3">
-            <a class="nav-link" th:href="@{/}" sec:authorize="isAuthenticated()">Dashboard</a>
-            <a class="nav-link" th:href="@{/inventory}" sec:authorize="isAuthenticated()">Inventory</a>
-            <a class="nav-link" th:href="@{/grocery}" sec:authorize="isAuthenticated()">Grocery</a>
-            <a class="nav-link" th:href="@{/categories}" sec:authorize="isAuthenticated()">Categories</a>
-            <span class="navbar-text" sec:authorize="isAuthenticated()"
-                  sec:authentication="name">user@example.com</span>
-            <form th:action="@{/logout}" method="post" class="m-0" sec:authorize="isAuthenticated()">
-                <button type="submit" class="btn btn-sm btn-outline-dark">Log out</button>
-            </form>
-        </div>
+<header class="pt-topbar">
+    <a class="pt-brand" th:href="@{/}">🥫 Pantry Tracker</a>
+    <div class="pt-topbar-right" sec:authorize="isAuthenticated()">
+        <span class="pt-user" sec:authentication="name">user@example.com</span>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-sm btn-outline-dark">Log out</button>
+        </form>
     </div>
-</nav>
-<main class="container py-4">
-    <div layout:fragment="content"></div>
-</main>
+</header>
+<div class="pt-shell">
+    <aside class="pt-sidebar" sec:authorize="isAuthenticated()">
+        <nav class="pt-nav">
+            <a th:href="@{/}"><span class="pt-ico">📊</span> Dashboard</a>
+            <a th:href="@{/inventory}"><span class="pt-ico">📦</span> Inventory</a>
+            <a th:href="@{/grocery}"><span class="pt-ico">🛒</span> Grocery</a>
+            <a th:href="@{/categories}"><span class="pt-ico">🏷️</span> Categories</a>
+        </nav>
+    </aside>
+    <main class="pt-main">
+        <div layout:fragment="content"></div>
+    </main>
+</div>
 <script>
     document.body.addEventListener('htmx:configRequest', function (event) {
         var token = document.querySelector('meta[name="_csrf"]');
@@ -113,14 +227,42 @@
         document.querySelectorAll('.pt-autocalc').forEach(ptApplyAutoCalc);
     }
 
+    function ptMarkActiveNav() {
+        var path = window.location.pathname;
+        document.querySelectorAll('.pt-nav a').forEach(function (a) {
+            var href = a.getAttribute('href');
+            var active = href === path || (href !== '/' && path.indexOf(href) === 0);
+            a.classList.toggle('active', active);
+        });
+    }
+
     document.addEventListener('change', function (event) {
         if (event.target.classList.contains('pt-autocalc')) {
             ptApplyAutoCalc(event.target);
         }
     });
 
-    document.addEventListener('DOMContentLoaded', ptSyncAllAutoCalc);
+    document.addEventListener('DOMContentLoaded', function () {
+        ptSyncAllAutoCalc();
+        ptMarkActiveNav();
+    });
     document.body.addEventListener('htmx:afterSwap', ptSyncAllAutoCalc);
+
+    document.body.addEventListener('htmx:afterOnLoad', function (event) {
+        var el = event.detail && event.detail.elt;
+        if (!el || !el.closest) {
+            return;
+        }
+        var modalEl = el.closest('.modal');
+        if (modalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+            var form = modalEl.querySelector('form');
+            if (form) {
+                form.reset();
+            }
+            ptSyncAllAutoCalc();
+        }
+    });
 </script>
 </body>
 </html>
