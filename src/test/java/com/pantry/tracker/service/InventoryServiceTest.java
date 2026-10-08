@@ -11,6 +11,7 @@ import com.pantry.tracker.model.Batch;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.User;
+import com.pantry.tracker.model.Views;
 import com.pantry.tracker.model.Views.FreshnessStatus;
 import com.pantry.tracker.model.Views.StockStatus;
 import com.pantry.tracker.repository.BatchRepository;
@@ -80,6 +81,27 @@ class InventoryServiceTest {
         item.getBatches().get(2).setExpirationDate(today.plusDays(3));
 
         assertThat(InventoryService.itemFreshness(item, today, 7)).isEqualTo(FreshnessStatus.EXPIRING_SOON);
+    }
+
+    @Test
+    void daysUntilExpiryUsesEarliestStockedBatch() {
+        Item item = itemWith(0, 2, 1);
+        item.getBatches().get(0).setExpirationDate(today.minusDays(5));
+        item.getBatches().get(1).setExpirationDate(today.plusDays(30));
+        item.getBatches().get(2).setExpirationDate(today.plusDays(3));
+
+        assertThat(InventoryService.daysUntil(InventoryService.earliestExpiry(item), today)).isEqualTo(3);
+        assertThat(InventoryService.daysUntil(null, today)).isNull();
+    }
+
+    @Test
+    void expiryTextWording() {
+        assertThat(Views.expiryText(null)).isNull();
+        assertThat(Views.expiryText(-3)).isEqualTo("Expired 3 days ago");
+        assertThat(Views.expiryText(-1)).isEqualTo("Expired yesterday");
+        assertThat(Views.expiryText(0)).isEqualTo("Expires today");
+        assertThat(Views.expiryText(1)).isEqualTo("Expires tomorrow");
+        assertThat(Views.expiryText(12)).isEqualTo("Expiring in 12 days");
     }
 
     @Test

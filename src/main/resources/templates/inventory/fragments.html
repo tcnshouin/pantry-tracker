@@ -74,6 +74,9 @@
                       th:text="${it.stockStatus().label()}">In stock</span>
                 <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK'}" class="badge rounded-pill"
                       th:classappend="${it.freshness().cssClass()}" th:text="${it.freshness().label()}">Fresh</span>
+                <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK' and it.expiryText() != null}"
+                      class="small pt-expiry" th:classappend="${it.daysUntilExpiry() < 0} ? 'pt-expiry-past'"
+                      th:text="${it.expiryText()}">Expiring in 5 days</span>
                 <span th:if="${it.purgeOverride()}" class="badge rounded-pill pt-badge pt-badge-muted">Kept</span>
                 <span th:if="${it.daysUntilPurge() != null}"
                       class="badge rounded-pill pt-badge pt-badge-warning"
@@ -157,6 +160,9 @@
                                th:value="${b.expirationDate()}" th:attr="form='bf-' + ${b.id()}">
                         <span class="badge rounded-pill mt-1" th:classappend="${b.freshness().cssClass()}"
                               th:text="${b.freshness().label()}">Fresh</span>
+                        <span th:if="${b.expiryText() != null}" class="small pt-expiry ms-1"
+                              th:classappend="${b.daysUntilExpiry() < 0} ? 'pt-expiry-past'"
+                              th:text="${b.expiryText()}">Expiring in 5 days</span>
                     </td>
                     <td>
                         <input type="date" name="dateAdded" class="form-control form-control-sm"
