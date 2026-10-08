@@ -86,13 +86,14 @@ pantry-tracker/
 ├── Dockerfile, docker-compose.yml       # containerized run (Phase 6)
 ├── README.md                            # full build spec + phase log
 ├── src/main/java/com/pantry/tracker/
-│   ├── user/        # accounts (User, registration, login)
-│   ├── config/      # Spring Security, scheduling, Thymeleaf
-│   ├── category/    # seeded categories + shelf-life reference
-│   ├── inventory/   # LocationGroup, Item, Batch, services, purge, controllers
-│   ├── grocery/     # grocery list + auto-suggestion + inventory loop
-│   ├── dashboard/   # dashboard aggregation
-│   └── undo/        # session-scoped undo stack
+│   ├── config/      # AppConfig: security, password encoder, layout dialect
+│   ├── model/       # entities (User, Category, Item, Batch, LocationGroup,
+│   │                #   GroceryListItem) + Views.java (status enums + view records)
+│   ├── repository/  # Spring Data repositories
+│   ├── service/     # UserService, InventoryService, GroceryService,
+│   │                #   DataStructures.java (the 4 required data structures)
+│   └── web/         # AuthController, HomeController, GroceryController,
+│                    #   CategoryController
 ├── src/main/resources/
 │   ├── db/migration/   # Flyway V1–V4 (schema + seed data)
 │   └── templates/      # Thymeleaf pages + HTMX fragments
@@ -115,7 +116,8 @@ detailed history and the small decisions made along the way.
   low-stock + out-of-stock flags, color-coded.
 - Grocery list: auto-suggests low/out-of-stock items (with anti-spam), manual add,
   and the inventory loop (check off → add back into inventory).
-- Dashboard: totals, expiring-this-week, low-stock, by-location, expiring-soon.
+- Home page: one window with an overview strip (totals, expiring-this-week,
+  low-stock, on-grocery-list, expiring-soon) above the inventory.
 - Auto-purge scheduled sweep (7-day item / 3-day batch) with Keep overrides and
   countdown flags.
 - Per-session undo stack (add/edit/delete, including field edits).
@@ -123,10 +125,11 @@ detailed history and the small decisions made along the way.
 - Docker Compose packaging.
 
 **Required data structures (for the report) — implemented and pointed-to:**
-- **HashMap** — duplicate detection (`inventory/DuplicateIndex.java`).
-- **Insertion sort** — batch ordering by expiry (`inventory/BatchSorter.java`).
-- **Min-heap / PriorityQueue** — dashboard "expiring soon" (`inventory/ExpiringSoonHeap.java`).
-- **Stack (LIFO)** — undo (`undo/UndoService.java`).
+All four live in `service/DataStructures.java`:
+- **HashMap** — duplicate detection (`DuplicateIndex`).
+- **Insertion sort** — batch ordering by expiry (`insertSorted`).
+- **Min-heap / PriorityQueue** — "expiring soon" list (`ExpiringSoonHeap`).
+- **Stack (LIFO)** — undo (`UndoStack`, kept in the user's session).
 - **B-tree indexes** — the composite/functional DB indexes in the Flyway migrations.
 
 ---
@@ -136,15 +139,14 @@ detailed history and the small decisions made along the way.
 Nothing is broken — these are the remaining **Phase 6 polish** items and a few
 intentionally-deferred niceties:
 
-1. **Empty states** — friendlier placeholders when the dashboard/inventory are
-   empty (partly present; could be nicer).
+1. **Empty states** — friendlier placeholders when the home page is empty
+   (partly present; could be nicer).
 2. **Profile / change-password page** — not built yet. Add a settings page that
    lets a logged-in user change their password (reuse `UserService` + BCrypt).
 3. **Broader test pass** — service logic is well covered; consider adding more
    secured-controller (`@WebMvcTest`) tests and a couple of end-to-end flows.
-4. **Inventory lazy-load / pagination per group** — currently each group renders
-   all its items eagerly. The `GET /locations/{id}/items` fragment endpoint
-   already exists; wire it to HTMX lazy-load or paginate for large lists.
+4. **Inventory pagination per group** — currently each group renders all its
+   items at once; paginate or lazy-load for large lists.
 5. **Move an item between groups inline** — item edit currently changes name +
    category only; there's no in-place "move to another group" (delete + re-add
    works as a workaround).
