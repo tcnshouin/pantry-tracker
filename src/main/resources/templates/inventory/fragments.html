@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
-<th:block th:fragment="groupBodyResponse(group, items, categories, prompt, addError, undoLabel)">
-    <div th:replace="~{inventory/fragments :: groupBody(${group}, ${items}, ${categories}, ${prompt}, ${addError})}"></div>
-    <div id="undo-slot" hx-swap-oob="true">
-        <form th:if="${undoLabel}" th:action="@{/undo}" method="post" class="mb-3">
-            <button type="submit" class="btn btn-sm btn-outline-dark">
-                ↶ Undo: <span th:text="${undoLabel}">last action</span>
-            </button>
-        </form>
-    </div>
-</th:block>
-
 <div th:fragment="groupBody(group, items, categories, prompt, addError)"
      th:with="target='#group-body-' + ${group.id()}">
+
+    <form th:if="${inlineUndo}" th:action="@{/undo}" method="post" class="mb-2">
+        <button type="submit" class="btn btn-sm btn-outline-dark">
+            ↶ Undo: <span th:text="${inlineUndo}">last action</span>
+        </button>
+    </form>
 
     <div th:if="${addError}" class="alert alert-danger py-2" th:text="${addError}">Error</div>
 

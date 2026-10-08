@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}"
+      lang="en">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-secondary" th:if="${undone}">
+        Undone: <span th:text="${undone}">action</span>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center py-2">
+                    <div class="h3 mb-0" th:text="${overview.totalItems()}">0</div>
+                    <div class="text-muted small">Total items</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center py-2">
+                    <div class="h3 mb-0" style="color: var(--pt-accent);" th:text="${overview.expiringThisWeek()}">0</div>
+                    <div class="text-muted small">Expiring this week</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center py-2">
+                    <div class="h3 mb-0" style="color: var(--pt-warning);" th:text="${overview.lowStock()}">0</div>
+                    <div class="text-muted small">Low / out of stock</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center py-2">
+                    <div class="h3 mb-0" th:text="${overview.onGroceryList()}">0</div>
+                    <div class="text-muted small">On grocery list</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" th:unless="${overview.expiringSoon().isEmpty()}">
+        <div class="card-body">
+            <h2 class="h6 mb-2">Expiring soon</h2>
+            <table class="table table-sm mb-0">
+                <tbody>
+                <tr th:each="e : ${overview.expiringSoon()}">
+                    <td th:text="${e.itemName()}">Item</td>
+                    <td class="text-muted" th:text="${e.locationName()}">Location</td>
+                    <td th:text="${e.expirationDate()}">2026-01-01</td>
+                    <td class="text-end">
+                        <span class="badge rounded-pill" th:classappend="${e.freshnessCssClass()}"
+                              th:text="${e.freshnessLabel()}">Expiring soon</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h1 class="h4 mb-0">Inventory</h1>
+        <form th:if="${undoLabel}" th:action="@{/undo}" method="post" class="m-0">
+            <button type="submit" class="btn btn-sm btn-outline-dark">
+                ↶ Undo: <span th:text="${undoLabel}">last action</span>
+            </button>
+        </form>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form th:action="@{/locations}" method="post" class="row g-2 align-items-end">
+                <div class="col-sm-8">
+                    <label for="new-group-name" class="form-label fw-semibold">Create group</label>
+                    <input type="text" id="new-group-name" name="name" class="form-control"
+                           placeholder="e.g. Pantry shelf" required>
+                </div>
+                <div class="col-sm-4 d-grid">
+                    <button type="submit" class="btn btn-pt">Create group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${groups.isEmpty()}" class="text-muted">
+        No groups yet. Create one above to start adding items.
+    </div>
+
+    <div th:each="g : ${groups}" class="card shadow-sm mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <button class="btn btn-link text-decoration-none fw-semibold p-0" type="button"
+                    data-bs-toggle="collapse" th:data-bs-target="'#collapse-' + ${g.group().id()}">
+                <span th:text="${g.group().name()}">Group</span>
+            </button>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <button type="button" class="btn btn-sm btn-pt"
+                        data-bs-toggle="modal" th:data-bs-target="'#addItemModal-' + ${g.group().id()}">
+                    + Add item
+                </button>
+                <form th:action="@{/locations/{id}/rename(id=${g.group().id()})}" method="post"
+                      class="d-flex gap-1">
+                    <input type="text" name="name" class="form-control form-control-sm"
+                           th:value="${g.group().name()}" style="max-width: 10rem;">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Rename</button>
+                </form>
+                <form th:action="@{/locations/{id}/delete(id=${g.group().id()})}" method="post"
+                      onsubmit="return confirm('Delete this group?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        <div th:id="'collapse-' + ${g.group().id()}" class="collapse show">
+            <div class="card-body">
+                <div th:id="'group-body-' + ${g.group().id()}">
+                    <div th:replace="~{inventory/fragments :: groupBody(${g.group()}, ${g.items()}, ${categories}, null, null)}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" th:id="'addItemModal-' + ${g.group().id()}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5">Add item to <span th:text="${g.group().name()}">group</span></h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:attr="hx-post=@{/locations/{id}/items(id=${g.group().id()})},hx-target='#group-body-' + ${g.group().id()}"
+                          hx-swap="innerHTML">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label" th:for="'ai-name-' + ${g.group().id()}">Item name</label>
+                                <input type="text" name="name" class="form-control"
+                                       th:id="'ai-name-' + ${g.group().id()}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" th:for="'ai-cat-' + ${g.group().id()}">Category</label>
+                                <select name="categoryId" class="form-select"
+                                        th:id="'ai-cat-' + ${g.group().id()}" required>
+                                    <option value="" selected>Choose…</option>
+                                    <option th:each="c : ${categories}" th:value="${c.id()}"
+                                            th:text="${c.name()}">Category</option>
+                                </select>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label" th:for="'ai-qty-' + ${g.group().id()}">Quantity</label>
+                                    <input type="number" name="quantity" min="0" value="1" class="form-control"
+                                           th:id="'ai-qty-' + ${g.group().id()}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" th:for="'ai-exp-' + ${g.group().id()}">Expiration</label>
+                                    <input type="date" name="expirationDate" class="form-control"
+                                           th:id="'ai-exp-' + ${g.group().id()}">
+                                </div>
+                            </div>
+                            <div class="form-check mt-3">
+                                <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
+                                       value="true" checked th:id="'ai-auto-' + ${g.group().id()}">
+                                <label class="form-check-label" th:for="'ai-auto-' + ${g.group().id()}">
+                                    Auto-calculate expiry from category
+                                </label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-pt">Add item</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
