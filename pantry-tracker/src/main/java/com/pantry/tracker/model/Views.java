@@ -59,16 +59,43 @@ public final class Views {
     public record LocationGroupView(Long id, String name, long itemCount) {
     }
 
+    public static String expiryText(Integer days) {
+        if (days == null) {
+            return null;
+        }
+        if (days < -1) {
+            return "Expired " + (-days) + " days ago";
+        }
+        if (days == -1) {
+            return "Expired yesterday";
+        }
+        if (days == 0) {
+            return "Expires today";
+        }
+        if (days == 1) {
+            return "Expires tomorrow";
+        }
+        return "Expiring in " + days + " days";
+    }
+
     public record BatchView(Long id, int quantity, LocalDate expirationDate, LocalDate dateAdded,
-                            boolean autoExpiry, FreshnessStatus freshness,
+                            boolean autoExpiry, FreshnessStatus freshness, Integer daysUntilExpiry,
                             boolean purgeOverride, Integer daysUntilPurge) {
+
+        public String expiryText() {
+            return Views.expiryText(daysUntilExpiry);
+        }
     }
 
     public record ItemView(Long id, String name, String categoryName, int totalQuantity,
-                           FreshnessStatus freshness, StockStatus stockStatus,
+                           FreshnessStatus freshness, Integer daysUntilExpiry, StockStatus stockStatus,
                            boolean lowStockEnabled, Integer lowStockThreshold,
                            boolean purgeOverride, Integer daysUntilPurge,
                            List<BatchView> batches) {
+
+        public String expiryText() {
+            return Views.expiryText(daysUntilExpiry);
+        }
     }
 
     public record GroupWithItems(LocationGroupView group, List<ItemView> items) {

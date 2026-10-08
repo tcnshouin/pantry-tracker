@@ -26,6 +26,7 @@ import com.pantry.tracker.service.DataStructures.UndoStack;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -363,22 +364,29 @@ public class InventoryService {
     }
 
     public static FreshnessStatus itemFreshness(Item item, LocalDate today, int soonDays) {
+        LocalDate earliest = earliestExpiry(item);
+        if (earliest == null) {
+            return FreshnessStatus.NONE;
+        }
+        return batchFreshness(earliest, today, soonDays);
+    }
+
+    public static LocalDate earliestExpiry(Item item) {
         LocalDate earliest = null;
-        boolean hasStock = false;
         for (Batch batch : item.getBatches()) {
             if (batch.getQuantity() <= 0) {
                 continue;
             }
-            hasStock = true;
             LocalDate date = batch.getExpirationDate();
             if (date != null && (earliest == null || date.isBefore(earliest))) {
                 earliest = date;
             }
         }
-        if (!hasStock || earliest == null) {
-            return FreshnessStatus.NONE;
-        }
-        return batchFreshness(earliest, today, soonDays);
+        return earliest;
+    }
+
+    public static Integer daysUntil(LocalDate date, LocalDate today) {
+        return date == null ? null : (int) ChronoUnit.DAYS.between(today, date);
     }
 
     public static StockStatus stockStatus(Item item) {
@@ -427,10 +435,11 @@ public class InventoryService {
         for (Batch b : item.getBatches()) {
             batches.add(new BatchView(b.getId(), b.getQuantity(), b.getExpirationDate(), b.getDateAdded(),
                     b.isAutoExpiry(), batchFreshness(b.getExpirationDate(), today, expiringSoonDays),
-                    b.isPurgeOverride(), daysUntilBatchPurge(b, now)));
+                    daysUntil(b.getExpirationDate(), today), b.isPurgeOverride(), daysUntilBatchPurge(b, now)));
         }
         return new ItemView(item.getId(), item.getName(), item.getCategory().getName(), item.totalQuantity(),
-                itemFreshness(item, today, expiringSoonDays), stockStatus(item),
+                itemFreshness(item, today, expiringSoonDays), daysUntil(earliestExpiry(item), today),
+                stockStatus(item),
                 item.isLowStockEnabled(), item.getLowStockThreshold(),
                 item.isPurgeOverride(), daysUntilItemPurge(item, now), batches);
     }
