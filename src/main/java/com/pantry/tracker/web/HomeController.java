@@ -51,8 +51,9 @@ public class HomeController {
     @PostMapping("/locations")
     public String createGroup(@RequestParam String name, RedirectAttributes ra) {
         try {
-            inventory.createGroup(userService.current(), name);
+            Long id = inventory.createGroup(userService.current(), name).getId();
             ra.addFlashAttribute("success", "Group created");
+            return "redirect:/#group-card-" + id;
         } catch (IllegalArgumentException ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
@@ -67,7 +68,7 @@ public class HomeController {
         } catch (IllegalArgumentException ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/";
+        return "redirect:/#group-card-" + id;
     }
 
     @PostMapping("/locations/{id}/delete")

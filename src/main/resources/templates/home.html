@@ -7,15 +7,65 @@
     <title>Home</title>
 </head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content" class="pt-home">
 
+    <aside class="pt-home-side">
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5 mb-3">By location</h2>
+            <div th:if="${groups.isEmpty()}" class="text-muted small">No locations yet.</div>
+            <ul th:unless="${groups.isEmpty()}" class="list-group list-group-flush">
+                <li th:each="g : ${groups}" class="list-group-item bg-transparent border-0 p-0 mb-1">
+                    <a class="pt-loc-link d-flex justify-content-between align-items-center"
+                       th:href="'#group-card-' + ${g.group().id()}" th:data-group-id="${g.group().id()}">
+                        <span th:text="${g.group().name()}">Location</span>
+                        <span class="badge rounded-pill pt-badge pt-badge-muted pt-loc-count"
+                              th:text="${g.group().itemCount()}">0</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Expiring soon</h2>
+            <div th:if="${overview.expiringSoon().isEmpty()}" class="text-muted small">
+                Nothing expiring soon 🎉
+            </div>
+            <table th:unless="${overview.expiringSoon().isEmpty()}" class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Item</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Expires</th>
+                    <th scope="col"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${overview.expiringSoon()}">
+                    <td th:text="${e.itemName()}">Item</td>
+                    <td class="text-muted" th:text="${e.locationName()}">Location</td>
+                    <td class="text-nowrap" th:text="${e.expirationDate()}">2026-01-01</td>
+                    <td class="text-end">
+                        <span class="badge rounded-pill" th:classappend="${e.freshnessCssClass()}"
+                              th:text="${e.freshnessLabel()}">Expiring soon</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </aside>
+
+    <section class="pt-home-main">
     <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
     <div class="alert alert-secondary" th:if="${undone}">
         Undone: <span th:text="${undone}">action</span>
     </div>
 
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body text-center py-2">
@@ -50,25 +100,6 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4" th:unless="${overview.expiringSoon().isEmpty()}">
-        <div class="card-body">
-            <h2 class="h6 mb-2">Expiring soon</h2>
-            <table class="table table-sm mb-0">
-                <tbody>
-                <tr th:each="e : ${overview.expiringSoon()}">
-                    <td th:text="${e.itemName()}">Item</td>
-                    <td class="text-muted" th:text="${e.locationName()}">Location</td>
-                    <td th:text="${e.expirationDate()}">2026-01-01</td>
-                    <td class="text-end">
-                        <span class="badge rounded-pill" th:classappend="${e.freshnessCssClass()}"
-                              th:text="${e.freshnessLabel()}">Expiring soon</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h1 class="h4 mb-0">Inventory</h1>
         <form th:if="${undoLabel}" th:action="@{/undo}" method="post" class="m-0">
@@ -97,7 +128,8 @@
         No groups yet. Create one above to start adding items.
     </div>
 
-    <div th:each="g : ${groups}" class="card shadow-sm mb-3">
+    <div th:each="g : ${groups}" class="card shadow-sm mb-3 pt-group-card" th:id="'group-card-' + ${g.group().id()}"
+         th:data-group-id="${g.group().id()}">
         <div class="card-header d-flex justify-content-between align-items-center">
             <button class="btn btn-link text-decoration-none fw-semibold p-0" type="button"
                     data-bs-toggle="collapse" th:data-bs-target="'#collapse-' + ${g.group().id()}">
@@ -181,6 +213,7 @@
             </div>
         </div>
     </div>
+    </section>
 </div>
 </body>
 </html>
