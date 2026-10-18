@@ -68,6 +68,8 @@ class InventoryServiceTest {
     @Test
     void batchFreshnessBoundaries() {
         assertThat(InventoryService.batchFreshness(today.minusDays(1), today, 7)).isEqualTo(FreshnessStatus.EXPIRED);
+        assertThat(InventoryService.batchFreshness(today, today, 7)).isEqualTo(FreshnessStatus.EXPIRES_TODAY);
+        assertThat(InventoryService.batchFreshness(today.plusDays(1), today, 7)).isEqualTo(FreshnessStatus.EXPIRING_SOON);
         assertThat(InventoryService.batchFreshness(today.plusDays(7), today, 7)).isEqualTo(FreshnessStatus.EXPIRING_SOON);
         assertThat(InventoryService.batchFreshness(today.plusDays(8), today, 7)).isEqualTo(FreshnessStatus.FRESH);
         assertThat(InventoryService.batchFreshness(null, today, 7)).isEqualTo(FreshnessStatus.NONE);
@@ -92,6 +94,28 @@ class InventoryServiceTest {
 
         assertThat(InventoryService.daysUntil(InventoryService.earliestExpiry(item), today)).isEqualTo(3);
         assertThat(InventoryService.daysUntil(null, today)).isNull();
+    }
+
+    @Test
+    void itemMinusTakesFromSoonestExpiringStockedBatch() {
+        Item item = itemWith(0, 2, 1);
+        item.getBatches().get(0).setExpirationDate(today.minusDays(5));
+        item.getBatches().get(1).setExpirationDate(today.plusDays(30));
+        item.getBatches().get(2).setExpirationDate(today.plusDays(3));
+
+        assertThat(InventoryService.soonestExpiringStocked(item)).isSameAs(item.getBatches().get(2));
+        assertThat(InventoryService.soonestExpiringStocked(itemWith(0, 0))).isNull();
+    }
+
+    @Test
+    void itemPlusAddsToMostRecentlyAddedBatch() {
+        Item item = itemWith(1, 1, 1);
+        item.getBatches().get(0).setDateAdded(today.minusDays(10));
+        item.getBatches().get(1).setDateAdded(today);
+        item.getBatches().get(2).setDateAdded(today.minusDays(2));
+
+        assertThat(InventoryService.mostRecentlyAdded(item)).isSameAs(item.getBatches().get(1));
+        assertThat(InventoryService.mostRecentlyAdded(itemWith())).isNull();
     }
 
     @Test

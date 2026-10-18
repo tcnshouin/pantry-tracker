@@ -5,6 +5,7 @@ import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.User;
+import com.pantry.tracker.model.Views;
 import com.pantry.tracker.model.Views.BatchView;
 import com.pantry.tracker.model.Views.CategoryOption;
 import com.pantry.tracker.model.Views.ExpiringEntry;
@@ -88,12 +89,13 @@ public class InventoryService {
                     continue;
                 }
                 FreshnessStatus freshness = batchFreshness(batch.getExpirationDate(), today, expiringSoonDays);
-                if (freshness == FreshnessStatus.EXPIRING_SOON) {
+                if (freshness == FreshnessStatus.EXPIRING_SOON || freshness == FreshnessStatus.EXPIRES_TODAY) {
                     expiringThisWeek++;
                 }
-                if (freshness == FreshnessStatus.EXPIRING_SOON || freshness == FreshnessStatus.EXPIRED) {
+                if (freshness != FreshnessStatus.FRESH && freshness != FreshnessStatus.NONE) {
                     heap.add(new ExpiringEntry(item.getName(), item.getLocationGroup().getName(),
-                            batch.getExpirationDate(), batch.getQuantity(), freshness.label(), freshness.cssClass()));
+                            batch.getExpirationDate(), batch.getQuantity(),
+                            Views.expiryText(daysUntil(batch.getExpirationDate(), today)), freshness.cssClass()));
                 }
             }
         }
@@ -119,7 +121,7 @@ public class InventoryService {
     public LocationGroup createGroup(User user, String name) {
         String trimmed = requireName(name);
         if (groupRepository.existsByUserAndNameIgnoreCase(user, trimmed)) {
-            throw new IllegalArgumentException("A group named " + trimmed + " already exists");
+            throw new IllegalArgumentException("A location named " + trimmed + " already exists");
         }
         return groupRepository.save(new LocationGroup(user, trimmed));
     }
@@ -130,7 +132,7 @@ public class InventoryService {
         LocationGroup group = findGroup(user, groupId);
         if (!group.getName().equalsIgnoreCase(trimmed)
                 && groupRepository.existsByUserAndNameIgnoreCase(user, trimmed)) {
-            throw new IllegalArgumentException("A group named " + trimmed + " already exists");
+            throw new IllegalArgumentException("A location named " + trimmed + " already exists");
         }
         group.setName(trimmed);
     }
@@ -139,7 +141,7 @@ public class InventoryService {
     public void deleteGroup(User user, Long groupId) {
         LocationGroup group = findGroup(user, groupId);
         if (itemRepository.countByLocationGroup(group) > 0) {
-            throw new IllegalArgumentException("Move or remove its items before deleting this group");
+            throw new IllegalArgumentException("Move or remove its items before deleting this location");
         }
         groupRepository.delete(group);
     }
@@ -264,6 +266,59 @@ public class InventoryService {
     }
 
     @Transactional
+    public Long adjustItemQuantity(User user, Long itemId, int delta, UndoStack undo) {
+        Item item = findItem(user, itemId);
+        Batch target = delta < 0 ? soonestExpiringStocked(item) : mostRecentlyAdded(item);
+        if (target == null) {
+            if (delta > 0) {
+                return addBatch(user, itemId, delta, null, true, undo);
+            }
+            return item.getLocationGroup().getId();
+        }
+        return adjustQuantity(user, target.getId(), delta, undo);
+    }
+
+    static Batch soonestExpiringStocked(Item item) {
+        Batch best = null;
+        for (Batch batch : item.getBatches()) {
+            if (batch.getQuantity() <= 0) {
+                continue;
+            }
+            if (best == null || expiresBefore(batch, best)) {
+                best = batch;
+            }
+        }
+        return best;
+    }
+
+    static Batch mostRecentlyAdded(Item item) {
+        Batch best = null;
+        for (Batch batch : item.getBatches()) {
+            if (best == null || addedAfter(batch, best)) {
+                best = batch;
+            }
+        }
+        return best;
+    }
+
+    private static boolean expiresBefore(Batch a, Batch b) {
+        if (a.getExpirationDate() == null) {
+            return false;
+        }
+        return b.getExpirationDate() == null || a.getExpirationDate().isBefore(b.getExpirationDate());
+    }
+
+    private static boolean addedAfter(Batch a, Batch b) {
+        if (a.getDateAdded() != null && b.getDateAdded() != null) {
+            int byDate = a.getDateAdded().compareTo(b.getDateAdded());
+            if (byDate != 0) {
+                return byDate > 0;
+            }
+        }
+        return a.getId() != null && b.getId() != null && a.getId() > b.getId();
+    }
+
+    @Transactional
     public Long deleteBatch(User user, Long batchId, UndoStack undo) {
         Batch batch = findBatch(user, batchId);
         Item item = batch.getItem();
@@ -356,6 +411,9 @@ public class InventoryService {
         }
         if (expiration.isBefore(today)) {
             return FreshnessStatus.EXPIRED;
+        }
+        if (expiration.isEqual(today)) {
+            return FreshnessStatus.EXPIRES_TODAY;
         }
         if (!expiration.isAfter(today.plusDays(soonDays))) {
             return FreshnessStatus.EXPIRING_SOON;

@@ -16,7 +16,7 @@
                         class="dropdown-item d-flex justify-content-between align-items-center pt-category-item"
                         th:data-id="${opt.id()}" th:data-name="${opt.name()}">
                     <span th:text="${opt.name()}">Category</span>
-                    <span class="badge rounded-pill text-bg-light ms-2"
+                    <span class="badge rounded-pill pt-cat-badge ms-2"
                           th:text="'~' + ${opt.shelfLifeDays()} + ' d'">~0 d</span>
                 </button>
             </li>

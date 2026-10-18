@@ -4,17 +4,15 @@
 <div th:fragment="groupBody(group, items, categories, prompt, addError)"
      th:with="target='#group-body-' + ${group.id()}">
 
-    <form th:if="${inlineUndo}" th:action="@{/undo}" method="post" class="mb-2">
-        <button type="submit" class="btn btn-sm btn-outline-dark">
-            ↶ Undo: <span th:text="${inlineUndo}">last action</span>
-        </button>
-    </form>
+    <th:block th:if="${inlineUndo}">
+        <div th:replace="~{inventory/fragments :: undoToast(${inlineUndo})}"></div>
+    </th:block>
 
     <div th:if="${addError}" class="alert alert-danger py-2" th:text="${addError}">Error</div>
 
     <div th:if="${prompt}" class="alert alert-warning">
         <p class="fw-semibold mb-2">
-            "<span th:text="${prompt.existing().name()}">Item</span>" already exists in this group.
+            "<span th:text="${prompt.existing().name()}">Item</span>" already exists in this location.
             Add it as a new batch, or edit one of its existing batches.
         </p>
         <form th:attr="hx-post=@{/items/{id}/batches(id=${prompt.existing().id()})},hx-target=${target}"
@@ -60,21 +58,39 @@
         No items yet. Use the <span class="fw-semibold">Add item</span> button above.
     </div>
 
-    <div th:each="it : ${items}" class="border rounded mb-2 p-2 bg-white pt-item-row">
+    <div th:each="it : ${items}" class="rounded mb-2 p-2 pt-item-row">
         <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-sm btn-link text-decoration-none p-0" type="button"
-                        data-bs-toggle="collapse" th:data-bs-target="'#batches-' + ${it.id()}">▸</button>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="fw-semibold" th:text="${it.name()}">Item</span>
-                <span class="badge text-bg-light" th:text="${it.categoryName()}">Category</span>
+                <span class="badge pt-cat-badge" th:text="${it.categoryName()}">Category</span>
+                <button class="btn btn-sm pt-batches-toggle collapsed" type="button" aria-expanded="false"
+                        data-bs-toggle="collapse" th:data-bs-target="'#batches-' + ${it.id()}"
+                        th:attr="aria-controls='batches-' + ${it.id()}">
+                    <span th:text="${it.batches().size() == 1} ? '1 batch' : ${it.batches().size()} + ' batches'">2 batches</span>
+                    <i class="bi bi-chevron-down pt-chev"></i>
+                </button>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small" th:text="'Qty ' + ${it.totalQuantity()}">Qty 0</span>
-                <span class="badge rounded-pill" th:classappend="${it.stockStatus().cssClass()}"
-                      th:text="${it.stockStatus().label()}">In stock</span>
-                <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK'}" class="badge rounded-pill"
-                      th:classappend="${it.freshness().cssClass()}" th:text="${it.freshness().label()}">Fresh</span>
-                <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK' and it.expiryText() != null}"
+                <div class="pt-qty" role="group" aria-label="Quantity">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Use one (soonest-expiring first)"
+                            th:disabled="${it.totalQuantity() == 0}"
+                            th:attr="hx-post=@{/items/{id}/quantity(id=${it.id()})},hx-target=${target}"
+                            hx-swap="innerHTML" hx-vals='{"delta": -1}'>−</button>
+                    <span class="btn btn-sm btn-outline-secondary disabled pt-qty-value"
+                          th:text="${it.totalQuantity()}">0</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Add one"
+                            th:attr="hx-post=@{/items/{id}/quantity(id=${it.id()})},hx-target=${target}"
+                            hx-swap="innerHTML" hx-vals='{"delta": 1}'>+</button>
+                </div>
+                <span th:if="${it.stockStatus().name() != 'IN_STOCK'}" class="badge rounded-pill"
+                      th:classappend="${it.stockStatus().cssClass()}"
+                      th:text="${it.stockStatus().label()}">Low stock</span>
+                <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK' and it.freshness().name() != 'FRESH' and it.freshness().name() != 'NONE'}"
+                      class="badge rounded-pill" th:classappend="${it.freshness().cssClass()}">
+                    <i th:if="${it.freshness().name() == 'EXPIRES_TODAY' or it.freshness().name() == 'EXPIRED'}"
+                       class="bi bi-exclamation-triangle-fill me-1"></i><span th:text="${it.freshness().label()}">Fresh</span>
+                </span>
+                <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK' and it.expiryText() != null and it.daysUntilExpiry() != 0}"
                       class="small pt-expiry" th:classappend="${it.daysUntilExpiry() < 0} ? 'pt-expiry-past'"
                       th:text="${it.expiryText()}">Expiring in 5 days</span>
                 <span th:if="${it.purgeOverride()}" class="badge rounded-pill pt-badge pt-badge-muted">Kept</span>
@@ -84,19 +100,49 @@
                 <button th:if="${it.daysUntilPurge() != null}" type="button" class="btn btn-sm btn-outline-secondary"
                         th:attr="hx-post=@{/items/{id}/keep(id=${it.id()})},hx-target=${target}"
                         hx-swap="innerHTML">Keep item</button>
-                <div class="input-group input-group-sm" style="width: 9.5rem;">
-                    <input type="number" name="quantity" min="1" value="1" class="form-control"
-                           th:id="'gq-' + ${it.id()}">
-                    <button type="button" class="btn btn-outline-secondary" hx-swap="outerHTML"
-                            th:attr="hx-post=@{/items/{id}/grocery(id=${it.id()})},hx-include='#gq-' + ${it.id()}">
-                        Add to list
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                            title="Add to grocery list" aria-label="Add to grocery list">
+                        <i class="bi bi-cart-plus"></i>
                     </button>
+                    <div class="dropdown-menu dropdown-menu-end p-3 pt-cart-menu">
+                        <div class="small fw-semibold mb-2">How many to buy?</div>
+                        <div class="pt-qty mb-2 w-100" role="group" aria-label="Quantity to buy">
+                            <button type="button" class="btn btn-sm btn-outline-secondary pt-step" data-step="-1">−</button>
+                            <input type="number" name="quantity" min="1" value="1"
+                                   class="pt-qty-input flex-grow-1" aria-label="Quantity to buy">
+                            <button type="button" class="btn btn-sm btn-outline-secondary pt-step" data-step="1">+</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-pt w-100"
+                                hx-include="closest .pt-cart-menu" hx-target="closest .dropdown" hx-swap="outerHTML"
+                                th:attr="hx-post=@{/items/{id}/grocery(id=${it.id()})}">
+                            <i class="bi bi-cart-plus me-1"></i>Add to list
+                        </button>
+                    </div>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" type="button"
-                        data-bs-toggle="collapse" th:data-bs-target="'#edit-' + ${it.id()}">Edit</button>
-                <button class="btn btn-sm btn-outline-danger" type="button"
-                        th:attr="hx-post=@{/items/{id}/delete(id=${it.id()})},hx-target=${target}"
-                        hx-swap="innerHTML" hx-confirm="Delete this item and all its batches?">Delete</button>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm pt-more-btn" data-bs-toggle="dropdown"
+                            aria-expanded="false" title="More actions" aria-label="More item actions">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end pt-menu-list">
+                        <li>
+                            <button type="button" class="dropdown-item" data-bs-toggle="collapse"
+                                    th:data-bs-target="'#edit-' + ${it.id()}">
+                                <i class="bi bi-pencil me-2"></i>Edit item
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button type="button" class="dropdown-item text-danger"
+                                    th:attr="hx-post=@{/items/{id}/delete(id=${it.id()})},hx-target=${target}"
+                                    hx-swap="innerHTML" hx-confirm="Delete this item and all its batches?">
+                                <i class="bi bi-trash3 me-2"></i>Delete item
+                            </button>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -160,7 +206,7 @@
                                th:value="${b.expirationDate()}" th:attr="form='bf-' + ${b.id()}">
                         <span class="badge rounded-pill mt-1" th:classappend="${b.freshness().cssClass()}"
                               th:text="${b.freshness().label()}">Fresh</span>
-                        <span th:if="${b.expiryText() != null}" class="small pt-expiry ms-1"
+                        <span th:if="${b.expiryText() != null and b.daysUntilExpiry() != 0}" class="small pt-expiry ms-1"
                               th:classappend="${b.daysUntilExpiry() < 0} ? 'pt-expiry-past'"
                               th:text="${b.expiryText()}">Expiring in 5 days</span>
                     </td>
@@ -216,6 +262,14 @@
             </form>
         </div>
     </div>
+</div>
+<div th:fragment="undoToast(label)" class="pt-undo-toast" role="status" aria-live="polite">
+    <i class="bi bi-check-circle-fill pt-undo-icon"></i>
+    <span class="pt-undo-label" th:text="${label}">Add item "Milk"</span>
+    <form th:action="@{/undo}" method="post" class="m-0">
+        <button type="submit" class="btn btn-sm btn-pt"><i class="bi bi-arrow-counterclockwise me-1"></i>Undo</button>
+    </form>
+    <button type="button" class="btn-close pt-undo-close" aria-label="Dismiss"></button>
 </div>
 </body>
 </html>

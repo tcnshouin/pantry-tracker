@@ -9,7 +9,8 @@ public final class Views {
     }
 
     public enum FreshnessStatus {
-        EXPIRED("Expired", "pt-badge pt-badge-warning"),
+        EXPIRED("Expired", "pt-badge pt-badge-expired"),
+        EXPIRES_TODAY("Expires today", "pt-badge pt-badge-today"),
         EXPIRING_SOON("Expiring soon", "pt-badge pt-badge-accent"),
         FRESH("Fresh", "pt-badge pt-badge-fresh"),
         NONE("No date", "pt-badge pt-badge-muted");
