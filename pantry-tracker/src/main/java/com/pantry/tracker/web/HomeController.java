@@ -172,6 +172,13 @@ public class HomeController {
         return groupBody(user, groupId, model, session, null, null);
     }
 
+    @PostMapping("/items/{id}/quantity")
+    public String adjustItemQuantity(@PathVariable Long id, @RequestParam int delta, Model model, HttpSession session) {
+        User user = userService.current();
+        Long groupId = inventory.adjustItemQuantity(user, id, delta, undoStack(session));
+        return groupBody(user, groupId, model, session, null, null);
+    }
+
     @PostMapping("/batches/{id}/delete")
     public String deleteBatch(@PathVariable Long id, Model model, HttpSession session) {
         User user = userService.current();

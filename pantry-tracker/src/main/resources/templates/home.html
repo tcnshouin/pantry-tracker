@@ -24,6 +24,18 @@
                     </a>
                 </li>
             </ul>
+            <button type="button" class="btn btn-sm pt-new-loc-btn mt-2" data-bs-toggle="collapse"
+                    data-bs-target="#new-location" aria-expanded="false" aria-controls="new-location">
+                <i class="bi bi-plus-lg me-1"></i>New location
+            </button>
+            <div id="new-location" class="collapse" th:classappend="${groups.isEmpty()} ? 'show'">
+                <form th:action="@{/locations}" method="post" class="d-flex gap-2 mt-2">
+                    <label for="new-group-name" class="visually-hidden">Location name</label>
+                    <input type="text" id="new-group-name" name="name" class="form-control form-control-sm"
+                           placeholder="e.g. Pantry shelf" required>
+                    <button type="submit" class="btn btn-sm btn-pt">Add</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -33,27 +45,17 @@
             <div th:if="${overview.expiringSoon().isEmpty()}" class="text-muted small">
                 Nothing expiring soon 🎉
             </div>
-            <table th:unless="${overview.expiringSoon().isEmpty()}" class="table table-sm align-middle mb-0">
-                <thead>
-                <tr>
-                    <th scope="col">Item</th>
-                    <th scope="col">Location</th>
-                    <th scope="col">Expires</th>
-                    <th scope="col"></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="e : ${overview.expiringSoon()}">
-                    <td th:text="${e.itemName()}">Item</td>
-                    <td class="text-muted" th:text="${e.locationName()}">Location</td>
-                    <td class="text-nowrap" th:text="${e.expirationDate()}">2026-01-01</td>
-                    <td class="text-end">
-                        <span class="badge rounded-pill" th:classappend="${e.freshnessCssClass()}"
-                              th:text="${e.freshnessLabel()}">Expiring soon</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-expiring-list">
+                <li th:each="e : ${overview.expiringSoon()}">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
+                        <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
+                              th:text="${e.freshnessLabel()}">Expires today</span>
+                    </div>
+                    <div class="small text-muted"
+                         th:text="${e.locationName()} + ' · ' + ${e.expirationDate()}">Shelf · 2026-01-01</div>
+                </li>
+            </ul>
         </div>
     </div>
     </aside>
@@ -77,7 +79,7 @@
         <div class="col-6 col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body text-center py-2">
-                    <div class="h3 mb-0" style="color: var(--pt-accent);" th:text="${overview.expiringThisWeek()}">0</div>
+                    <div class="h3 mb-0 pt-stat-soon" th:text="${overview.expiringThisWeek()}">0</div>
                     <div class="text-muted small">Expiring this week</div>
                 </div>
             </div>
@@ -85,7 +87,7 @@
         <div class="col-6 col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-body text-center py-2">
-                    <div class="h3 mb-0" style="color: var(--pt-warning);" th:text="${overview.lowStock()}">0</div>
+                    <div class="h3 mb-0 pt-stat-warning" th:text="${overview.lowStock()}">0</div>
                     <div class="text-muted small">Low / out of stock</div>
                 </div>
             </div>
@@ -100,57 +102,65 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h1 class="h4 mb-0">Inventory</h1>
-        <form th:if="${undoLabel}" th:action="@{/undo}" method="post" class="m-0">
-            <button type="submit" class="btn btn-sm btn-outline-dark">
-                ↶ Undo: <span th:text="${undoLabel}">last action</span>
-            </button>
-        </form>
-    </div>
+    <h1 class="h4 mb-3">Inventory</h1>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form th:action="@{/locations}" method="post" class="row g-2 align-items-end">
-                <div class="col-sm-8">
-                    <label for="new-group-name" class="form-label fw-semibold">Create group</label>
-                    <input type="text" id="new-group-name" name="name" class="form-control"
-                           placeholder="e.g. Pantry shelf" required>
-                </div>
-                <div class="col-sm-4 d-grid">
-                    <button type="submit" class="btn btn-pt">Create group</button>
-                </div>
-            </form>
+    <th:block th:if="${undoLabel}">
+        <div th:replace="~{inventory/fragments :: undoToast(${undoLabel})}"></div>
+    </th:block>
+
+    <div th:if="${groups.isEmpty()}" class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="fs-1 mb-2">📦</div>
+            <p class="fw-semibold mb-1">No locations yet</p>
+            <p class="text-muted small mb-0">Add your first one, like "Pantry shelf", with
+                <span class="fw-semibold">New location</span> on the left.</p>
         </div>
-    </div>
-
-    <div th:if="${groups.isEmpty()}" class="text-muted">
-        No groups yet. Create one above to start adding items.
     </div>
 
     <div th:each="g : ${groups}" class="card shadow-sm mb-3 pt-group-card" th:id="'group-card-' + ${g.group().id()}"
          th:data-group-id="${g.group().id()}">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <button class="btn btn-link text-decoration-none fw-semibold p-0" type="button"
-                    data-bs-toggle="collapse" th:data-bs-target="'#collapse-' + ${g.group().id()}">
-                <span th:text="${g.group().name()}">Group</span>
-            </button>
-            <div class="d-flex gap-2 align-items-center flex-wrap">
+            <h2 class="h5 mb-0 fw-semibold" th:text="${g.group().name()}">Group</h2>
+            <div class="d-flex gap-2 align-items-center">
                 <button type="button" class="btn btn-sm btn-pt"
                         data-bs-toggle="modal" th:data-bs-target="'#addItemModal-' + ${g.group().id()}">
-                    + Add item
+                    <i class="bi bi-plus-lg me-1"></i>Add item
                 </button>
-                <form th:action="@{/locations/{id}/rename(id=${g.group().id()})}" method="post"
-                      class="d-flex gap-1">
-                    <input type="text" name="name" class="form-control form-control-sm"
-                           th:value="${g.group().name()}" style="max-width: 10rem;">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">Rename</button>
-                </form>
-                <form th:action="@{/locations/{id}/delete(id=${g.group().id()})}" method="post"
-                      onsubmit="return confirm('Delete this group?');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                </form>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm pt-more-btn" data-bs-toggle="dropdown"
+                            aria-expanded="false" title="More actions" aria-label="More location actions">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end pt-menu-list">
+                        <li>
+                            <button type="button" class="dropdown-item" data-bs-toggle="collapse"
+                                    th:data-bs-target="'#rename-' + ${g.group().id()}">
+                                <i class="bi bi-pencil me-2"></i>Rename location
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/locations/{id}/delete(id=${g.group().id()})}" method="post"
+                                  onsubmit="return confirm('Delete this location? It must be empty first.');">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-trash3 me-2"></i>Delete location
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
+        </div>
+        <div th:id="'rename-' + ${g.group().id()}" class="collapse">
+            <form th:action="@{/locations/{id}/rename(id=${g.group().id()})}" method="post"
+                  class="d-flex gap-2 px-3 pt-3">
+                <label class="visually-hidden" th:for="'rename-input-' + ${g.group().id()}">New name</label>
+                <input type="text" name="name" class="form-control form-control-sm" required
+                       th:id="'rename-input-' + ${g.group().id()}" th:value="${g.group().name()}">
+                <button type="submit" class="btn btn-sm btn-pt">Save</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse"
+                        th:data-bs-target="'#rename-' + ${g.group().id()}">Cancel</button>
+            </form>
         </div>
         <div th:id="'collapse-' + ${g.group().id()}" class="collapse show">
             <div class="card-body">
