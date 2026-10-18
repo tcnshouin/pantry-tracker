@@ -10,50 +10,72 @@
 <div layout:fragment="content" class="pt-home">
 
     <aside class="pt-home-side">
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <h2 class="h5 mb-3">By location</h2>
+    <div class="card shadow-sm pt-side-card">
+        <div class="pt-side-head">
+            <h2 class="h5 mb-0">By location</h2>
+            <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm pt-icon-btn" data-bs-toggle="collapse"
+                        data-bs-target="#loc-search-box" aria-expanded="false" aria-controls="loc-search-box"
+                        title="Search locations" aria-label="Search locations">
+                    <i class="bi bi-search"></i>
+                </button>
+                <button type="button" class="btn btn-sm pt-icon-btn" data-bs-toggle="collapse"
+                        data-bs-target="#new-location" aria-expanded="false" aria-controls="new-location"
+                        title="Add location" aria-label="Add location">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+        </div>
+        <div id="loc-search-box" class="collapse px-3">
+            <label for="loc-search" class="visually-hidden">Search locations</label>
+            <input type="search" id="loc-search" class="form-control form-control-sm mb-2"
+                   placeholder="Search locations" autocomplete="off">
+        </div>
+        <div id="new-location" class="collapse px-3" th:classappend="${groups.isEmpty()} ? 'show'">
+            <form th:action="@{/locations}" method="post" class="d-flex gap-2 mb-2">
+                <label for="new-group-name" class="visually-hidden">Location name</label>
+                <input type="text" id="new-group-name" name="name" class="form-control form-control-sm"
+                       placeholder="New location, e.g. Pantry shelf" required>
+                <button type="submit" class="btn btn-sm btn-pt">Add</button>
+            </form>
+        </div>
+        <div class="pt-side-scroll">
             <div th:if="${groups.isEmpty()}" class="text-muted small">No locations yet.</div>
-            <ul th:unless="${groups.isEmpty()}" class="list-group list-group-flush">
+            <ul th:unless="${groups.isEmpty()}" class="list-group list-group-flush" id="loc-list">
                 <li th:each="g : ${groups}" class="list-group-item bg-transparent border-0 p-0 mb-1">
                     <a class="pt-loc-link d-flex justify-content-between align-items-center"
                        th:href="'#group-card-' + ${g.group().id()}" th:data-group-id="${g.group().id()}">
-                        <span th:text="${g.group().name()}">Location</span>
+                        <span class="pt-loc-name" th:text="${g.group().name()}">Location</span>
                         <span class="badge rounded-pill pt-badge pt-badge-muted pt-loc-count"
                               th:text="${g.group().itemCount()}">0</span>
                     </a>
                 </li>
             </ul>
-            <button type="button" class="btn btn-sm pt-new-loc-btn mt-2" data-bs-toggle="collapse"
-                    data-bs-target="#new-location" aria-expanded="false" aria-controls="new-location">
-                <i class="bi bi-plus-lg me-1"></i>New location
-            </button>
-            <div id="new-location" class="collapse" th:classappend="${groups.isEmpty()} ? 'show'">
-                <form th:action="@{/locations}" method="post" class="d-flex gap-2 mt-2">
-                    <label for="new-group-name" class="visually-hidden">Location name</label>
-                    <input type="text" id="new-group-name" name="name" class="form-control form-control-sm"
-                           placeholder="e.g. Pantry shelf" required>
-                    <button type="submit" class="btn btn-sm btn-pt">Add</button>
-                </form>
-            </div>
+            <div id="loc-no-match" class="text-muted small" hidden>No locations match your search.</div>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <h2 class="h5 mb-3">Expiring soon</h2>
+    <div class="card shadow-sm pt-side-card">
+        <div class="pt-side-head">
+            <h2 class="h5 mb-0">Expiring soon</h2>
+        </div>
+        <div class="pt-side-scroll">
             <div th:if="${overview.expiringSoon().isEmpty()}" class="text-muted small">
                 Nothing expiring soon 🎉
             </div>
             <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-expiring-list">
                 <li th:each="e : ${overview.expiringSoon()}">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
-                        <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
-                              th:text="${e.freshnessLabel()}">Expires today</span>
-                    </div>
-                    <div class="small text-muted"
-                         th:text="${e.locationName()} + ' · ' + ${e.expirationDate()}">Shelf · 2026-01-01</div>
+                    <a class="pt-exp-link" th:href="'#group-card-' + ${e.locationId()}"
+                       th:data-group-id="${e.locationId()}" th:data-item-id="${e.itemId()}"
+                       th:title="'Go to ' + ${e.itemName()} + ' in ' + ${e.locationName()}">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
+                            <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
+                                  th:text="${e.freshnessLabel()}">Expires today</span>
+                        </div>
+                        <div class="small text-muted"
+                             th:text="${e.locationName()} + ' · ' + ${e.expirationDate()}">Shelf · 2026-01-01</div>
+                    </a>
                 </li>
             </ul>
         </div>
@@ -112,8 +134,8 @@
         <div class="card-body text-center py-5">
             <div class="fs-1 mb-2">📦</div>
             <p class="fw-semibold mb-1">No locations yet</p>
-            <p class="text-muted small mb-0">Add your first one, like "Pantry shelf", with
-                <span class="fw-semibold">New location</span> on the left.</p>
+            <p class="text-muted small mb-0">Add your first one, like "Pantry shelf", with the
+                <span class="fw-semibold">+</span> next to <span class="fw-semibold">By location</span>.</p>
         </div>
     </div>
 

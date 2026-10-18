@@ -58,7 +58,7 @@
         No items yet. Use the <span class="fw-semibold">Add item</span> button above.
     </div>
 
-    <div th:each="it : ${items}" class="rounded mb-2 p-2 pt-item-row">
+    <div th:each="it : ${items}" class="rounded mb-2 p-2 pt-item-row" th:id="'item-row-' + ${it.id()}">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="fw-semibold" th:text="${it.name()}">Item</span>

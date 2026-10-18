@@ -37,7 +37,7 @@ class DataStructuresTest {
     }
 
     private ExpiringEntry entry(String name, LocalDate date) {
-        return new ExpiringEntry(name, "Shelf", date, 1, "Expiring soon", "");
+        return new ExpiringEntry(name, "Shelf", date, 1, "Expiring soon", "", 1L, 1L);
     }
 
     @Test
