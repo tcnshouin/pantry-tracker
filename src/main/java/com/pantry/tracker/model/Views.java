@@ -107,7 +107,8 @@ public final class Views {
     }
 
     public record ExpiringEntry(String itemName, String locationName, LocalDate expirationDate,
-                                int quantity, String freshnessLabel, String freshnessCssClass) {
+                                int quantity, String freshnessLabel, String freshnessCssClass,
+                                Long locationId, Long itemId) {
     }
 
     public record Overview(long totalItems, long expiringThisWeek, long lowStock, long onGroceryList,

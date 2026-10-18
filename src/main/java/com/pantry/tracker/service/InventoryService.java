@@ -95,7 +95,8 @@ public class InventoryService {
                 if (freshness != FreshnessStatus.FRESH && freshness != FreshnessStatus.NONE) {
                     heap.add(new ExpiringEntry(item.getName(), item.getLocationGroup().getName(),
                             batch.getExpirationDate(), batch.getQuantity(),
-                            Views.expiryText(daysUntil(batch.getExpirationDate(), today)), freshness.cssClass()));
+                            Views.expiryText(daysUntil(batch.getExpirationDate(), today)), freshness.cssClass(),
+                            item.getLocationGroup().getId(), item.getId()));
                 }
             }
         }
