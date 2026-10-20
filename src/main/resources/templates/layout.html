@@ -273,8 +273,8 @@
             margin-left: 0;
             margin-right: 0;
         }
-        .pt-fit-card.pt-fit-sized,
-        .pt-fit-card.pt-fit-sized .pt-side-scroll {
+        .pt-side-card.pt-fit-sized,
+        .pt-side-card.pt-fit-sized .pt-side-scroll {
             flex: none;
         }
         .pt-loc-card .pt-side-scroll {
@@ -331,12 +331,30 @@
                 font-size: 1.2rem;
             }
             .pt-side-card > .pt-summary-body {
-                padding-bottom: 1rem;
+                padding-bottom: 0.6rem;
             }
             .pt-side-head {
                 padding-top: 0.7rem;
                 padding-bottom: 0.8rem;
                 margin-bottom: 0.65rem;
+            }
+            .pt-recent-list li {
+                padding: 0.35rem 0 !important;
+            }
+            .pt-recent-list li:first-child {
+                padding-top: 0 !important;
+            }
+            .pt-home-side {
+                padding-top: 1.2rem !important;
+                padding-bottom: 1.2rem !important;
+                gap: 0.8rem !important;
+            }
+            .pt-quick-btn {
+                padding-top: 0.3rem;
+                padding-bottom: 0.3rem;
+            }
+            .pt-side-card > .px-3 .form-control {
+                margin-bottom: 0.35rem !important;
             }
         }
         @media (min-width: 992px) and (max-height: 719.98px) {
@@ -1722,7 +1740,15 @@
             margin: 0.6rem 0.9rem 0;
             background-color: #B9D3BE;
         }
+        .pt-nav a .bi::before {
+            display: block;
+            vertical-align: 0;
+        }
         .pt-nav a .bi {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
             font-size: 1.3rem;
             width: 1.45rem;
             text-align: center;
@@ -1932,7 +1958,7 @@
         var minFlexible = 170;
         document.querySelectorAll('.pt-home-side').forEach(function (side) {
             var cards = Array.prototype.slice.call(side.querySelectorAll('.pt-fit-card'));
-            cards.forEach(function (card) {
+            side.querySelectorAll('.pt-fit-card, .pt-side-card[data-min-rows]').forEach(function (card) {
                 card.querySelector('.pt-side-scroll').style.height = '';
                 card.classList.remove('pt-fit-sized');
             });
@@ -1964,6 +1990,7 @@
                 });
             });
             plans.forEach(function (plan) {
+                plan.target = plan.k;
                 plan.scroll.style.height = plan.heightFor(plan.k) + 'px';
             });
             var style = getComputedStyle(side);
@@ -1976,9 +2003,22 @@
                 var used = gap * Math.max(0, kids.length - 1);
                 kids.forEach(function (c) {
                     var sized = c.classList.contains('pt-fit-sized') || c.classList.contains('pt-side-fixed');
-                    used += sized ? c.getBoundingClientRect().height : minFlexible;
+                    used += sized ? c.getBoundingClientRect().height : flexibleNeed(c);
                 });
                 return used - inner;
+            }
+            function flexibleNeed(card) {
+                var rows = parseInt(card.dataset.minRows, 10);
+                var scroll = card.querySelector('.pt-side-scroll');
+                var items = card.dataset.minItems ? card.querySelectorAll(card.dataset.minItems) : [];
+                if (!rows || !scroll || !items.length) {
+                    return minFlexible;
+                }
+                var shown = items[Math.min(rows, items.length) - 1];
+                var scrollRect = scroll.getBoundingClientRect();
+                var fixed = card.getBoundingClientRect().height - scrollRect.height;
+                var content = shown.getBoundingClientRect().bottom - scrollRect.top + scroll.scrollTop + 10;
+                return Math.max(minFlexible, Math.ceil(fixed + content));
             }
             var guard = 30;
             while (overflow() > 0 && guard-- > 0) {
@@ -1990,6 +2030,34 @@
                 biggest.k--;
                 biggest.scroll.style.height = biggest.heightFor(biggest.k) + 'px';
             }
+            var shrunk = plans.some(function (p) { return p.k < p.target; });
+            if (!shrunk) {
+                return;
+            }
+            side.querySelectorAll('.pt-side-card[data-min-rows]').forEach(function (card) {
+                var rows = parseInt(card.dataset.minRows, 10);
+                var scroll = card.querySelector('.pt-side-scroll');
+                var items = card.querySelectorAll(card.dataset.minItems);
+                if (!rows || !scroll || items.length <= rows) {
+                    return;
+                }
+                card.classList.add('pt-fit-sized');
+                var top = scroll.getBoundingClientRect().top - scroll.scrollTop;
+                var last = items[rows - 1].getBoundingClientRect().bottom;
+                var next = items[rows].getBoundingClientRect().top;
+                scroll.style.height = Math.round(last + (next - last) / 2 - top) + 'px';
+            });
+            plans.slice().sort(function (a, b) { return a.k - b.k; }).forEach(function (plan) {
+                while (plan.k < plan.target) {
+                    plan.k++;
+                    plan.scroll.style.height = plan.heightFor(plan.k) + 'px';
+                    if (overflow() > 0) {
+                        plan.k--;
+                        plan.scroll.style.height = plan.heightFor(plan.k) + 'px';
+                        break;
+                    }
+                }
+            });
         });
     }
 
