@@ -193,6 +193,56 @@
             scrollbar-width: thin;
             scrollbar-color: var(--pt-line) transparent;
         }
+        .pt-side-card.pt-side-fixed {
+            flex: none;
+        }
+        .pt-mini-stat {
+            background-color: var(--pt-head);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.25rem;
+        }
+        .pt-quick-btn {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.45rem 0.5rem;
+            border: 0;
+            border-radius: 0.5rem;
+            background-color: transparent;
+            color: var(--pt-text);
+            transition: background-color 0.15s ease;
+        }
+        .pt-quick-btn .bi {
+            color: var(--pt-link);
+            font-size: 1.1rem;
+        }
+        .pt-quick-btn:hover,
+        .pt-quick-btn:focus-visible {
+            background-color: var(--pt-tint);
+        }
+        .pt-grocery-row {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            background-color: transparent;
+            border-color: var(--pt-line);
+        }
+        .pt-grocery-row .pt-pick {
+            flex-shrink: 0;
+            width: 1.2rem;
+            height: 1.2rem;
+            margin: 0;
+        }
+        .pt-grocery-name {
+            flex: 1 1 auto;
+            min-width: 0;
+            cursor: pointer;
+        }
+        .pt-grocery-row:has(.pt-pick:checked) {
+            background-color: var(--pt-fresh);
+        }
         .pt-batches-toggle {
             display: inline-flex;
             align-items: center;
@@ -779,6 +829,93 @@
         }
     });
 
+    function ptSyncPutAway() {
+        var picks = Array.prototype.slice.call(document.querySelectorAll('.pt-pick:not(:disabled)'));
+        var btn = document.getElementById('put-away-btn');
+        if (!btn) {
+            return;
+        }
+        var checked = picks.filter(function (p) { return p.checked; }).length;
+        document.getElementById('put-away-count').textContent = checked;
+        btn.disabled = checked === 0;
+        var all = document.getElementById('pick-all');
+        all.checked = picks.length > 0 && checked === picks.length;
+        all.indeterminate = checked > 0 && checked < picks.length;
+    }
+
+    function ptFilterQuickAdd() {
+        var field = document.getElementById('quick-search');
+        if (!field) {
+            return;
+        }
+        var term = field.value.trim().toLowerCase();
+        var shown = 0;
+        document.querySelectorAll('#quick-list > li').forEach(function (li) {
+            var match = li.querySelector('.pt-quick-name').textContent.toLowerCase().indexOf(term) !== -1;
+            li.hidden = !match;
+            if (match) {
+                shown++;
+            }
+        });
+        var none = document.getElementById('quick-no-match');
+        if (none) {
+            none.hidden = shown > 0 || !document.getElementById('quick-list');
+        }
+    }
+
+    document.addEventListener('change', function (event) {
+        if (event.target.id === 'pick-all') {
+            document.querySelectorAll('.pt-pick:not(:disabled)').forEach(function (p) {
+                p.checked = event.target.checked;
+            });
+        }
+        if (event.target.id === 'pick-all' || event.target.classList.contains('pt-pick')) {
+            ptSyncPutAway();
+        }
+    });
+
+    document.addEventListener('input', function (event) {
+        if (event.target.id === 'quick-search') {
+            ptFilterQuickAdd();
+        }
+    });
+
+    var ptGroceryState = null;
+
+    document.body.addEventListener('htmx:beforeSwap', function (event) {
+        if (event.detail.target.id !== 'grocery-body') {
+            return;
+        }
+        var search = document.getElementById('quick-search');
+        ptGroceryState = {
+            picked: Array.prototype.map.call(document.querySelectorAll('.pt-pick:checked'), function (p) { return p.value; }),
+            search: search ? search.value : '',
+            focus: search === document.activeElement
+        };
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+        if (event.detail.target.id !== 'grocery-body' || !ptGroceryState) {
+            return;
+        }
+        ptGroceryState.picked.forEach(function (id) {
+            var box = document.getElementById('pick-' + id);
+            if (box && !box.disabled) {
+                box.checked = true;
+            }
+        });
+        var search = document.getElementById('quick-search');
+        if (search) {
+            search.value = ptGroceryState.search;
+            if (ptGroceryState.focus) {
+                search.focus();
+            }
+        }
+        ptGroceryState = null;
+        ptFilterQuickAdd();
+        ptSyncPutAway();
+    });
+
     var ptToastTimer = null;
 
     function ptShowToast(toast) {
@@ -830,6 +967,7 @@
         ptSyncAllAutoCalc();
         ptMarkActiveNav();
         ptInitGroups();
+        ptSyncPutAway();
     });
     document.body.addEventListener('htmx:afterSwap', ptSyncAllAutoCalc);
 

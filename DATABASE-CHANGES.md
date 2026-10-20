@@ -4,9 +4,11 @@ This project uses **Flyway migrations** to manage the database. That means every
 change to the database (new table, new column, etc.) is written as a numbered SQL
 file that lives in the repo, so the whole team stays in sync through Git.
 
-> **Important:** everyone runs their **own** local database. There is no single
-> shared database. Git shares the *structure* (migration files) — not the data.
-> Everyone's rows stay on their own machine.
+> **Important:** the database is a **Supabase** project (see `SUPABASE-SETUP.md`).
+> If the team shares one project (same `.env`), everyone uses the **same**
+> database, and a migration is applied once, by whoever first runs code that
+> contains it. If each person made their own project, each database is updated
+> separately. Either way, Git shares the *structure* (migration files), not the data.
 
 ---
 
@@ -18,12 +20,13 @@ pantry-tracker/src/main/resources/db/migration/
     V2__create_category_and_expiry_reference.sql
     V3__create_inventory.sql
     V4__grocery_list.sql
-    ...            <-- your new file goes here as V5, V6, ...
+    V5__supabase.sql
+    ...            <-- your new file goes here as V6, V7, ...
 ```
 
 File name format: **`V<number>__<short_description>.sql`** — capital `V`, a number,
 then **two** underscores, then a snake_case description. Example:
-`V5__add_item_notes.sql`.
+`V6__add_item_notes.sql`.
 
 ---
 
@@ -37,7 +40,7 @@ git pull
 **2. Create the next migration file** (one higher than the last one) and write your
 SQL in it. Example — add a `notes` column to the `item` table:
 ```sql
--- V5__add_item_notes.sql
+-- V6__add_item_notes.sql
 alter table item add column notes varchar(500);
 ```
 
@@ -52,15 +55,15 @@ private String notes;
 **4. Run the app to apply it.** Flyway applies the new migration automatically on
 startup — no manual SQL needed.
 ```bash
-docker compose up --build          # or:  DB_PASSWORD=devpw ./mvnw spring-boot:run
+./mvnw spring-boot:run             # or:  docker compose up --build
 ```
-Look for a log line like `Migrating schema "public" to version "5 - add item notes"`.
+Look for a log line like `Migrating schema "public" to version "6 - add item notes"`.
 That confirms it worked.
 
 **5. Commit and push** the migration file (plus any code changes).
 ```bash
 git add -A
-git commit -m "Add notes column to item (V5)"
+git commit -m "Add notes column to item (V6)"
 git push
 ```
 
@@ -71,21 +74,26 @@ git push
 They only do two things:
 ```bash
 git pull
-docker compose up --build          # or restart their running app
+./mvnw spring-boot:run             # or restart their running app
 ```
-Flyway notices the new `V5` hasn't been applied to their database yet and runs it
-automatically on startup. Their existing data is kept.
+On their next start, Flyway applies the new `V6` if their database doesn't have
+it yet. On a shared Supabase project it is usually already applied, and Flyway
+just skips it. Existing data is kept.
+
+> **Shared project tip:** once someone applies `V6` to the shared database,
+> teammates on older code usually still start fine. If one of them gets a
+> "Schema-validation" error on startup, the fix is `git pull` and restart.
 
 ### Does it update automatically when someone pushes?
 
 **No — pushing only uploads the files.** A database updates only when that person
 **pulls** the new migration **and restarts the app** (then Flyway applies it on
-boot). Nothing reaches a database across the network.
+boot). Nothing changes a database until someone runs the app.
 
 | Action | Updates the database? |
 | ------ | --------------------- |
-| `git push` (share the file) | No — just uploads code |
-| `git pull` (download the file) | No — just downloads code |
+| `git push` (share the file) | No, it just uploads code |
+| `git pull` (download the file) | No, it just downloads code |
 | **Start / restart the app** | **Yes — Flyway applies pending migrations** |
 
 The full loop:
@@ -98,7 +106,7 @@ teammate:  git pull  →  restart app      <-- Flyway auto-applies it here
 
 ## Rules that keep this from breaking
 
-- **Never edit a migration that already ran** (V1–V4, or any file a teammate has
+- **Never edit a migration that already ran** (V1–V5, or any file a teammate has
   already applied). Flyway stores a checksum of each file; changing one makes the
   app refuse to start. To change something, always add a **new, higher-numbered**
   file instead.
@@ -113,22 +121,25 @@ teammate:  git pull  →  restart app      <-- Flyway auto-applies it here
 
 ---
 
-## Resetting a broken local database
+## Resetting a broken database
 
-If your own database gets into a bad state and you just want a clean rebuild from
-scratch (this **erases your local data only**):
-```bash
-docker compose down -v        # deletes the database volume
-docker compose up --build     # rebuilds it fresh, re-running V1 → latest
+This **erases all pantry data in that Supabase project** (accounts stay), so on
+a shared project agree with the team first. In the Supabase **SQL Editor**, run:
+```sql
+drop schema public cascade;
+create schema public;
+grant usage on schema public to postgres, anon, authenticated, service_role;
 ```
+Then start the app: Flyway rebuilds everything from V1 to the latest. Afterwards, run
+the `flyway_schema_history` RLS line from `SUPABASE-SETUP.md` step 7 again.
 
 ---
 
 ## Copy-paste template for a new migration
 
-Create `src/main/resources/db/migration/V5__your_change.sql` (bump the number):
+Create `src/main/resources/db/migration/V6__your_change.sql` (bump the number):
 ```sql
--- V5__your_change.sql
+-- V6__your_change.sql
 -- Describe what this change does.
 
 -- examples:
@@ -141,4 +152,6 @@ Create `src/main/resources/db/migration/V5__your_change.sql` (bump the number):
 --   );
 -- add an index:
 --   create index ix_item_notes on item (notes);
+-- new tables in Supabase should also get:
+--   alter table example enable row level security;
 ```

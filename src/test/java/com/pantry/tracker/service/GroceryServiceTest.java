@@ -2,6 +2,8 @@ package com.pantry.tracker.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,12 +12,13 @@ import com.pantry.tracker.model.Batch;
 import com.pantry.tracker.model.GroceryListItem;
 import com.pantry.tracker.model.GroceryListItem.Source;
 import com.pantry.tracker.model.Item;
-import com.pantry.tracker.model.User;
+import com.pantry.tracker.repository.BatchRepository;
 import com.pantry.tracker.repository.GroceryListItemRepository;
 import com.pantry.tracker.repository.ItemRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,12 +35,15 @@ class GroceryServiceTest {
     private ItemRepository itemRepository;
 
     @Mock
+    private BatchRepository batchRepository;
+
+    @Mock
     private InventoryService inventoryService;
 
     @InjectMocks
     private GroceryService groceryService;
 
-    private final User user = new User("owner@example.com", "hash");
+    private final UUID user = UUID.randomUUID();
 
     private Item item(int quantity, boolean alreadySuggested) {
         Item item = new Item();
@@ -55,7 +61,7 @@ class GroceryServiceTest {
     @Test
     void lowItemIsSuggestedOnce() {
         Item low = item(2, false);
-        when(itemRepository.findByUser(user)).thenReturn(List.of(low));
+        when(itemRepository.findByUserId(user)).thenReturn(List.of(low));
 
         groceryService.syncAutoSuggestions(user);
 
@@ -65,7 +71,7 @@ class GroceryServiceTest {
 
     @Test
     void alreadySuggestedItemIsNotAddedAgain() {
-        when(itemRepository.findByUser(user)).thenReturn(List.of(item(0, true)));
+        when(itemRepository.findByUserId(user)).thenReturn(List.of(item(0, true)));
 
         groceryService.syncAutoSuggestions(user);
 
@@ -75,7 +81,7 @@ class GroceryServiceTest {
     @Test
     void restockedItemCanBeSuggestedAgainLater() {
         Item restocked = item(5, true);
-        when(itemRepository.findByUser(user)).thenReturn(List.of(restocked));
+        when(itemRepository.findByUserId(user)).thenReturn(List.of(restocked));
 
         groceryService.syncAutoSuggestions(user);
 
@@ -83,14 +89,45 @@ class GroceryServiceTest {
     }
 
     @Test
-    void buyingASuggestedItemAllowsItToBeSuggestedAgain() {
-        Item linked = item(0, true);
-        GroceryListItem entry = new GroceryListItem(user, linked, "Rice", 2, Source.AUTO);
-        when(groceryRepository.findByIdAndUser(9L, user)).thenReturn(Optional.of(entry));
+    void quantityChangesButNeverDropsBelowOne() {
+        GroceryListItem entry = new GroceryListItem(user, null, "Milk", 2, Source.MANUAL);
+        when(groceryRepository.findByIdAndUserId(4L, user)).thenReturn(Optional.of(entry));
 
-        groceryService.togglePurchased(user, 9L);
+        groceryService.changeQuantity(user, 4L, 1);
+        assertThat(entry.getQuantityNeeded()).isEqualTo(3);
 
-        assertThat(entry.isPurchased()).isTrue();
-        assertThat(linked.isLowStockSuggested()).isFalse();
+        groceryService.changeQuantity(user, 4L, -5);
+        assertThat(entry.getQuantityNeeded()).isEqualTo(1);
+    }
+
+    @Test
+    void putAwayAddsBatchesWithRowQuantityAndClearsTheRows() {
+        Item rice = item(0, true);
+        rice.setId(11L);
+        GroceryListItem suggested = new GroceryListItem(user, rice, "Rice", 3, Source.AUTO);
+        GroceryListItem orphan = new GroceryListItem(user, null, "Old thing", 1, Source.MANUAL);
+        when(groceryRepository.findByUserIdAndIdIn(user, List.of(1L, 2L))).thenReturn(List.of(suggested, orphan));
+
+        int count = groceryService.putAway(user, List.of(1L, 2L));
+
+        assertThat(count).isEqualTo(1);
+        verify(inventoryService).addBatch(eq(user), eq(11L), eq(3), isNull(), eq(true), isNull());
+        verify(groceryRepository).delete(suggested);
+        verify(groceryRepository, never()).delete(orphan);
+        assertThat(rice.isLowStockSuggested()).isFalse();
+    }
+
+    @Test
+    void addingAnItemAlreadyOnTheListBumpsItsQuantity() {
+        Item rice = item(1, false);
+        rice.setId(11L);
+        GroceryListItem existing = new GroceryListItem(user, rice, "Rice", 2, Source.MANUAL);
+        when(itemRepository.findByIdAndUserId(11L, user)).thenReturn(Optional.of(rice));
+        when(groceryRepository.findByUserIdOrderByCreatedAtDesc(user)).thenReturn(List.of(existing));
+
+        groceryService.addManual(user, 11L, 2);
+
+        assertThat(existing.getQuantityNeeded()).isEqualTo(4);
+        verify(groceryRepository, never()).save(any());
     }
 }

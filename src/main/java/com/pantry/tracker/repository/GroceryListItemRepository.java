@@ -1,16 +1,19 @@
 package com.pantry.tracker.repository;
 
 import com.pantry.tracker.model.GroceryListItem;
-import com.pantry.tracker.model.User;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GroceryListItemRepository extends JpaRepository<GroceryListItem, Long> {
 
-    List<GroceryListItem> findByUserAndSourceOrderByCreatedAtDesc(User user, GroceryListItem.Source source);
+    List<GroceryListItem> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
-    Optional<GroceryListItem> findByIdAndUser(Long id, User user);
+    List<GroceryListItem> findByUserIdAndIdIn(UUID userId, Collection<Long> ids);
 
-    long countByUserAndPurchasedFalse(User user);
+    Optional<GroceryListItem> findByIdAndUserId(Long id, UUID userId);
+
+    long countByUserId(UUID userId);
 }

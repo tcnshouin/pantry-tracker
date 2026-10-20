@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,9 +32,8 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @Column(nullable = false)
     private String name;
@@ -73,8 +73,8 @@ public class Item {
     @OrderBy("expirationDate asc")
     private List<Batch> batches = new ArrayList<>();
 
-    public Item(User user, String name, Category category, LocationGroup locationGroup) {
-        this.user = user;
+    public Item(UUID userId, String name, Category category, LocationGroup locationGroup) {
+        this.userId = userId;
         this.name = name;
         this.category = category;
         this.locationGroup = locationGroup;

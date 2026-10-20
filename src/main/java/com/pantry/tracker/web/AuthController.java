@@ -1,31 +1,59 @@
 package com.pantry.tracker.web;
 
-import com.pantry.tracker.service.UserService;
+import com.pantry.tracker.model.SupabaseUser;
+import com.pantry.tracker.service.SupabaseAuthClient;
+import com.pantry.tracker.service.SupabaseAuthClient.AuthException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @Controller
 public class AuthController {
 
-    private final UserService userService;
+    private final SupabaseAuthClient supabase;
+    private final SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
 
-    public AuthController(UserService userService) {
-        this.userService = userService;
+    public AuthController(SupabaseAuthClient supabase) {
+        this.supabase = supabase;
     }
 
     @GetMapping("/login")
     public String login() {
         return "auth/login";
+    }
+
+    @PostMapping("/login")
+    public String login(@RequestParam String email, @RequestParam String password, Model model,
+                        HttpServletRequest request, HttpServletResponse response) {
+        try {
+            SupabaseUser user = supabase.signIn(SupabaseAuthClient.normalizeEmail(email), password);
+            signIn(user, request, response);
+            return "redirect:/";
+        } catch (AuthException ex) {
+            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("email", email);
+            return "auth/login";
+        }
     }
 
     @GetMapping("/register")
@@ -43,12 +71,71 @@ public class AuthController {
             return "auth/register";
         }
         try {
-            userService.register(form.getEmail(), form.getPassword());
-        } catch (IllegalArgumentException ex) {
-            result.rejectValue("email", "email.exists", ex.getMessage());
+            boolean needsConfirmation = supabase.signUp(SupabaseAuthClient.normalizeEmail(form.getEmail()),
+                    form.getPassword());
+            return needsConfirmation ? "redirect:/login?confirm" : "redirect:/login?registered";
+        } catch (AuthException ex) {
+            result.reject("supabase", ex.getMessage());
             return "auth/register";
         }
-        return "redirect:/login?registered";
+    }
+
+    @GetMapping("/forgot-password")
+    public String forgotPassword() {
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPassword(@RequestParam String email, Model model) {
+        String redirectTo = ServletUriComponentsBuilder.fromCurrentContextPath().path("/reset-password").toUriString();
+        try {
+            supabase.sendPasswordReset(SupabaseAuthClient.normalizeEmail(email), redirectTo);
+            model.addAttribute("sent", true);
+        } catch (AuthException ex) {
+            model.addAttribute("error", ex.getMessage());
+        }
+        return "auth/forgot-password";
+    }
+
+    @GetMapping("/reset-password")
+    public String resetPassword() {
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@RequestParam String accessToken, @RequestParam String password,
+                                @RequestParam String confirmPassword, Model model) {
+        String error = null;
+        if (password.length() < 8) {
+            error = "Password must be at least 8 characters";
+        } else if (!password.equals(confirmPassword)) {
+            error = "Passwords do not match";
+        } else if (accessToken.isBlank()) {
+            error = "This reset link is missing its token. Request a new one.";
+        }
+        if (error == null) {
+            try {
+                supabase.updatePassword(accessToken, password);
+                return "redirect:/login?reset";
+            } catch (AuthException ex) {
+                error = ex.getMessage();
+            }
+        }
+        model.addAttribute("error", error);
+        model.addAttribute("accessToken", accessToken);
+        return "auth/reset-password";
+    }
+
+    private void signIn(SupabaseUser user, HttpServletRequest request, HttpServletResponse response) {
+        if (request.getSession(false) != null) {
+            request.changeSessionId();
+        }
+        UsernamePasswordAuthenticationToken auth = UsernamePasswordAuthenticationToken.authenticated(
+                user, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+        contextRepository.saveContext(context, request, response);
     }
 
     @Getter

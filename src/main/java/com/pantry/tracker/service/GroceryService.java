@@ -1,16 +1,24 @@
 package com.pantry.tracker.service;
 
+import com.pantry.tracker.model.Batch;
 import com.pantry.tracker.model.GroceryListItem;
 import com.pantry.tracker.model.GroceryListItem.Source;
 import com.pantry.tracker.model.Item;
-import com.pantry.tracker.model.User;
-import com.pantry.tracker.model.Views.GroceryList;
+import com.pantry.tracker.model.Views.GroceryPage;
 import com.pantry.tracker.model.Views.GroceryRow;
+import com.pantry.tracker.model.Views.GrocerySummary;
+import com.pantry.tracker.model.Views.PutAwayEntry;
+import com.pantry.tracker.model.Views.QuickAddOption;
 import com.pantry.tracker.model.Views.StockStatus;
+import com.pantry.tracker.repository.BatchRepository;
 import com.pantry.tracker.repository.GroceryListItemRepository;
 import com.pantry.tracker.repository.ItemRepository;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,23 +27,25 @@ public class GroceryService {
 
     private final GroceryListItemRepository groceryRepository;
     private final ItemRepository itemRepository;
+    private final BatchRepository batchRepository;
     private final InventoryService inventoryService;
 
     public GroceryService(GroceryListItemRepository groceryRepository, ItemRepository itemRepository,
-                          InventoryService inventoryService) {
+                          BatchRepository batchRepository, InventoryService inventoryService) {
         this.groceryRepository = groceryRepository;
         this.itemRepository = itemRepository;
+        this.batchRepository = batchRepository;
         this.inventoryService = inventoryService;
     }
 
     @Transactional
-    public void syncAutoSuggestions(User user) {
-        for (Item item : itemRepository.findByUser(user)) {
+    public void syncAutoSuggestions(UUID userId) {
+        for (Item item : itemRepository.findByUserId(userId)) {
             boolean needy = InventoryService.stockStatus(item) != StockStatus.IN_STOCK;
             if (needy && !item.isLowStockSuggested()) {
                 int quantity = item.getLowStockThreshold() != null && item.getLowStockThreshold() > 0
                         ? item.getLowStockThreshold() : 1;
-                groceryRepository.save(new GroceryListItem(user, item, item.getName(), quantity, Source.AUTO));
+                groceryRepository.save(new GroceryListItem(userId, item, item.getName(), quantity, Source.AUTO));
                 item.setLowStockSuggested(true);
             } else if (!needy && item.isLowStockSuggested()) {
                 item.setLowStockSuggested(false);
@@ -44,40 +54,89 @@ public class GroceryService {
     }
 
     @Transactional(readOnly = true)
-    public GroceryList list(User user) {
-        return new GroceryList(rows(user, Source.AUTO), rows(user, Source.MANUAL));
+    public GroceryPage page(UUID userId) {
+        List<GroceryRow> rows = new ArrayList<>();
+        Set<Long> onList = new HashSet<>();
+        int units = 0;
+        int suggested = 0;
+        for (GroceryListItem e : groceryRepository.findByUserIdOrderByCreatedAtDesc(userId)) {
+            Item item = e.getItem();
+            boolean auto = e.getSource() == Source.AUTO;
+            rows.add(new GroceryRow(e.getId(), e.getItemName(),
+                    item != null ? item.getCategory().getName() : null, e.getQuantityNeeded(), auto,
+                    item != null ? item.getId() : null));
+            if (item != null) {
+                onList.add(item.getId());
+            }
+            units += e.getQuantityNeeded();
+            if (auto) {
+                suggested++;
+            }
+        }
+        GrocerySummary summary = new GrocerySummary(rows.size(), units, suggested, rows.size() - suggested);
+        return new GroceryPage(rows, summary, quickAddOptions(userId, onList), recentlyStocked(userId));
     }
 
     @Transactional
-    public void addManual(User user, Long itemId, int quantity) {
-        Item item = itemRepository.findByIdAndUser(itemId, user).orElseThrow();
-        groceryRepository.save(new GroceryListItem(user, item, item.getName(), Math.max(1, quantity), Source.MANUAL));
+    public void addManual(UUID userId, Long itemId, int quantity) {
+        Item item = itemRepository.findByIdAndUserId(itemId, userId).orElseThrow();
+        int amount = Math.max(1, quantity);
+        for (GroceryListItem e : groceryRepository.findByUserIdOrderByCreatedAtDesc(userId)) {
+            if (e.getItem() != null && e.getItem().getId().equals(itemId)) {
+                e.setQuantityNeeded(e.getQuantityNeeded() + amount);
+                return;
+            }
+        }
+        groceryRepository.save(new GroceryListItem(userId, item, item.getName(), amount, Source.MANUAL));
     }
 
     @Transactional
-    public void togglePurchased(User user, Long id) {
-        GroceryListItem entry = find(user, id);
-        entry.setPurchased(!entry.isPurchased());
-        if (entry.isPurchased()) {
+    public void changeQuantity(UUID userId, Long id, int delta) {
+        GroceryListItem entry = find(userId, id);
+        entry.setQuantityNeeded(Math.max(1, entry.getQuantityNeeded() + delta));
+    }
+
+    @Transactional
+    public void remove(UUID userId, Long id) {
+        GroceryListItem entry = find(userId, id);
+        rearm(entry);
+        groceryRepository.delete(entry);
+    }
+
+    @Transactional
+    public int putAway(UUID userId, List<Long> ids) {
+        int count = 0;
+        for (GroceryListItem entry : groceryRepository.findByUserIdAndIdIn(userId, ids)) {
+            if (entry.getItem() == null) {
+                continue;
+            }
+            inventoryService.addBatch(userId, entry.getItem().getId(), entry.getQuantityNeeded(), null, true, null);
             rearm(entry);
+            groceryRepository.delete(entry);
+            count++;
         }
+        return count;
     }
 
-    @Transactional
-    public void remove(User user, Long id) {
-        GroceryListItem entry = find(user, id);
-        rearm(entry);
-        groceryRepository.delete(entry);
+    private List<QuickAddOption> quickAddOptions(UUID userId, Set<Long> onList) {
+        List<QuickAddOption> options = new ArrayList<>();
+        for (Item item : itemRepository.findByUserId(userId)) {
+            if (!onList.contains(item.getId())) {
+                options.add(new QuickAddOption(item.getId(), item.getName(), item.getLocationGroup().getName(),
+                        item.totalQuantity()));
+            }
+        }
+        options.sort(Comparator.comparing(o -> o.name().toLowerCase()));
+        return options;
     }
 
-    @Transactional
-    public void restock(User user, Long id) {
-        GroceryListItem entry = find(user, id);
-        if (entry.getItem() != null) {
-            inventoryService.addBatch(user, entry.getItem().getId(), entry.getQuantityNeeded(), null, true, null);
+    private List<PutAwayEntry> recentlyStocked(UUID userId) {
+        List<PutAwayEntry> entries = new ArrayList<>();
+        for (Batch batch : batchRepository.findTop8ByItemUserIdOrderByIdDesc(userId)) {
+            entries.add(new PutAwayEntry(batch.getItem().getName(), batch.getQuantity(), batch.getDateAdded(),
+                    batch.getItem().getLocationGroup().getName()));
         }
-        rearm(entry);
-        groceryRepository.delete(entry);
+        return entries;
     }
 
     private void rearm(GroceryListItem entry) {
@@ -86,17 +145,7 @@ public class GroceryService {
         }
     }
 
-    private GroceryListItem find(User user, Long id) {
-        return groceryRepository.findByIdAndUser(id, user).orElseThrow();
-    }
-
-    private List<GroceryRow> rows(User user, Source source) {
-        List<GroceryRow> rows = new ArrayList<>();
-        for (GroceryListItem e : groceryRepository.findByUserAndSourceOrderByCreatedAtDesc(user, source)) {
-            Long itemId = e.getItem() != null ? e.getItem().getId() : null;
-            rows.add(new GroceryRow(e.getId(), e.getItemName(), e.getQuantityNeeded(), e.isPurchased(),
-                    itemId != null, itemId));
-        }
-        return rows;
+    private GroceryListItem find(UUID userId, Long id) {
+        return groceryRepository.findByIdAndUserId(id, userId).orElseThrow();
     }
 }

@@ -115,10 +115,24 @@ public final class Views {
                            List<ExpiringEntry> expiringSoon) {
     }
 
-    public record GroceryRow(Long id, String itemName, int quantityNeeded, boolean purchased,
-                             boolean linked, Long itemId) {
+    public record GroceryRow(Long id, String itemName, String categoryName, int quantityNeeded,
+                             boolean suggested, Long itemId) {
+
+        public boolean linked() {
+            return itemId != null;
+        }
     }
 
-    public record GroceryList(List<GroceryRow> suggested, List<GroceryRow> manual) {
+    public record GrocerySummary(int items, int units, int suggested, int added) {
+    }
+
+    public record QuickAddOption(Long itemId, String name, String locationName, int totalQuantity) {
+    }
+
+    public record PutAwayEntry(String itemName, int quantity, LocalDate dateAdded, String locationName) {
+    }
+
+    public record GroceryPage(List<GroceryRow> rows, GrocerySummary summary, List<QuickAddOption> quickAdd,
+                              List<PutAwayEntry> recentlyPutAway) {
     }
 }

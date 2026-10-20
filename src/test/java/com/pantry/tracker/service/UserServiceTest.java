@@ -2,50 +2,44 @@ package com.pantry.tracker.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import com.pantry.tracker.model.User;
-import com.pantry.tracker.repository.UserRepository;
+import com.pantry.tracker.model.SupabaseUser;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-@ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+    private final UserService userService = new UserService();
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @InjectMocks
-    private UserService userService;
-
-    @Test
-    void registerHashesPasswordAndNormalizesEmail() {
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("HASHED");
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        User user = userService.register("  Test@Example.com ", "password123");
-
-        assertThat(user.getEmail()).isEqualTo("test@example.com");
-        assertThat(user.getPasswordHash()).isEqualTo("HASHED");
+    @AfterEach
+    void clear() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
-    void registerRejectsAnEmailThatIsAlreadyUsed() {
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
+    void currentIdComesFromTheSupabaseUser() {
+        UUID id = UUID.randomUUID();
+        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
+                new SupabaseUser(id, "owner@example.com"), null, List.of()));
 
-        assertThatThrownBy(() -> userService.register("Test@Example.com", "password123"))
-                .isInstanceOf(IllegalArgumentException.class);
-        verify(userRepository, never()).save(any());
+        assertThat(userService.currentId()).isEqualTo(id);
+    }
+
+    @Test
+    void currentIdFailsWhenNobodyIsSignedIn() {
+        assertThatThrownBy(userService::currentId).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void supabaseErrorsBecomeFriendlyMessages() {
+        assertThat(SupabaseAuthClient.friendly("{\"error_code\":\"invalid_credentials\"}"))
+                .isEqualTo("Invalid email or password.");
+        assertThat(SupabaseAuthClient.friendly("{\"error_code\":\"email_not_confirmed\"}"))
+                .startsWith("Please confirm your email");
+        assertThat(SupabaseAuthClient.normalizeEmail("  Test@Example.com ")).isEqualTo("test@example.com");
     }
 }

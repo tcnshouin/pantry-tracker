@@ -5,10 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,9 +24,8 @@ public class LocationGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @Column(nullable = false)
     private String name;
@@ -36,8 +34,8 @@ public class LocationGroup {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public LocationGroup(User user, String name) {
-        this.user = user;
+    public LocationGroup(UUID userId, String name) {
+        this.userId = userId;
         this.name = name;
     }
 }
