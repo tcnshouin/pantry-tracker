@@ -241,6 +241,7 @@
                 <input class="form-check-input pt-manual-switch" type="checkbox" role="switch" name="manual"
                        value="true" th:id="${prefix} + '-manual'" th:checked="${manual}">
                 <label class="form-check-label" th:for="${prefix} + '-manual'">No set shelf life</label>
+                <button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="No automatic expiry. You'll enter the date manually for every item in this category." aria-label="About no set shelf life"><i class="bi bi-info-lg"></i></button>
             </div>
         </div>
         <div class="col-md-6">

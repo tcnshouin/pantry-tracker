@@ -244,6 +244,7 @@
                                        th:checked="${!it.manualExpiry()}" th:disabled="${it.manualExpiry()}"
                                        th:id="'ab-auto-' + ${it.id()}">
                                 <label class="form-check-label" th:for="'ab-auto-' + ${it.id()}">Auto expiry</label>
+                                <button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Uses the category's shelf life to set the date, e.g. Bread (3 days) added today expires in 3 days. Untick to enter the printed date." aria-label="About auto expiry"><i class="bi bi-info-lg"></i></button>
                             </div>
                         </div>
                         <div class="col-6 col-md-3">

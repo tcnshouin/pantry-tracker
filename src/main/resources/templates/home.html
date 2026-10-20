@@ -273,6 +273,7 @@
                                 <label class="form-check-label" th:for="'ai-auto-' + ${g.group().id()}">
                                     Auto-calculate expiry from category
                                 </label>
+                                <button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Pick a category and we'll estimate the expiry, e.g. Canned fish lasts 3 years. Have the real date? Untick this and enter it." aria-label="About auto-calculated expiry"><i class="bi bi-info-lg"></i></button>
                             </div>
                             <div class="pt-manual-hint mt-2" hidden>
                                 <i class="bi bi-exclamation-circle-fill me-1"></i>This category has no set shelf life,
