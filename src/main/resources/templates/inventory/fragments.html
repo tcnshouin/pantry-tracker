@@ -236,12 +236,13 @@
                         <div class="col-6 col-md-4">
                             <label class="form-label pt-field-label" th:for="'nb-e-' + ${it.id()}">Expiration</label>
                             <input type="date" name="expirationDate" class="form-control pt-date"
-                                   th:id="'nb-e-' + ${it.id()}">
+                                   th:id="'nb-e-' + ${it.id()}" th:required="${it.manualExpiry()}">
                         </div>
                         <div class="col-6 col-md-2">
                             <div class="form-check pt-auto-check mb-2">
                                 <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry" value="true"
-                                       checked th:id="'ab-auto-' + ${it.id()}">
+                                       th:checked="${!it.manualExpiry()}" th:disabled="${it.manualExpiry()}"
+                                       th:id="'ab-auto-' + ${it.id()}">
                                 <label class="form-check-label" th:for="'ab-auto-' + ${it.id()}">Auto expiry</label>
                             </div>
                         </div>

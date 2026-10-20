@@ -4,6 +4,7 @@ import com.pantry.tracker.model.Views.DuplicatePrompt;
 import com.pantry.tracker.model.Views.GroupWithItems;
 import com.pantry.tracker.model.Views.ItemView;
 import com.pantry.tracker.service.DataStructures.UndoAction;
+import com.pantry.tracker.service.CategoryService;
 import com.pantry.tracker.service.DataStructures.UndoStack;
 import com.pantry.tracker.service.GroceryService;
 import com.pantry.tracker.service.InventoryService;
@@ -25,11 +26,14 @@ public class HomeController {
     private final UserService userService;
     private final InventoryService inventory;
     private final GroceryService groceryService;
+    private final CategoryService categoryService;
 
-    public HomeController(UserService userService, InventoryService inventory, GroceryService groceryService) {
+    public HomeController(UserService userService, InventoryService inventory, GroceryService groceryService,
+                          CategoryService categoryService) {
         this.userService = userService;
         this.inventory = inventory;
         this.groceryService = groceryService;
+        this.categoryService = categoryService;
     }
 
     @GetMapping("/")
@@ -39,7 +43,8 @@ public class HomeController {
         model.addAttribute("overview", inventory.overview(userId));
         model.addAttribute("groups", inventory.groupsWithItems(userId));
         model.addAttribute("allItems", inventory.allItemsByDateAdded(userId));
-        model.addAttribute("categories", inventory.categoryOptions());
+        model.addAttribute("categories", categoryService.options(userId));
+        model.addAttribute("categoryGroups", categoryService.grouped(userId));
         model.addAttribute("undoLabel", undoStack(session).peekLabel());
         return "home";
     }
@@ -176,8 +181,12 @@ public class HomeController {
     @PostMapping("/items/{id}/quantity")
     public String adjustItemQuantity(@PathVariable Long id, @RequestParam int delta, Model model, HttpSession session) {
         UUID userId = userService.currentId();
-        Long groupId = inventory.adjustItemQuantity(userId, id, delta, undoStack(session));
-        return groupBody(userId, groupId, model, session, null, null);
+        try {
+            Long groupId = inventory.adjustItemQuantity(userId, id, delta, undoStack(session));
+            return groupBody(userId, groupId, model, session, null, null);
+        } catch (IllegalArgumentException ex) {
+            return groupBody(userId, inventory.groupIdOfItem(userId, id), model, session, null, ex.getMessage());
+        }
     }
 
     @PostMapping("/batches/{id}/delete")
@@ -208,7 +217,7 @@ public class HomeController {
         GroupWithItems body = inventory.groupBody(userId, groupId);
         model.addAttribute("group", body.group());
         model.addAttribute("items", body.items());
-        model.addAttribute("categories", inventory.categoryOptions());
+        model.addAttribute("categories", categoryService.options(userId));
         model.addAttribute("prompt", prompt);
         model.addAttribute("addError", addError);
         model.addAttribute("inlineUndo", undoStack(session).peekLabel());

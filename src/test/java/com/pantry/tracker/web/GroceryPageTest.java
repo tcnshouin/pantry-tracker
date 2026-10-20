@@ -88,7 +88,7 @@ class GroceryPageTest {
 
     @Test
     void putAwayMovesCheckedItemsAndSaysHowMany() throws Exception {
-        when(groceryService.putAway(userId, List.of(1L))).thenReturn(1);
+        when(groceryService.putAway(userId, List.of(1L))).thenReturn(new GroceryService.PutAwayResult(1, 0));
 
         mockMvc.perform(post("/grocery/put-away").with(signedIn).with(csrf()).param("ids", "1"))
                 .andExpect(status().is3xxRedirection())

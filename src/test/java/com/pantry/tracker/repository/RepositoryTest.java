@@ -7,6 +7,7 @@ import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views.CategoryOption;
+import com.pantry.tracker.service.CategoryService;
 import com.pantry.tracker.service.InventoryService;
 import com.pantry.tracker.service.InventoryService.PurgeResult;
 import java.time.Duration;
@@ -24,7 +25,7 @@ import org.springframework.context.annotation.Import;
 @DataJpaTest
 @EnabledIf("com.pantry.tracker.SupabaseAvailable#configured")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(InventoryService.class)
+@Import({InventoryService.class, CategoryService.class})
 class RepositoryTest {
 
     @Autowired
@@ -45,14 +46,24 @@ class RepositoryTest {
     @Autowired
     private InventoryService inventory;
 
-    @Test
-    void seedDataHasFifteenCategoriesWithShelfLife() {
-        List<CategoryOption> options = inventory.categoryOptions();
+    @Autowired
+    private CategoryService categoryService;
 
-        assertThat(options).hasSize(15);
-        assertThat(options).allSatisfy(opt -> assertThat(opt.shelfLifeDays()).isPositive());
-        assertThat(options).filteredOn(opt -> opt.name().startsWith("Bread"))
-                .singleElement().satisfies(opt -> assertThat(opt.shelfLifeDays()).isEqualTo(3));
+    @Test
+    void starterCategoriesAreCopiedForANewUser() {
+        List<Category> templates = categories.findByUserIdIsNullOrderByNameAsc();
+        assertThat(templates).hasSizeGreaterThan(80);
+        assertThat(templates).allSatisfy(c -> assertThat(c.getGroupName()).isNotBlank());
+        assertThat(templates).filteredOn(c -> c.getName().equals("Others"))
+                .singleElement().satisfies(c -> assertThat(c.getShelfLifeDays()).isNull());
+        assertThat(templates).filteredOn(c -> c.getName().equals("Bread"))
+                .singleElement().satisfies(c -> assertThat(c.getShelfLifeDays()).isEqualTo(3));
+
+        UUID newUser = UUID.randomUUID();
+        List<CategoryOption> options = categoryService.options(newUser);
+
+        assertThat(options).hasSize(templates.size());
+        assertThat(categories.countByUserId(newUser)).isEqualTo(templates.size());
     }
 
     @Test

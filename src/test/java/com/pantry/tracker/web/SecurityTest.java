@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.pantry.tracker.config.AppConfig;
 import com.pantry.tracker.model.SupabaseUser;
+import com.pantry.tracker.service.CategoryService;
 import com.pantry.tracker.service.GroceryService;
 import com.pantry.tracker.service.InventoryService;
 import com.pantry.tracker.service.SupabaseAuthClient;
@@ -47,6 +48,9 @@ class SecurityTest {
 
     @MockitoBean
     private GroceryService groceryService;
+
+    @MockitoBean
+    private CategoryService categoryService;
 
     @Test
     void pagesRedirectToLoginWhenNotSignedIn() throws Exception {

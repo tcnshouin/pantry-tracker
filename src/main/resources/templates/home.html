@@ -236,8 +236,10 @@
                                 <select name="categoryId" class="form-select"
                                         th:id="'ai-cat-' + ${g.group().id()}" required>
                                     <option value="" selected>Choose…</option>
-                                    <option th:each="c : ${categories}" th:value="${c.id()}"
-                                            th:text="${c.name()}">Category</option>
+                                    <optgroup th:each="cg : ${categoryGroups}" th:label="${cg.key}">
+                                        <option th:each="c : ${cg.value}" th:value="${c.id()}"
+                                                th:data-manual="${c.manualExpiry()}" th:text="${c.name()}">Category</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="row g-2">
@@ -262,6 +264,10 @@
                                 <label class="form-check-label" th:for="'ai-auto-' + ${g.group().id()}">
                                     Auto-calculate expiry from category
                                 </label>
+                            </div>
+                            <div class="pt-manual-hint mt-2" hidden>
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>This category has no set shelf life,
+                                so enter an expiration date.
                             </div>
                         </div>
                         <div class="modal-footer">

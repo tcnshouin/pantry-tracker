@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pantry.tracker.model.Batch;
+import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views;
@@ -143,6 +144,18 @@ class InventoryServiceTest {
         assertThat(InventoryService.stockStatus(plenty)).isEqualTo(StockStatus.IN_STOCK);
 
         assertThat(InventoryService.stockStatus(itemWith(1))).isEqualTo(StockStatus.IN_STOCK);
+    }
+
+    @Test
+    void expiryComesFromShelfLifeOrMustBeTypedForOthers() {
+        Category rice = new Category(user, "Rice", "Rice & Grains", 730);
+        Category others = new Category(user, "Others", "Others", null);
+
+        assertThat(InventoryService.resolveExpiry(rice, today, null, true)).isEqualTo(today.plusDays(730));
+        assertThat(InventoryService.resolveExpiry(others, today, today.plusDays(5), true)).isEqualTo(today.plusDays(5));
+        assertThatThrownBy(() -> InventoryService.resolveExpiry(others, today, null, true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Enter an expiration date");
     }
 
     @Test

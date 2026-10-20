@@ -103,11 +103,19 @@ public class GroceryService {
         groceryRepository.delete(entry);
     }
 
+    public record PutAwayResult(int putAway, int needDate) {
+    }
+
     @Transactional
-    public int putAway(UUID userId, List<Long> ids) {
+    public PutAwayResult putAway(UUID userId, List<Long> ids) {
         int count = 0;
+        int needDate = 0;
         for (GroceryListItem entry : groceryRepository.findByUserIdAndIdIn(userId, ids)) {
             if (entry.getItem() == null) {
+                continue;
+            }
+            if (entry.getItem().getCategory().getShelfLifeDays() == null) {
+                needDate++;
                 continue;
             }
             inventoryService.addBatch(userId, entry.getItem().getId(), entry.getQuantityNeeded(), null, true, null);
@@ -115,7 +123,7 @@ public class GroceryService {
             groceryRepository.delete(entry);
             count++;
         }
-        return count;
+        return new PutAwayResult(count, needDate);
     }
 
     private List<QuickAddOption> quickAddOptions(UUID userId, Set<Long> onList) {

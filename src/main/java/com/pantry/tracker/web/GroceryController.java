@@ -64,9 +64,17 @@ public class GroceryController {
             ra.addFlashAttribute("error", "Tick the items you bought first");
             return "redirect:/grocery";
         }
-        int count = groceryService.putAway(userService.currentId(), ids);
-        ra.addFlashAttribute("success", "Put away " + count + (count == 1 ? " item" : " items")
-                + " into your pantry");
+        GroceryService.PutAwayResult result = groceryService.putAway(userService.currentId(), ids);
+        int count = result.putAway();
+        if (count > 0) {
+            ra.addFlashAttribute("success", "Put away " + count + (count == 1 ? " item" : " items")
+                    + " into your pantry");
+        }
+        if (result.needDate() > 0) {
+            ra.addFlashAttribute("error", result.needDate() + (result.needDate() == 1 ? " item has" : " items have")
+                    + " no set shelf life. Add " + (result.needDate() == 1 ? "it" : "them")
+                    + " from the inventory page with an expiration date.");
+        }
         return "redirect:/grocery";
     }
 

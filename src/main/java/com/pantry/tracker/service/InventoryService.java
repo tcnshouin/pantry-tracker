@@ -7,7 +7,6 @@ import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views;
 import com.pantry.tracker.model.Views.AddedItem;
 import com.pantry.tracker.model.Views.BatchView;
-import com.pantry.tracker.model.Views.CategoryOption;
 import com.pantry.tracker.model.Views.ExpiringEntry;
 import com.pantry.tracker.model.Views.FreshnessStatus;
 import com.pantry.tracker.model.Views.GroupWithItems;
@@ -64,15 +63,6 @@ public class InventoryService {
     }
 
     public record PurgeResult(int itemsPurged, int batchesPurged) {
-    }
-
-    @Transactional(readOnly = true)
-    public List<CategoryOption> categoryOptions() {
-        List<CategoryOption> options = new ArrayList<>();
-        for (Object[] row : categoryRepository.findOptionRows()) {
-            options.add(new CategoryOption((Long) row[0], (String) row[1], (Integer) row[2]));
-        }
-        return options;
     }
 
     @Transactional(readOnly = true)
@@ -171,8 +161,8 @@ public class InventoryService {
     public void createItem(UUID userId, Long groupId, String name, Long categoryId, int quantity,
                            LocalDate expirationDate, boolean autoExpiry, UndoStack undo) {
         LocationGroup group = findGroup(userId, groupId);
-        Category category = categoryRepository.findById(categoryId).orElseThrow();
-        LocalDate expiry = resolveExpiry(categoryId, LocalDate.now(), expirationDate, autoExpiry);
+        Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
+        LocalDate expiry = resolveExpiry(category, LocalDate.now(), expirationDate, autoExpiry);
         Item item = new Item(userId, name.trim(), category, group);
         Batch batch = new Batch(item, Math.max(0, quantity), expiry);
         batch.setAutoExpiry(autoExpiry);
@@ -189,7 +179,7 @@ public class InventoryService {
     public Long updateItem(UUID userId, Long itemId, String name, Long categoryId, boolean lowStockEnabled,
                            Integer lowStockThreshold, UndoStack undo) {
         Item item = findItem(userId, itemId);
-        Category category = categoryRepository.findById(categoryId).orElseThrow();
+        Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
         if (undo != null) {
             UndoAction action = new UndoAction(UndoAction.Type.RESTORE_ITEM, "Edit item \"" + item.getName() + "\"");
             action.itemId = item.getId();
@@ -238,7 +228,7 @@ public class InventoryService {
     public Long addBatch(UUID userId, Long itemId, int quantity, LocalDate expirationDate, boolean autoExpiry,
                          UndoStack undo) {
         Item item = findItem(userId, itemId);
-        LocalDate expiry = resolveExpiry(item.getCategory().getId(), LocalDate.now(), expirationDate, autoExpiry);
+        LocalDate expiry = resolveExpiry(item.getCategory(), LocalDate.now(), expirationDate, autoExpiry);
         Batch batch = new Batch(item, Math.max(0, quantity), expiry);
         batch.setAutoExpiry(autoExpiry);
         applyEmptySince(batch);
@@ -258,7 +248,7 @@ public class InventoryService {
                             boolean autoExpiry, UndoStack undo) {
         Batch batch = findBatch(userId, batchId);
         LocalDate newDateAdded = dateAdded != null ? dateAdded : batch.getDateAdded();
-        LocalDate expiry = resolveExpiry(batch.getItem().getCategory().getId(), newDateAdded, expirationDate,
+        LocalDate expiry = resolveExpiry(batch.getItem().getCategory(), newDateAdded, expirationDate,
                 autoExpiry);
         rememberBatch(batch, undo, "Edit batch in \"" + batch.getItem().getName() + "\"");
         batch.setQuantity(Math.max(0, quantity));
@@ -371,7 +361,7 @@ public class InventoryService {
                     .ifPresent(itemRepository::delete);
             case RESTORE_ITEM -> itemRepository.findByIdAndUserId(action.itemId, userId).ifPresent(item -> {
                 item.setName(action.name);
-                categoryRepository.findById(action.categoryId).ifPresent(item::setCategory);
+                categoryRepository.findByIdAndUserId(action.categoryId, userId).ifPresent(item::setCategory);
                 item.setLowStockEnabled(action.lowStockEnabled);
                 item.setLowStockThreshold(action.lowStockThreshold);
             });
@@ -514,12 +504,13 @@ public class InventoryService {
                 itemFreshness(item, today, expiringSoonDays), daysUntil(earliestExpiry(item), today),
                 stockStatus(item),
                 item.isLowStockEnabled(), item.getLowStockThreshold(),
-                item.isPurgeOverride(), daysUntilItemPurge(item, now), batches);
+                item.isPurgeOverride(), daysUntilItemPurge(item, now), batches,
+                item.getCategory().getShelfLifeDays() == null);
     }
 
     private void recreateItem(UUID userId, UndoAction action) {
         LocationGroup group = groupRepository.findByIdAndUserId(action.groupId, userId).orElse(null);
-        Category category = categoryRepository.findById(action.categoryId).orElse(null);
+        Category category = categoryRepository.findByIdAndUserId(action.categoryId, userId).orElse(null);
         if (group == null || category == null) {
             return;
         }
@@ -547,12 +538,15 @@ public class InventoryService {
         }
     }
 
-    private LocalDate resolveExpiry(Long categoryId, LocalDate dateAdded, LocalDate manualDate, boolean autoExpiry) {
-        if (!autoExpiry) {
+    static LocalDate resolveExpiry(Category category, LocalDate dateAdded, LocalDate manualDate, boolean autoExpiry) {
+        Integer days = category.getShelfLifeDays();
+        if (days == null && manualDate == null) {
+            throw new IllegalArgumentException("\"" + category.getName()
+                    + "\" has no set shelf life. Enter an expiration date.");
+        }
+        if (!autoExpiry || days == null) {
             return manualDate;
         }
-        Integer days = categoryRepository.findShelfLifeDays(categoryId).orElseThrow(() ->
-                new IllegalArgumentException("This category has no shelf-life reference; enter an expiration date manually"));
         LocalDate base = dateAdded == null ? LocalDate.now() : dateAdded;
         return base.plusDays(days);
     }

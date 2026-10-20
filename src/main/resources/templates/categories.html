@@ -7,43 +7,240 @@
     <title>Categories</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <h1 class="h3 mb-3">Categories</h1>
-
-    <div class="row g-4">
-        <div class="col-md-5">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <label class="form-label fw-semibold">Category picker</label>
-                    <div th:replace="~{fragments/category-select :: categorySelect(${categories}, 'categoryId')}"></div>
-                    <p class="form-text mb-0">Type to filter. The badge shows the shelf-life estimate.</p>
-                </div>
+<div layout:fragment="content" class="pt-cat-page">
+    <div class="pt-page-head">
+        <div class="d-flex align-items-center gap-3">
+            <span class="pt-page-icon" aria-hidden="true"><i class="bi bi-tags-fill"></i></span>
+            <div>
+                <h1 class="pt-page-title mb-0">Categories</h1>
+                <p class="text-muted mb-0">Your categories and how long each one usually lasts.</p>
             </div>
         </div>
-        <div class="col-md-7">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h2 class="h5 mb-3">Reference list</h2>
-                    <table class="table table-sm mb-0">
-                        <thead>
-                        <tr>
-                            <th scope="col">Category</th>
-                            <th scope="col" class="text-end">Shelf life (days)</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="opt : ${categories}">
-                            <td th:text="${opt.name()}">Category</td>
-                            <td class="text-end" th:text="${opt.shelfLifeDays()}">0</td>
-                        </tr>
-                        </tbody>
-                    </table>
+        <button type="button" class="btn pt-btn-new" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
+            <i class="bi bi-plus-lg me-2"></i>New Category
+        </button>
+    </div>
+
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-7">
+                    <label for="cat-search" class="form-label pt-field-label">Search categories</label>
+                    <div class="pt-search">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <input type="search" id="cat-search" class="form-control" placeholder="Search categories..."
+                               autocomplete="off">
+                    </div>
                 </div>
+                <div class="col-md-5">
+                    <label for="cat-group" class="form-label pt-field-label">Category Picker</label>
+                    <select id="cat-group" class="form-select">
+                        <option value="">All categories</option>
+                        <option th:each="g : ${groups}" th:value="${g}" th:text="${g}">Group</option>
+                    </select>
+                </div>
+            </div>
+            <p class="form-text mb-0 mt-2">Type to filter, or pick a group.
+                Showing <span id="cat-shown" th:text="${rows.size()}">0</span> of <span th:text="${rows.size()}">0</span>.</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 pt-cat-table">
+                <thead>
+                <tr>
+                    <th scope="col">Category</th>
+                    <th scope="col">Category Group</th>
+                    <th scope="col">Shelf life</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <th:block th:each="row : ${rows}" th:with="c=${row.category()}">
+                    <tr class="pt-cat-row" th:data-name="${c.name()}" th:data-group="${c.groupName()}">
+                        <td>
+                            <span class="fw-semibold" th:text="${c.name()}">Category</span>
+                            <span th:if="${row.itemCount() > 0}" class="d-block small text-muted"
+                                  th:text="${row.itemCount()} + (${row.itemCount() == 1} ? ' item' : ' items')">2 items</span>
+                        </td>
+                        <td><span class="badge pt-cat-badge" th:text="${c.groupName()}">Group</span></td>
+                        <td>
+                            <span th:if="${c.manualExpiry()}" class="badge rounded-pill pt-badge-accent">Set manually</span>
+                            <span th:unless="${c.manualExpiry()}" th:text="${c.shelfLifeText()}">3 days</span>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <button type="button" class="btn btn-sm pt-icon-btn pt-cat-edit-btn" title="Edit category"
+                                    th:attr="aria-label='Edit ' + ${c.name()},data-edit='cat-edit-' + ${c.id()}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <div class="dropdown d-inline-block">
+                                <button type="button" class="btn btn-sm pt-more-btn" data-bs-toggle="dropdown"
+                                        data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false"
+                                        th:attr="aria-label='More actions for ' + ${c.name()}">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end pt-menu-list">
+                                    <li>
+                                        <form th:action="@{/categories/{id}/delete(id=${c.id()})}" method="post"
+                                              onsubmit="return confirm('Delete this category?');">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash3 me-2"></i>Delete category
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="pt-cat-edit" th:id="'cat-edit-' + ${c.id()}" hidden>
+                        <td colspan="4">
+                            <form th:action="@{/categories/{id}(id=${c.id()})}" method="post" class="pt-panel mt-0">
+                                <div class="pt-panel-title"><i class="bi bi-pencil-square me-2"></i>Edit category</div>
+                                <div th:replace="~{categories :: categoryFields('e' + ${c.id()}, ${c.name()}, ${c.groupName()}, ${c.shelfLifeAmount()}, ${c.shelfLifeUnit()}, ${c.manualExpiry()})}"></div>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <button type="button" class="btn btn-outline-secondary pt-cat-cancel"
+                                            th:attr="data-edit='cat-edit-' + ${c.id()}">Cancel</button>
+                                    <button type="submit" class="btn pt-btn-save"><i class="bi bi-check2 me-1"></i>Save</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                </th:block>
+                <tr id="cat-none" hidden>
+                    <td colspan="4" class="text-center text-muted py-4">No categories match your search.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <datalist id="cat-group-list">
+        <option th:each="g : ${groups}" th:value="${g}"></option>
+    </datalist>
+
+    <div class="modal fade" id="newCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered pt-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="pt-modal-icon" aria-hidden="true"><i class="bi bi-tag"></i></span>
+                    <div class="me-auto">
+                        <h2 class="modal-title h5 mb-0">New Category</h2>
+                        <div class="small text-muted">Only you will see it</div>
+                    </div>
+                    <button type="button" class="pt-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <form th:action="@{/categories}" method="post">
+                    <div class="modal-body">
+                        <div th:replace="~{categories :: categoryFields('new', '', '', 1, 'months', false)}"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-pt">Add category</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <div th:replace="~{fragments/category-select :: categorySelectScript}"></div>
+    <script>
+        (function () {
+            var search = document.getElementById('cat-search');
+            var group = document.getElementById('cat-group');
+            var shown = document.getElementById('cat-shown');
+            var none = document.getElementById('cat-none');
+
+            function filter() {
+                var term = search.value.trim().toLowerCase();
+                var pick = group.value;
+                var count = 0;
+                document.querySelectorAll('.pt-cat-row').forEach(function (row) {
+                    var match = row.dataset.name.toLowerCase().indexOf(term) !== -1
+                        && (!pick || row.dataset.group === pick);
+                    row.hidden = !match;
+                    var edit = row.nextElementSibling;
+                    if (!match && edit && edit.classList.contains('pt-cat-edit')) {
+                        edit.hidden = true;
+                    }
+                    if (match) {
+                        count++;
+                    }
+                });
+                shown.textContent = count;
+                none.hidden = count > 0;
+            }
+
+            function syncManual(box) {
+                var fields = box.closest('.pt-cat-fields');
+                fields.querySelectorAll('.pt-shelf-input').forEach(function (input) {
+                    input.disabled = box.checked;
+                });
+            }
+
+            search.addEventListener('input', filter);
+            group.addEventListener('change', filter);
+
+            document.addEventListener('click', function (event) {
+                var button = event.target.closest('.pt-cat-edit-btn, .pt-cat-cancel');
+                if (!button) {
+                    return;
+                }
+                var row = document.getElementById(button.dataset.edit);
+                row.hidden = button.classList.contains('pt-cat-cancel') ? true : !row.hidden;
+                if (!row.hidden) {
+                    row.querySelector('input[name="name"]').focus();
+                }
+            });
+
+            document.addEventListener('change', function (event) {
+                if (event.target.classList.contains('pt-manual-switch')) {
+                    syncManual(event.target);
+                }
+            });
+
+            document.querySelectorAll('.pt-manual-switch').forEach(syncManual);
+        })();
+    </script>
+</div>
+
+<div th:fragment="categoryFields(prefix, name, group, amount, unit, manual)" class="pt-cat-fields">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label pt-field-label" th:for="${prefix} + '-name'">Category name</label>
+            <input type="text" name="name" class="form-control" th:id="${prefix} + '-name'" th:value="${name}"
+                   placeholder="e.g. Canned fish" required maxlength="120">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label pt-field-label" th:for="${prefix} + '-group'">Category Group</label>
+            <input type="text" name="groupName" class="form-control" list="cat-group-list"
+                   th:id="${prefix} + '-group'" th:value="${group}" placeholder="e.g. Canned Goods" maxlength="60">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label pt-field-label" th:for="${prefix} + '-amount'">Shelf life</label>
+            <div class="input-group">
+                <input type="number" name="amount" min="1" class="form-control pt-shelf-input"
+                       th:id="${prefix} + '-amount'" th:value="${amount}" required>
+                <select name="unit" class="form-select pt-shelf-input" aria-label="Shelf life unit">
+                    <option value="days" th:selected="${unit == 'days'}">days</option>
+                    <option value="weeks" th:selected="${unit == 'weeks'}">weeks</option>
+                    <option value="months" th:selected="${unit == 'months'}">months</option>
+                    <option value="years" th:selected="${unit == 'years'}">years</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check form-switch pt-switch-box w-100">
+                <input class="form-check-input pt-manual-switch" type="checkbox" role="switch" name="manual"
+                       value="true" th:id="${prefix} + '-manual'" th:checked="${manual}">
+                <label class="form-check-label" th:for="${prefix} + '-manual'">No set shelf life (enter expiry by hand)</label>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pantry.tracker.model.Batch;
+import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.GroceryListItem;
 import com.pantry.tracker.model.GroceryListItem.Source;
 import com.pantry.tracker.model.Item;
@@ -51,6 +52,7 @@ class GroceryServiceTest {
         item.setLowStockEnabled(true);
         item.setLowStockThreshold(2);
         item.setLowStockSuggested(alreadySuggested);
+        item.setCategory(new Category(user, "Rice", "Rice & Grains", 730));
         item.setBatches(new ArrayList<>());
         Batch batch = new Batch();
         batch.setQuantity(quantity);
@@ -108,13 +110,28 @@ class GroceryServiceTest {
         GroceryListItem orphan = new GroceryListItem(user, null, "Old thing", 1, Source.MANUAL);
         when(groceryRepository.findByUserIdAndIdIn(user, List.of(1L, 2L))).thenReturn(List.of(suggested, orphan));
 
-        int count = groceryService.putAway(user, List.of(1L, 2L));
+        GroceryService.PutAwayResult result = groceryService.putAway(user, List.of(1L, 2L));
 
-        assertThat(count).isEqualTo(1);
+        assertThat(result.putAway()).isEqualTo(1);
         verify(inventoryService).addBatch(eq(user), eq(11L), eq(3), isNull(), eq(true), isNull());
         verify(groceryRepository).delete(suggested);
         verify(groceryRepository, never()).delete(orphan);
         assertThat(rice.isLowStockSuggested()).isFalse();
+    }
+
+    @Test
+    void putAwaySkipsItemsWhoseCategoryNeedsAManualDate() {
+        Item other = item(0, false);
+        other.setId(12L);
+        other.setCategory(new Category(user, "Others", "Others", null));
+        GroceryListItem entry = new GroceryListItem(user, other, "Mystery jar", 1, Source.MANUAL);
+        when(groceryRepository.findByUserIdAndIdIn(user, List.of(3L))).thenReturn(List.of(entry));
+
+        GroceryService.PutAwayResult result = groceryService.putAway(user, List.of(3L));
+
+        assertThat(result.putAway()).isZero();
+        assertThat(result.needDate()).isEqualTo(1);
+        verify(groceryRepository, never()).delete(entry);
     }
 
     @Test
