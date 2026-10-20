@@ -201,14 +201,16 @@
                             <h2 class="modal-title h5 mb-0">Add item</h2>
                             <div class="small text-muted">to <span class="fw-semibold" th:text="${g.group().name()}">group</span></div>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="pt-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
                     <form th:attr="hx-post=@{/locations/{id}/items(id=${g.group().id()})},hx-target='#group-body-' + ${g.group().id()}"
                           hx-swap="innerHTML">
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label" th:for="'ai-name-' + ${g.group().id()}">Item name</label>
-                                <input type="text" name="name" class="form-control"
+                                <input type="text" name="name" class="form-control" placeholder="Enter item name..."
                                        th:id="'ai-name-' + ${g.group().id()}" required>
                             </div>
                             <div class="mb-3">
@@ -223,12 +225,16 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <label class="form-label" th:for="'ai-qty-' + ${g.group().id()}">Quantity</label>
-                                    <input type="number" name="quantity" min="0" value="1" class="form-control"
-                                           th:id="'ai-qty-' + ${g.group().id()}">
+                                    <div class="pt-stepper">
+                                        <button type="button" class="pt-step" data-step="-1" aria-label="One less">−</button>
+                                        <input type="number" name="quantity" min="1" value="1" class="pt-qty-input"
+                                               th:id="'ai-qty-' + ${g.group().id()}">
+                                        <button type="button" class="pt-step" data-step="1" aria-label="One more">+</button>
+                                    </div>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label" th:for="'ai-exp-' + ${g.group().id()}">Expiration</label>
-                                    <input type="date" name="expirationDate" class="form-control"
+                                    <input type="date" name="expirationDate" class="form-control pt-date"
                                            th:id="'ai-exp-' + ${g.group().id()}">
                                 </div>
                             </div>

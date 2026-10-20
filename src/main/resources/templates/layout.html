@@ -256,7 +256,7 @@
             top: -30px;
         }
         .pt-modal .modal-content {
-            border: 3px solid #1B3324;
+            border: 7px solid #C3DCC7;
             border-radius: 1rem;
             background-color: var(--pt-card);
             box-shadow: 0 1.5rem 3.5rem rgba(31, 42, 36, 0.28), 0 0.35rem 1rem rgba(31, 42, 36, 0.14);
@@ -265,13 +265,78 @@
         .pt-modal .modal-header {
             gap: 0.85rem;
             background-color: var(--pt-head);
-            border-top: 4px solid var(--pt-primary);
             border-bottom: 1px solid var(--pt-line);
             padding: 1rem 1.5rem;
         }
         .pt-modal .modal-title {
             color: #28452F;
             font-weight: 700;
+            font-size: 1.45rem;
+        }
+        .pt-modal-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 1px solid var(--pt-line);
+            border-radius: 50%;
+            background: linear-gradient(145deg, #FFFFFF 0%, #DDEEDF 55%, #B9D6BF 100%);
+            color: #28452F;
+            font-size: 0.95rem;
+            box-shadow: 0 0.2rem 0.45rem rgba(31, 42, 36, 0.15);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .pt-modal-close:hover,
+        .pt-modal-close:focus-visible {
+            background: linear-gradient(145deg, #EEF6EF 0%, #B9D6BF 60%, #8FBF99 100%);
+            box-shadow: 0 0.3rem 0.7rem rgba(31, 42, 36, 0.22);
+            transform: scale(1.05);
+        }
+        .pt-stepper {
+            display: flex;
+            align-items: center;
+            background-color: var(--pt-row);
+            border: 1px solid var(--pt-line);
+            border-radius: 0.6rem;
+            overflow: hidden;
+        }
+        .pt-stepper:focus-within {
+            background-color: var(--pt-white);
+            border-color: var(--pt-primary);
+            box-shadow: 0 0 0 0.2rem var(--pt-tint);
+        }
+        .pt-stepper .pt-step {
+            border: 0;
+            background: transparent;
+            color: rgba(31, 42, 36, 0.6);
+            font-size: 1.1rem;
+            width: 2.6rem;
+            align-self: stretch;
+        }
+        .pt-stepper .pt-step:hover {
+            background-color: var(--pt-tint);
+            color: #28452F;
+        }
+        .pt-stepper .pt-qty-input {
+            flex: 1 1 auto;
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            background: transparent;
+            padding: 0.375rem 0;
+            box-shadow: none;
+        }
+        .pt-stepper .pt-qty-input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        .pt-date {
+            text-transform: uppercase;
+        }
+        .pt-date::-webkit-datetime-edit {
+            text-transform: uppercase;
         }
         .pt-modal-icon {
             display: inline-flex;
@@ -324,6 +389,17 @@
         .pt-modal .modal-footer .btn {
             min-width: 6.5rem;
             border-radius: 0.6rem;
+        }
+        .pt-modal .modal-footer .btn-pt {
+            background-color: #28452F;
+            border-color: #28452F;
+            box-shadow: 0 0.4rem 0.9rem rgba(40, 69, 47, 0.38);
+        }
+        .pt-modal .modal-footer .btn-pt:hover,
+        .pt-modal .modal-footer .btn-pt:focus-visible {
+            background-color: #1B3324;
+            border-color: #1B3324;
+            box-shadow: 0 0.55rem 1.2rem rgba(40, 69, 47, 0.45);
         }
         .pt-empty-art {
             width: 9rem;
