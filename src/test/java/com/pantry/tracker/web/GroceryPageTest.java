@@ -73,7 +73,7 @@ class GroceryPageTest {
                         Matchers.containsString("Recently Stocked"),
                         Matchers.containsString("Rice"),
                         Matchers.containsString("Not in inventory"),
-                        Matchers.containsString("Put Away"))));
+                        Matchers.containsString("Add to Pantry"))));
         verify(groceryService).syncAutoSuggestions(userId);
     }
 
@@ -93,6 +93,6 @@ class GroceryPageTest {
         mockMvc.perform(post("/grocery/put-away").with(signedIn).with(csrf()).param("ids", "1"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/grocery"))
-                .andExpect(flash().attribute("success", "Put away 1 item into your pantry"));
+                .andExpect(flash().attribute("success", "Added 1 item to your pantry"));
     }
 }

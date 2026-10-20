@@ -67,8 +67,8 @@ public class GroceryController {
         GroceryService.PutAwayResult result = groceryService.putAway(userService.currentId(), ids);
         int count = result.putAway();
         if (count > 0) {
-            ra.addFlashAttribute("success", "Put away " + count + (count == 1 ? " item" : " items")
-                    + " into your pantry");
+            ra.addFlashAttribute("success", "Added " + count + (count == 1 ? " item" : " items")
+                    + " to your pantry");
         }
         if (result.needDate() > 0) {
             ra.addFlashAttribute("error", result.needDate() + (result.needDate() == 1 ? " item has" : " items have")

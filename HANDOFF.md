@@ -104,7 +104,7 @@ pantry-tracker/                      (repo root)
 │   └── templates/               # Thymeleaf pages + HTMX fragments
 │       ├── layout.html          #   title bar, ☰ menu, ALL colors/CSS, page JS
 │       ├── home.html            #   home page + left panel
-│       ├── grocery/             #   grocery page (summary, quick add, put away)
+│       ├── grocery/             #   grocery page (summary, quick add, add to pantry)
 │       ├── auth/                #   login, register, forgot/reset password
 │       └── inventory/fragments.html  # item rows, steppers, menus, undo toast
 └── tasks/todo.md                # per-phase checklists, decisions, deferrals
@@ -128,7 +128,7 @@ are CSS variables at the top of `layout.html`). To change how something
 - Expiry auto-calculation and freshness status: fresh / expiring soon /
   **expires today** / expired; low-stock and out-of-stock flags.
 - Grocery list: auto-suggests low/out-of-stock items, manual add (🛒 on an item
-  or **Quick add**), inline − / + quantity, and **Put away**: tick what you
+  or **Quick add**), inline − / + quantity, and **Add to Pantry**: tick what you
   bought and it is added to inventory as new batches with auto-calculated expiry.
 - Auto-purge sweep (7-day item / 3-day batch) with Keep overrides.
 - Per-session undo stack.
@@ -153,7 +153,7 @@ are CSS variables at the top of `layout.html`). To change how something
   suggested vs. added), **Quick add** (searchable pantry items not on the list),
   and **Recently stocked** (last 8 batches added). It refreshes with every action.
 - One merged list with Suggested / Added tags, checkboxes, **Select all**, and
-  **Put away (N)**.
+  **Add to Pantry (N)**.
 
 **Required data structures (for the report)** — all in `service/DataStructures.java`:
 - **HashMap** — duplicate detection (`DuplicateIndex`).
