@@ -139,7 +139,7 @@ are CSS variables at the top of `layout.html`). To change how something
   light yellow page). Colors meet WCAG AA contrast.
 - ☰ slide-out navigation (hover or click) to Home / Grocery / Categories.
 - Full-height left panel that stays in place, each card scrolling on its own:
-  - **By location** — pick which location is shown, with 🔍 search and ＋ add.
+  - **My Pantry** (locations list) — pick which location is shown, with 🔍 search and ＋ add.
   - **Expiring soon** — click an entry to jump to that item (it flashes).
 - One location's inventory shown at a time; the choice is remembered.
 - Item rows: − / + quantity stepper (− uses the soonest-expiring batch first,
@@ -175,7 +175,7 @@ From the latest design review (small, high-value first):
 3. **Screen-reader labels** — add the item name to the −, +, 🛒 and ⋯ button
    labels (e.g. `aria-label="Remove one Bread Pan"`).
 4. **Flag locations that need attention** — a warning dot/count next to each
-   location in the By location list.
+   location in the My Pantry list.
 5. **Make the stat boxes filters** — clicking "Low / out of stock" should show
    just those items.
 
