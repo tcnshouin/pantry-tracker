@@ -262,6 +262,21 @@
             margin-left: 0;
             margin-right: 0;
         }
+        .pt-recent-card.pt-recent-sized {
+            flex: none;
+        }
+        .pt-recent-card.pt-recent-sized .pt-side-scroll {
+            flex: none;
+        }
+        .pt-recent-list li {
+            padding: 0.5rem 0;
+        }
+        .pt-recent-list .fw-semibold {
+            font-size: 0.95rem;
+        }
+        .pt-recent-list .small {
+            font-size: 0.78rem;
+        }
         .pt-summary-body {
             padding-left: 1.25rem !important;
             padding-right: 1.25rem !important;
@@ -295,9 +310,25 @@
             color: var(--pt-text);
             transition: background-color 0.15s ease;
         }
-        .pt-quick-btn .bi {
-            color: var(--pt-link);
-            font-size: 1.1rem;
+        .pt-quick-plus {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 1.75rem;
+            height: 1.75rem;
+            border: 1.5px solid var(--pt-primary);
+            border-radius: 50%;
+            color: var(--pt-primary);
+            font-size: 0.85rem;
+            transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+        .pt-quick-btn:hover .pt-quick-plus,
+        .pt-quick-btn:focus-visible .pt-quick-plus {
+            background-color: var(--pt-primary);
+            color: var(--pt-white);
+            box-shadow: 0 0.35rem 0.8rem rgba(47, 125, 79, 0.45);
+            transform: scale(1.08);
         }
         .pt-quick-btn:hover,
         .pt-quick-btn:focus-visible {
@@ -1466,6 +1497,11 @@
             white-space: nowrap;
             transition: background-color 0.15s ease, transform 0.12s ease, color 0.15s ease;
         }
+        .pt-nav-end {
+            height: 1px;
+            margin: 0.6rem 0.9rem 0;
+            background-color: #B9D3BE;
+        }
         .pt-nav a .bi {
             font-size: 1.15rem;
             width: 1.3rem;
@@ -1519,6 +1555,7 @@
                     <a th:href="@{/}"><i class="bi bi-house"></i> Home</a>
                     <a th:href="@{/grocery}"><i class="bi bi-cart3"></i> Grocery</a>
                     <a th:href="@{/categories}"><i class="bi bi-tags"></i> Categories</a>
+                    <div class="pt-nav-end" aria-hidden="true"></div>
                 </nav>
             </aside>
         </div>
@@ -1601,6 +1638,27 @@
     document.body.addEventListener('htmx:afterSwap', function (event) {
         ptInitTooltips(event.detail && event.detail.target);
     });
+
+    function ptSizeRecent() {
+        var card = document.querySelector('.pt-recent-card');
+        if (!card) {
+            return;
+        }
+        var scroll = card.querySelector('.pt-side-scroll');
+        var items = card.querySelectorAll('.pt-recent-list > li');
+        if (items.length < 4 || window.innerWidth < 992) {
+            card.classList.remove('pt-recent-sized');
+            scroll.style.height = '';
+            return;
+        }
+        card.classList.add('pt-recent-sized');
+        scroll.style.height = '';
+        var top = scroll.getBoundingClientRect().top - scroll.scrollTop;
+        scroll.style.height = Math.round(items[3].getBoundingClientRect().bottom - top) + 'px';
+    }
+
+    window.addEventListener('resize', ptSizeRecent);
+    document.body.addEventListener('htmx:afterSwap', ptSizeRecent);
 
     function ptSyncAllAutoCalc() {
         document.querySelectorAll('.pt-autocalc').forEach(ptApplyAutoCalc);
@@ -1933,6 +1991,7 @@
         ptMarkActiveNav();
         ptInitGroups();
         ptInitTooltips();
+        ptSizeRecent();
         ptSyncPutAway();
     });
     document.body.addEventListener('htmx:afterSwap', ptSyncAllAutoCalc);
