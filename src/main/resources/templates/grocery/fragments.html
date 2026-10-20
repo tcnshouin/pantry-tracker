@@ -98,23 +98,26 @@
         <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
         <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h1 class="h4 mb-0">Grocery List</h1>
+        <div class="pt-page-head">
+            <div class="d-flex align-items-center gap-3">
+                <span class="pt-page-icon" aria-hidden="true"><i class="bi bi-cart3"></i></span>
+                <div>
+                    <h1 class="pt-page-title mb-0">Grocery List</h1>
+                    <p class="text-muted mb-0">Bought something? Tick it and press <span class="fw-semibold">Put Away</span>
+                        to add it to your pantry with its expiry worked out from the category.</p>
+                </div>
+            </div>
             <form th:action="@{/grocery/put-away}" method="post" id="put-away-form"
                   class="d-flex align-items-center gap-3" th:unless="${page.rows().isEmpty()}">
                 <div class="form-check mb-0">
                     <input class="form-check-input" type="checkbox" id="pick-all">
                     <label class="form-check-label" for="pick-all">Select all</label>
                 </div>
-                <button type="submit" class="btn btn-pt" id="put-away-btn" disabled>
+                <button type="submit" class="btn pt-btn-new" id="put-away-btn" disabled>
                     <i class="bi bi-box-arrow-in-down me-1"></i>Put Away (<span id="put-away-count">0</span>)
                 </button>
             </form>
         </div>
-        <p class="text-muted small mb-3">
-            Bought something? Tick it and press <span class="fw-semibold">Put Away</span> to add it to your pantry
-            with its expiry worked out from the category.
-        </p>
 
         <div th:if="${page.rows().isEmpty()}" class="card shadow-sm">
             <div class="card-body text-center py-5">
@@ -162,7 +165,6 @@
                     </button>
                 </li>
             </ul>
-            <div class="pt-list-end pt-list-end-pad" aria-hidden="true"></div>
         </div>
     </section>
 </th:block>

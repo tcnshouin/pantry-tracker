@@ -188,6 +188,7 @@
             }
         }
         .pt-side-card {
+            background: linear-gradient(0deg, #E3F0E5 0%, #F3F9F4 14%, var(--pt-card) 32%);
             display: flex;
             flex-direction: column;
             flex: 1 1 0;
@@ -838,7 +839,16 @@
             padding: 1.1rem 1.35rem;
             margin-bottom: 1rem;
         }
+        .pt-page-head > div:first-child {
+            flex: 1 1 18rem;
+            min-width: 0;
+        }
+        .pt-page-head > form,
+        .pt-page-head > .btn {
+            flex-shrink: 0;
+        }
         .pt-page-icon {
+            flex-shrink: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -863,6 +873,13 @@
             border-radius: 0.65rem;
             padding: 0.55rem 1.1rem;
             box-shadow: 0 0.4rem 0.9rem rgba(47, 107, 69, 0.35);
+        }
+        .pt-btn-new:disabled {
+            background-color: #2F6B45;
+            border-color: #2F6B45;
+            color: #FFFFFF;
+            opacity: 0.5;
+            box-shadow: none;
         }
         .pt-btn-new:hover,
         .pt-btn-new:focus-visible {

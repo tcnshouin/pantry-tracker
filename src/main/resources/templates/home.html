@@ -103,6 +103,15 @@
     </aside>
 
     <section class="pt-home-main">
+    <div class="pt-page-head">
+        <div class="d-flex align-items-center gap-3">
+            <span class="pt-page-icon" aria-hidden="true"><i class="bi bi-box-seam-fill"></i></span>
+            <div>
+                <h1 class="pt-page-title mb-0">Inventory</h1>
+                <p class="text-muted mb-0">Everything in your pantry, one location at a time.</p>
+            </div>
+        </div>
+    </div>
     <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
     <div class="alert alert-secondary" th:if="${undone}">
@@ -143,8 +152,6 @@
             </div>
         </div>
     </div>
-
-    <h1 class="h4 mb-3">Inventory</h1>
 
     <th:block th:if="${undoLabel}">
         <div th:replace="~{inventory/fragments :: undoToast(${undoLabel})}"></div>
