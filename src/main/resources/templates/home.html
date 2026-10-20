@@ -62,7 +62,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm pt-side-card">
+    <div class="card shadow-sm pt-side-card pt-fit-card" data-fit="4">
         <div class="pt-side-head pt-head-tight">
             <h2 class="h5 mb-0"><i class="bi bi-calendar-event-fill pt-head-icon" aria-hidden="true"></i><span class="pt-head-text">Expiring Soon</span></h2>
             <span th:unless="${overview.expiringSoon().isEmpty()}" class="badge rounded-pill pt-exp-count"
@@ -75,7 +75,7 @@
                 <p class="text-muted small mb-0 mx-auto pt-empty-text">You have no items expiring soon. Enjoy your
                     fresh groceries.</p>
             </div>
-            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-exp-cards">
+            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-exp-cards pt-fit-list">
                 <li th:each="e : ${overview.expiringSoon()}">
                     <a class="pt-exp-link pt-exp-card" th:href="'#group-card-' + ${e.locationId()}"
                        th:data-group-id="${e.locationId()}" th:data-item-id="${e.itemId()}"

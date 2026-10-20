@@ -262,11 +262,12 @@
             margin-left: 0;
             margin-right: 0;
         }
-        .pt-recent-card.pt-recent-sized {
+        .pt-fit-card.pt-fit-sized,
+        .pt-fit-card.pt-fit-sized .pt-side-scroll {
             flex: none;
         }
-        .pt-recent-card.pt-recent-sized .pt-side-scroll {
-            flex: none;
+        .pt-exp-cards {
+            padding: 0.3rem 0 0.2rem;
         }
         .pt-recent-list li {
             padding: 0.5rem 0;
@@ -849,7 +850,7 @@
             min-width: 1.6rem;
         }
         .pt-exp-cards li + li {
-            margin-top: 0.55rem;
+            margin-top: 0.85rem;
         }
         .pt-exp-link.pt-exp-card {
             display: flex;
@@ -1648,26 +1649,26 @@
         ptInitTooltips(event.detail && event.detail.target);
     });
 
-    function ptSizeRecent() {
-        var card = document.querySelector('.pt-recent-card');
-        if (!card) {
-            return;
-        }
-        var scroll = card.querySelector('.pt-side-scroll');
-        var items = card.querySelectorAll('.pt-recent-list > li');
-        if (items.length < 4 || window.innerWidth < 992) {
-            card.classList.remove('pt-recent-sized');
+    function ptFitLists() {
+        document.querySelectorAll('.pt-fit-card').forEach(function (card) {
+            var count = parseInt(card.dataset.fit, 10) || 4;
+            var scroll = card.querySelector('.pt-side-scroll');
+            var items = card.querySelectorAll('.pt-fit-list > li');
             scroll.style.height = '';
-            return;
-        }
-        card.classList.add('pt-recent-sized');
-        scroll.style.height = '';
-        var top = scroll.getBoundingClientRect().top - scroll.scrollTop;
-        scroll.style.height = Math.round(items[3].getBoundingClientRect().bottom - top) + 'px';
+            if (items.length < count || window.innerWidth < 992) {
+                card.classList.remove('pt-fit-sized');
+                return;
+            }
+            card.classList.add('pt-fit-sized');
+            var top = scroll.getBoundingClientRect().top - scroll.scrollTop;
+            var last = items[count - 1].getBoundingClientRect().bottom;
+            var next = items[count] ? items[count].getBoundingClientRect().top : last + 8;
+            scroll.style.height = Math.round(last + (next - last) / 2 - top) + 'px';
+        });
     }
 
-    window.addEventListener('resize', ptSizeRecent);
-    document.body.addEventListener('htmx:afterSwap', ptSizeRecent);
+    window.addEventListener('resize', ptFitLists);
+    document.body.addEventListener('htmx:afterSwap', ptFitLists);
 
     function ptSyncAllAutoCalc() {
         document.querySelectorAll('.pt-autocalc').forEach(ptApplyAutoCalc);
@@ -2000,7 +2001,7 @@
         ptMarkActiveNav();
         ptInitGroups();
         ptInitTooltips();
-        ptSizeRecent();
+        ptFitLists();
         ptSyncPutAway();
     });
     document.body.addEventListener('htmx:afterSwap', ptSyncAllAutoCalc);
