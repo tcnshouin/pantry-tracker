@@ -120,7 +120,7 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0" th:text="${overview.totalItems()}">0</div>
                     <div class="text-muted small">Total items</div>
@@ -128,7 +128,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0 pt-stat-soon" th:text="${overview.expiringThisWeek()}">0</div>
                     <div class="text-muted small">Expiring this week</div>
@@ -136,7 +136,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0 pt-stat-warning" th:text="${overview.lowStock()}">0</div>
                     <div class="text-muted small">Low / out of stock</div>
@@ -144,7 +144,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0" th:text="${overview.onGroceryList()}">0</div>
                     <div class="text-muted small">On grocery list</div>
