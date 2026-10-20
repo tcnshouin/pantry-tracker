@@ -9,6 +9,7 @@
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title layout:title-pattern="$CONTENT_TITLE · Pantry Tracker">Pantry Tracker</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
@@ -484,6 +485,13 @@
             color: var(--pt-text);
             text-decoration: none;
             letter-spacing: -0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .pt-logo {
+            height: 2rem;
+            width: auto;
         }
         .pt-topbar-right {
             display: flex;
@@ -621,7 +629,7 @@
                 </nav>
             </aside>
         </div>
-        <a class="pt-brand" th:href="@{/}">🥫 Pantry Tracker</a>
+        <a class="pt-brand" th:href="@{/}"><img class="pt-logo" th:src="@{/img/logo.png}" alt="">Pantry Tracker</a>
     </div>
     <div class="pt-topbar-right" sec:authorize="isAuthenticated()">
         <span class="pt-user" sec:authentication="name">user@example.com</span>

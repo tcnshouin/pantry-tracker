@@ -20,7 +20,7 @@ public class AppConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/register", "/forgot-password", "/reset-password",
-                                "/css/**", "/js/**", "/error").permitAll()
+                                "/css/**", "/js/**", "/img/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")))
                 .logout(logout -> logout
