@@ -125,7 +125,7 @@
                         <li>
                             <button type="button" class="dropdown-item text-danger"
                                     th:attr="hx-post=@{/items/{id}/delete(id=${it.id()})},hx-target=${target}"
-                                    hx-swap="innerHTML" hx-confirm="Delete this item and all its batches?">
+                                    hx-swap="innerHTML" hx-confirm="Delete this item?" data-confirm-note="All of its batches are removed too. You can undo this right after.">
                                 <i class="bi bi-trash3 me-2"></i>Delete item
                             </button>
                         </li>

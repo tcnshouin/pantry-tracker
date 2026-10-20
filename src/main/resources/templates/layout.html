@@ -975,6 +975,38 @@
             display: block;
             vertical-align: 0;
         }
+        .pt-confirm-modal.modal-dialog {
+            max-width: 440px;
+        }
+        .pt-confirm-modal .modal-content {
+            border-color: #F1CFCF;
+        }
+        .pt-confirm-modal .modal-header {
+            background: linear-gradient(180deg, #FBEAEA 0%, #FDF4F4 55%, var(--pt-card) 100%);
+            border-bottom: 0;
+        }
+        .pt-confirm-modal .modal-title {
+            color: #7A1717;
+        }
+        .pt-confirm-icon {
+            background-color: #9B1C1C;
+            box-shadow: 0 0.25rem 0.6rem rgba(155, 28, 28, 0.35);
+        }
+        .pt-btn-danger {
+            background-color: #9B1C1C;
+            border: 1px solid #9B1C1C;
+            color: #FFFFFF;
+            font-weight: 600;
+            min-width: 6.5rem;
+            border-radius: 0.6rem;
+            box-shadow: 0 0.4rem 0.9rem rgba(155, 28, 28, 0.32);
+        }
+        .pt-btn-danger:hover,
+        .pt-btn-danger:focus-visible {
+            background-color: #7A1717;
+            border-color: #7A1717;
+            color: #FFFFFF;
+        }
         .pt-manual-hint {
             font-size: 0.85rem;
             font-weight: 600;
@@ -1603,7 +1635,76 @@
 <main class="pt-main">
     <div layout:fragment="content"></div>
 </main>
+<div class="modal fade" id="pt-confirm" tabindex="-1" aria-hidden="true" aria-labelledby="pt-confirm-title">
+    <div class="modal-dialog modal-dialog-centered pt-modal pt-confirm-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="pt-modal-icon pt-confirm-icon" aria-hidden="true"><i class="bi bi-trash3"></i></span>
+                <div class="me-auto">
+                    <h2 class="modal-title h5 mb-0" id="pt-confirm-title">Are you sure?</h2>
+                    <div class="small text-muted" id="pt-confirm-note">This can't be undone.</div>
+                </div>
+                <button type="button" class="pt-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn pt-btn-danger" id="pt-confirm-ok"><i class="bi bi-trash3 me-1"></i>Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
+    var ptConfirmAction = null;
+
+    function ptAskConfirm(question, note, onConfirm) {
+        var el = document.getElementById('pt-confirm');
+        if (!el || !window.bootstrap) {
+            if (window.confirm(question)) {
+                onConfirm();
+            }
+            return;
+        }
+        document.getElementById('pt-confirm-title').textContent = question;
+        document.getElementById('pt-confirm-note').textContent = note || "This can't be undone.";
+        ptConfirmAction = onConfirm;
+        bootstrap.Modal.getOrCreateInstance(el).show();
+    }
+
+    document.addEventListener('click', function (event) {
+        if (event.target.closest('#pt-confirm-ok')) {
+            var action = ptConfirmAction;
+            ptConfirmAction = null;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('pt-confirm')).hide();
+            if (action) {
+                action();
+            }
+        }
+    });
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form.dataset || !form.dataset.confirm || form.dataset.confirmed === 'yes') {
+            return;
+        }
+        event.preventDefault();
+        ptAskConfirm(form.dataset.confirm, form.dataset.confirmNote, function () {
+            form.dataset.confirmed = 'yes';
+            form.requestSubmit();
+        });
+    }, true);
+
+    document.body.addEventListener('htmx:confirm', function (event) {
+        if (!event.detail.question) {
+            return;
+        }
+        event.preventDefault();
+        ptAskConfirm(event.detail.question, event.detail.elt.dataset.confirmNote, function () {
+            event.detail.issueRequest(true);
+        });
+    });
+
     document.body.addEventListener('htmx:configRequest', function (event) {
         var token = document.querySelector('meta[name="_csrf"]');
         var header = document.querySelector('meta[name="_csrf_header"]');
