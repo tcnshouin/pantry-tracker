@@ -65,7 +65,7 @@
                 <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK' and it.freshness().name() != 'FRESH' and it.freshness().name() != 'NONE'}"
                       class="badge rounded-pill" th:classappend="${it.freshness().cssClass()}">
                     <i th:if="${it.freshness().name() == 'EXPIRES_TODAY' or it.freshness().name() == 'EXPIRED'}"
-                       class="bi bi-exclamation-triangle-fill me-1"></i><span th:text="${it.freshness().label()}">Fresh</span>
+                       class="bi bi-exclamation-triangle-fill"></i><span th:text="${it.freshness().label()}">Fresh</span>
                 </span>
                 <span th:if="${it.stockStatus().name() != 'OUT_OF_STOCK' and it.expiryText() != null and it.daysUntilExpiry() != 0}"
                       class="small pt-expiry" th:classappend="${it.daysUntilExpiry() < 0} ? 'pt-expiry-past'"

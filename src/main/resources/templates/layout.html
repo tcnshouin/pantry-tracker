@@ -953,6 +953,22 @@
             line-height: 1.4;
             box-shadow: 0 0.5rem 1.2rem rgba(31, 42, 36, 0.25);
         }
+        .badge:has(> .bi) {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35em;
+            line-height: 1;
+            padding-top: 0.4em;
+            padding-bottom: 0.4em;
+        }
+        .badge > .bi {
+            display: block;
+            line-height: 1;
+        }
+        .badge > .bi::before {
+            display: block;
+            vertical-align: 0;
+        }
         .pt-manual-hint {
             font-size: 0.85rem;
             font-weight: 600;
