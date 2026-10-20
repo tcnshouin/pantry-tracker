@@ -10,48 +10,36 @@
 
     <div th:if="${addError}" class="alert alert-danger py-2" th:text="${addError}">Error</div>
 
-    <div th:if="${prompt}" class="alert alert-warning">
-        <p class="fw-semibold mb-2">
-            "<span th:text="${prompt.existing().name()}">Item</span>" already exists in this location.
-            Add it as a new batch, or edit one of its existing batches.
+    <div th:if="${prompt}" class="pt-dup">
+        <p class="pt-dup-message">
+            <i class="bi bi-info-circle-fill pt-dup-icon" aria-hidden="true"></i>
+            <span>"<span th:text="${prompt.existing().name()}">Item</span>" already exists in this location.
+                Add it as a new batch, or edit one of its existing batches.</span>
         </p>
         <form th:attr="hx-post=@{/items/{id}/batches(id=${prompt.existing().id()})},hx-target=${target}"
-              hx-swap="innerHTML" class="mb-3">
+              hx-swap="innerHTML">
             <input type="hidden" name="quantity" th:value="${prompt.quantity()}">
             <input type="hidden" name="expirationDate" th:value="${prompt.expirationDate()}">
             <input type="hidden" name="autoExpiry" th:value="${prompt.autoExpiry()}">
-            <button type="submit" class="btn btn-sm btn-pt">Add as new batch</button>
+            <button type="submit" class="btn btn-pt pt-dup-add"><i class="bi bi-plus-lg me-2"></i>Add as new batch</button>
         </form>
-        <p class="mb-1 small text-muted">Existing batches (by date added):</p>
-        <table class="table table-sm mb-0 bg-white">
-            <thead>
-            <tr>
-                <th scope="col">Added</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Expiration</th>
-                <th scope="col"></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="b : ${prompt.existing().batches()}">
-                <td th:text="${b.dateAdded()}">2026-01-01</td>
-                <td>
-                    <input type="number" name="quantity" min="0" class="form-control form-control-sm"
-                           style="width: 6rem;" th:value="${b.quantity()}" th:attr="form='pf-' + ${b.id()}">
-                </td>
-                <td>
-                    <input type="date" name="expirationDate" class="form-control form-control-sm"
-                           th:value="${b.expirationDate()}" th:attr="form='pf-' + ${b.id()}">
-                </td>
-                <td>
-                    <form th:id="'pf-' + ${b.id()}"
-                          th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
-                    </form>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+        <hr class="pt-dup-divider">
+        <p class="mb-2">Existing batches (by date added):</p>
+        <div class="pt-dup-grid pt-dup-head" aria-hidden="true">
+            <span>Added</span>
+            <span>Quantity</span>
+            <span>Expiration</span>
+            <span></span>
+        </div>
+        <form th:each="b : ${prompt.existing().batches()}" class="pt-dup-grid pt-dup-row"
+              th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
+            <span th:text="${b.dateAdded()}">2026-01-01</span>
+            <input type="number" name="quantity" min="0" class="form-control pt-dup-qty" th:value="${b.quantity()}"
+                   aria-label="Quantity">
+            <input type="date" name="expirationDate" class="form-control" th:value="${b.expirationDate()}"
+                   aria-label="Expiration">
+            <button type="submit" class="btn btn-pt pt-dup-save">Save</button>
+        </form>
     </div>
 
     <div th:if="${items.isEmpty()}" class="text-muted small">

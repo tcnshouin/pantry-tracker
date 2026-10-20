@@ -433,6 +433,88 @@
         .pt-jump:focus-visible > td {
             background-color: var(--pt-tint);
         }
+        .pt-dup {
+            background-color: var(--pt-card);
+            border: 1.5px solid #9DAFA2;
+            border-radius: 1rem;
+            box-shadow: 0 0.5rem 1.4rem rgba(31, 42, 36, 0.12);
+            padding: 1.35rem 1.5rem 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .pt-dup-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--pt-text);
+            margin-bottom: 1rem;
+        }
+        .pt-dup-icon {
+            color: var(--pt-soon);
+            font-size: 1.25rem;
+            line-height: 1.3;
+        }
+        .pt-dup-add,
+        .pt-dup-save {
+            background-color: #2F6B45;
+            border-color: #2F6B45;
+            border-radius: 0.6rem;
+            font-weight: 600;
+            box-shadow: 0 0.3rem 0.7rem rgba(47, 107, 69, 0.3);
+        }
+        .pt-dup-add:hover,
+        .pt-dup-save:hover {
+            background-color: #24553A;
+            border-color: #24553A;
+        }
+        .pt-dup-divider {
+            border-color: var(--pt-line);
+            opacity: 1;
+            margin: 1.4rem 0 1.1rem;
+        }
+        .pt-dup-grid {
+            display: grid;
+            grid-template-columns: minmax(6rem, 1fr) minmax(5rem, 1fr) minmax(9rem, 1.6fr) auto;
+            align-items: center;
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+        .pt-dup-head {
+            color: rgba(31, 42, 36, 0.7);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .pt-dup-row {
+            background-color: #EEF1EE;
+            border: 1px solid #DCE3DD;
+            border-radius: 0.85rem;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .pt-dup-row .form-control {
+            border-color: #7F8C83;
+            border-radius: 0.5rem;
+            background-color: var(--pt-white);
+        }
+        .pt-dup-row .form-control:focus {
+            border-color: var(--pt-primary);
+            box-shadow: 0 0 0 0.2rem var(--pt-tint);
+        }
+        .pt-dup-qty {
+            max-width: 5.5rem;
+        }
+        .pt-dup-save {
+            min-width: 6rem;
+        }
+        @media (max-width: 575.98px) {
+            .pt-dup-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .pt-dup-head {
+                display: none;
+            }
+        }
         .pt-batches-toggle {
             display: inline-flex;
             align-items: center;
