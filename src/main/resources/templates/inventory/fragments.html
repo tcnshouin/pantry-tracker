@@ -49,7 +49,7 @@
     <div th:each="it : ${items}" class="rounded mb-2 p-2 pt-item-row" th:id="'item-row-' + ${it.id()}">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="fw-semibold" th:text="${it.name()}">Item</span>
+                <span class="fw-semibold pt-item-name" th:text="${it.name()}">Item</span>
                 <span class="badge pt-cat-badge" th:text="${it.categoryName()}">Category</span>
                 <button class="btn btn-sm pt-batches-toggle collapsed" type="button" aria-expanded="false"
                         data-bs-toggle="collapse" th:data-bs-target="'#batches-' + ${it.id()}"
