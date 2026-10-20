@@ -191,6 +191,26 @@
             border-top-right-radius: calc(var(--bs-card-border-radius) - 1px);
             box-shadow: 0 0.2rem 0.45rem rgba(31, 42, 36, 0.07);
         }
+        .pt-side-card-soft {
+            border: 0;
+            box-shadow: 0 0.5rem 1.5rem rgba(31, 42, 36, 0.1);
+        }
+        .pt-side-card-soft .pt-side-head {
+            position: relative;
+            background-color: transparent;
+            border-bottom: 0;
+            box-shadow: none;
+            padding-bottom: 0.95rem;
+        }
+        .pt-side-card-soft .pt-side-head::after {
+            content: "";
+            position: absolute;
+            left: 1.25rem;
+            right: 1.25rem;
+            bottom: 0;
+            height: 1px;
+            background-color: var(--pt-line);
+        }
         .pt-side-head > h2 {
             color: #28452F;
             font-weight: 700;
@@ -974,7 +994,7 @@
         }
         .pt-loc-link.pt-loc-all {
             background-color: var(--pt-white);
-            border: 1px solid var(--pt-line);
+            border: 0;
             box-shadow: 0 0.35rem 0.85rem rgba(31, 42, 36, 0.13);
             margin-bottom: 0.6rem !important;
         }
