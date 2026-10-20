@@ -241,7 +241,7 @@
                                        th:id="'ai-name-' + ${g.group().id()}" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label" th:for="'ai-cat-' + ${g.group().id()}">Category</label><button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Can't find the right category? Add your own on the Categories page (☰ menu → Categories), or pick Others and enter the date yourself." aria-label="About categories"><i class="bi bi-info-lg"></i></button>
+                                <label class="form-label" th:for="'ai-cat-' + ${g.group().id()}">Category</label><button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Can't find the right category? Add your own on the Categories page (☰ Menu → Categories), or pick Others and enter the date yourself." aria-label="About categories"><i class="bi bi-info-lg"></i></button>
                                 <select name="categoryId" class="form-select"
                                         th:id="'ai-cat-' + ${g.group().id()}" required>
                                     <option value="" selected>Choose…</option>
