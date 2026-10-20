@@ -129,7 +129,7 @@
             </div>
         </div>
 
-        <div th:unless="${page.rows().isEmpty()}" class="card shadow-sm">
+        <div th:unless="${page.rows().isEmpty()}" class="card shadow-sm pt-grocery-card">
             <ul class="list-group list-group-flush">
                 <li th:each="row : ${page.rows()}" class="list-group-item pt-grocery-row">
                     <input type="checkbox" class="form-check-input pt-pick" name="ids" form="put-away-form"
