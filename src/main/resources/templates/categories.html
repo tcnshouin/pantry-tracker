@@ -24,7 +24,7 @@
     <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 
-    <div class="card shadow-sm mb-3">
+    <div class="card shadow-sm mb-3 flex-shrink-0">
         <div class="card-body">
             <div class="row g-3 align-items-end">
                 <div class="col-md-7">
@@ -48,8 +48,8 @@
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="table-responsive">
+    <div class="card shadow-sm pt-cat-table-card">
+        <div class="table-responsive pt-cat-scroll">
             <table class="table align-middle mb-0 pt-cat-table">
                 <thead>
                 <tr>
