@@ -928,6 +928,7 @@
         .pt-cat-page {
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             height: calc(100vh - var(--pt-topbar-h));
             padding: 2.75rem 4.5rem 4.5rem;
             overflow: hidden;
@@ -937,9 +938,13 @@
             flex-shrink: 0;
         }
         .pt-cat-table-card {
-            flex: 1 1 auto;
+            flex: 0 1 auto;
             min-height: 0;
             overflow: hidden;
+        }
+        .pt-cat-page > .pt-page-head,
+        .pt-cat-page > .card {
+            margin-bottom: 0 !important;
         }
         .pt-cat-scroll {
             height: 100%;
