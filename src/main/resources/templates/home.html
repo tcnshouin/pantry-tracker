@@ -193,10 +193,14 @@
         </div>
 
         <div class="modal fade" th:id="'addItemModal-' + ${g.group().id()}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered pt-modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2 class="modal-title h5">Add item to <span th:text="${g.group().name()}">group</span></h2>
+                        <span class="pt-modal-icon" aria-hidden="true"><i class="bi bi-basket2"></i></span>
+                        <div class="me-auto">
+                            <h2 class="modal-title h5 mb-0">Add item</h2>
+                            <div class="small text-muted">to <span class="fw-semibold" th:text="${g.group().name()}">group</span></div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form th:attr="hx-post=@{/locations/{id}/items(id=${g.group().id()})},hx-target='#group-body-' + ${g.group().id()}"
@@ -228,7 +232,7 @@
                                            th:id="'ai-exp-' + ${g.group().id()}">
                                 </div>
                             </div>
-                            <div class="form-check mt-3">
+                            <div class="form-check pt-modal-option mt-3">
                                 <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
                                        value="true" checked th:id="'ai-auto-' + ${g.group().id()}">
                                 <label class="form-check-label" th:for="'ai-auto-' + ${g.group().id()}">

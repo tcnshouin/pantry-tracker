@@ -244,6 +244,83 @@
         .pt-grocery-row:has(.pt-pick:checked) {
             background-color: var(--pt-fresh);
         }
+        .modal-backdrop {
+            --bs-backdrop-bg: #1F2A24;
+            --bs-backdrop-opacity: 0.45;
+        }
+        .modal.show {
+            backdrop-filter: blur(2px);
+        }
+        .pt-modal .modal-content {
+            border: 1px solid var(--pt-line);
+            border-radius: 1rem;
+            background-color: var(--pt-card);
+            box-shadow: 0 1.5rem 3.5rem rgba(31, 42, 36, 0.28), 0 0.35rem 1rem rgba(31, 42, 36, 0.14);
+            overflow: hidden;
+        }
+        .pt-modal .modal-header {
+            gap: 0.85rem;
+            background-color: var(--pt-head);
+            border-top: 4px solid var(--pt-primary);
+            border-bottom: 1px solid var(--pt-line);
+            padding: 1rem 1.5rem;
+        }
+        .pt-modal .modal-title {
+            color: #28452F;
+            font-weight: 700;
+        }
+        .pt-modal-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 50%;
+            background-color: var(--pt-primary);
+            color: var(--pt-on-primary);
+            font-size: 1.2rem;
+            box-shadow: 0 0.25rem 0.6rem rgba(47, 125, 79, 0.35);
+        }
+        .pt-modal .modal-body {
+            padding: 1.35rem 1.5rem 1.1rem;
+        }
+        .pt-modal .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+        .pt-modal .form-control,
+        .pt-modal .form-select {
+            background-color: var(--pt-row);
+            border-color: var(--pt-line);
+            border-radius: 0.6rem;
+        }
+        .pt-modal .form-control:focus,
+        .pt-modal .form-select:focus {
+            background-color: var(--pt-white);
+            border-color: var(--pt-primary);
+            box-shadow: 0 0 0 0.2rem var(--pt-tint);
+        }
+        .pt-modal .form-control:disabled {
+            background-color: var(--pt-surface);
+            color: rgba(31, 42, 36, 0.55);
+        }
+        .pt-modal-option {
+            background-color: var(--pt-fresh);
+            border: 1px solid var(--pt-line);
+            border-radius: 0.6rem;
+            padding: 0.6rem 0.75rem 0.6rem 2.35rem;
+        }
+        .pt-modal .modal-footer {
+            background-color: var(--pt-row);
+            border-top: 1px solid var(--pt-line);
+            padding: 0.85rem 1.5rem;
+        }
+        .pt-modal .modal-footer .btn {
+            min-width: 6.5rem;
+            border-radius: 0.6rem;
+        }
         .pt-batches-toggle {
             display: inline-flex;
             align-items: center;
