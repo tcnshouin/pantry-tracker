@@ -323,6 +323,35 @@
         .pt-recent-list .small {
             font-size: 0.78rem;
         }
+        @media (min-width: 992px) and (max-height: 860px) {
+            .pt-mini-stat {
+                padding: 0.3rem 0.25rem;
+            }
+            .pt-mini-stat .h4 {
+                font-size: 1.2rem;
+            }
+            .pt-side-card > .pt-summary-body {
+                padding-bottom: 1rem;
+            }
+            .pt-side-head {
+                padding-top: 0.7rem;
+                padding-bottom: 0.8rem;
+                margin-bottom: 0.65rem;
+            }
+        }
+        @media (min-width: 992px) and (max-height: 719.98px) {
+            .pt-home-side {
+                position: static !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            .pt-side-card {
+                flex: none;
+            }
+            .pt-side-scroll {
+                max-height: 15rem;
+            }
+        }
         .pt-summary-body {
             padding-left: 1.25rem !important;
             padding-right: 1.25rem !important;
@@ -1900,24 +1929,67 @@
     });
 
     function ptFitLists() {
-        document.querySelectorAll('.pt-fit-card').forEach(function (card) {
-            var count = parseInt(card.dataset.fit, 10) || 4;
-            var scroll = card.querySelector('.pt-side-scroll');
-            var items = card.querySelectorAll(card.dataset.fitItems || '.pt-fit-list > li');
-            scroll.style.height = '';
-            if (items.length < count || window.innerWidth < 992) {
+        var minFlexible = 170;
+        document.querySelectorAll('.pt-home-side').forEach(function (side) {
+            var cards = Array.prototype.slice.call(side.querySelectorAll('.pt-fit-card'));
+            cards.forEach(function (card) {
+                card.querySelector('.pt-side-scroll').style.height = '';
                 card.classList.remove('pt-fit-sized');
+            });
+            if (window.innerWidth < 992 || window.innerHeight < 720) {
                 return;
             }
-            card.classList.add('pt-fit-sized');
-            var top = scroll.getBoundingClientRect().top - scroll.scrollTop;
-            var last = items[count - 1].getBoundingClientRect().bottom;
-            var end = scroll.querySelector('.pt-list-end');
-            if (!items[count] && end) {
-                last = end.getBoundingClientRect().bottom;
+            var plans = [];
+            cards.forEach(function (card) {
+                var count = parseInt(card.dataset.fit, 10) || 4;
+                var scroll = card.querySelector('.pt-side-scroll');
+                var items = card.querySelectorAll(card.dataset.fitItems || '.pt-fit-list > li');
+                if (items.length < count) {
+                    return;
+                }
+                card.classList.add('pt-fit-sized');
+                var end = scroll.querySelector('.pt-list-end');
+                plans.push({
+                    k: count,
+                    scroll: scroll,
+                    heightFor: function (k) {
+                        var top = scroll.getBoundingClientRect().top - scroll.scrollTop;
+                        var last = items[k - 1].getBoundingClientRect().bottom;
+                        if (!items[k] && end) {
+                            last = end.getBoundingClientRect().bottom;
+                        }
+                        var next = items[k] ? items[k].getBoundingClientRect().top : last + 12;
+                        return Math.round(last + (next - last) / 2 - top);
+                    }
+                });
+            });
+            plans.forEach(function (plan) {
+                plan.scroll.style.height = plan.heightFor(plan.k) + 'px';
+            });
+            var style = getComputedStyle(side);
+            var gap = parseFloat(style.rowGap) || 0;
+            function overflow() {
+                var inner = side.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+                var kids = Array.prototype.filter.call(side.children, function (c) {
+                    return c.offsetParent !== null;
+                });
+                var used = gap * Math.max(0, kids.length - 1);
+                kids.forEach(function (c) {
+                    var sized = c.classList.contains('pt-fit-sized') || c.classList.contains('pt-side-fixed');
+                    used += sized ? c.getBoundingClientRect().height : minFlexible;
+                });
+                return used - inner;
             }
-            var next = items[count] ? items[count].getBoundingClientRect().top : last + 12;
-            scroll.style.height = Math.round(last + (next - last) / 2 - top) + 'px';
+            var guard = 30;
+            while (overflow() > 0 && guard-- > 0) {
+                var biggest = plans.filter(function (p) { return p.k > 1; })
+                    .sort(function (a, b) { return b.k - a.k; })[0];
+                if (!biggest) {
+                    break;
+                }
+                biggest.k--;
+                biggest.scroll.style.height = biggest.heightFor(biggest.k) + 'px';
+            }
         });
     }
 
@@ -1984,7 +2056,7 @@
             body.classList.remove('pt-group-fitted');
         });
         var card = document.querySelector('.pt-one-group .pt-group-card.pt-active:not(#group-card-all)');
-        if (!card || window.innerWidth < 992) {
+        if (!card || window.innerWidth < 992 || window.innerHeight < 720) {
             return;
         }
         var body = card.querySelector('.pt-group-scroll');
