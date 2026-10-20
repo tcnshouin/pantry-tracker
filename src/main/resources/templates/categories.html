@@ -98,7 +98,7 @@
                     </tr>
                     <tr class="pt-cat-edit" th:id="'cat-edit-' + ${c.id()}" hidden>
                         <td colspan="4">
-                            <form th:action="@{/categories/{id}(id=${c.id()})}" method="post" class="pt-panel mt-0">
+                            <form th:action="@{/categories/{id}(id=${c.id()})}" method="post" class="pt-panel my-3">
                                 <div class="pt-panel-title"><i class="bi bi-pencil-square me-2"></i>Edit category</div>
                                 <div th:replace="~{categories :: categoryFields('e' + ${c.id()}, ${c.name()}, ${c.groupName()}, ${c.shelfLifeAmount()}, ${c.shelfLifeUnit()}, ${c.manualExpiry()})}"></div>
                                 <div class="d-flex justify-content-end gap-2 mt-3">
@@ -123,7 +123,7 @@
     </datalist>
 
     <div class="modal fade" id="newCategoryModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered pt-modal">
+        <div class="modal-dialog modal-dialog-centered pt-modal pt-modal-wide">
             <div class="modal-content">
                 <div class="modal-header">
                     <span class="pt-modal-icon" aria-hidden="true"><i class="bi bi-tag"></i></span>
@@ -220,6 +220,13 @@
             <input type="text" name="groupName" class="form-control" list="cat-group-list"
                    th:id="${prefix} + '-group'" th:value="${group}" placeholder="e.g. Canned Goods" maxlength="60">
         </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check form-switch pt-switch-box w-100">
+                <input class="form-check-input pt-manual-switch" type="checkbox" role="switch" name="manual"
+                       value="true" th:id="${prefix} + '-manual'" th:checked="${manual}">
+                <label class="form-check-label" th:for="${prefix} + '-manual'">No set shelf life</label>
+            </div>
+        </div>
         <div class="col-md-6">
             <label class="form-label pt-field-label" th:for="${prefix} + '-amount'">Shelf life</label>
             <div class="input-group">
@@ -231,13 +238,6 @@
                     <option value="months" th:selected="${unit == 'months'}">months</option>
                     <option value="years" th:selected="${unit == 'years'}">years</option>
                 </select>
-            </div>
-        </div>
-        <div class="col-md-6 d-flex align-items-end">
-            <div class="form-check form-switch pt-switch-box w-100">
-                <input class="form-check-input pt-manual-switch" type="checkbox" role="switch" name="manual"
-                       value="true" th:id="${prefix} + '-manual'" th:checked="${manual}">
-                <label class="form-check-label" th:for="${prefix} + '-manual'">No set shelf life (enter expiry by hand)</label>
             </div>
         </div>
     </div>
