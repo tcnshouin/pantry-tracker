@@ -62,11 +62,26 @@
         }
         .card {
             background-color: var(--pt-card);
-            border-color: var(--pt-line);
+            border: 0;
+        }
+        .card,
+        .card.shadow-sm {
+            box-shadow: 0 0.5rem 1.5rem rgba(31, 42, 36, 0.1) !important;
         }
         .card-header {
-            background-color: var(--pt-head);
-            border-bottom-color: var(--pt-line);
+            position: relative;
+            background: linear-gradient(180deg, #E3F0E5 0%, #F1F8F2 55%, var(--pt-card) 100%);
+            border-bottom: 0;
+        }
+        .card-header::after,
+        .pt-side-head::after {
+            content: "";
+            position: absolute;
+            left: 1.25rem;
+            right: 1.25rem;
+            bottom: 0;
+            height: 1px;
+            background-color: var(--pt-line);
         }
         .form-check-input:checked {
             background-color: var(--pt-primary);
@@ -185,36 +200,19 @@
             gap: 0.5rem;
             padding: 0.85rem 1rem;
             margin-bottom: 0.85rem;
-            background-color: var(--pt-head);
-            border-bottom: 1px solid var(--pt-line);
-            border-top-left-radius: calc(var(--bs-card-border-radius) - 1px);
-            border-top-right-radius: calc(var(--bs-card-border-radius) - 1px);
-            box-shadow: 0 0.2rem 0.45rem rgba(31, 42, 36, 0.07);
-        }
-        .pt-side-card-soft {
-            border: 0;
-            box-shadow: 0 0.5rem 1.5rem rgba(31, 42, 36, 0.1);
-        }
-        .pt-side-card-soft .pt-side-head {
             position: relative;
-            background: linear-gradient(0deg, #E3F0E5 0%, #F1F8F2 45%, var(--pt-card) 100%);
-            border-bottom: 0;
-            box-shadow: none;
             padding-bottom: 0.95rem;
-        }
-        .pt-side-card-soft .pt-side-head::after {
-            content: "";
-            position: absolute;
-            left: 1.25rem;
-            right: 1.25rem;
-            bottom: 0;
-            height: 1px;
-            background-color: var(--pt-line);
+            background: linear-gradient(180deg, #E3F0E5 0%, #F1F8F2 55%, var(--pt-card) 100%);
+            border-top-left-radius: var(--bs-card-border-radius);
+            border-top-right-radius: var(--bs-card-border-radius);
         }
         .pt-list-end {
             height: 1px;
             margin: 0.75rem 0.25rem 0.25rem;
             background-color: var(--pt-line);
+        }
+        .pt-list-end.pt-list-end-pad {
+            margin: 0.35rem 1.25rem 0.85rem;
         }
         .pt-side-head > h2 {
             color: #28452F;

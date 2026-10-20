@@ -66,6 +66,7 @@
                     </li>
                 </ul>
                 <div id="quick-no-match" class="text-muted small" hidden>No pantry items match your search.</div>
+                <div th:unless="${page.quickAdd().isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
             </div>
         </div>
 
@@ -88,6 +89,7 @@
                              th:text="${r.locationName()} + ' · ' + ${r.dateAdded()}">Shelf · 2026-01-01</div>
                     </li>
                 </ul>
+                <div th:unless="${page.recentlyPutAway().isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
             </div>
         </div>
     </aside>
@@ -160,6 +162,7 @@
                     </button>
                 </li>
             </ul>
+            <div class="pt-list-end pt-list-end-pad" aria-hidden="true"></div>
         </div>
     </section>
 </th:block>

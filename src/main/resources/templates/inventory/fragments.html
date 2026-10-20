@@ -254,6 +254,7 @@
             </div>
         </div>
     </div>
+    <div th:unless="${items.isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
 </div>
 <div th:fragment="undoToast(label)" class="pt-undo-toast" role="status" aria-live="polite">
     <i class="bi bi-check-circle-fill pt-undo-icon"></i>
