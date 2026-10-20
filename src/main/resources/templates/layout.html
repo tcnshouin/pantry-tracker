@@ -716,6 +716,77 @@
                 justify-content: flex-start;
             }
         }
+        .pt-exp-count {
+            background-color: var(--pt-soon);
+            color: var(--pt-soon-text);
+            font-size: 0.8rem;
+            min-width: 1.6rem;
+        }
+        .pt-exp-cards li + li {
+            margin-top: 0.55rem;
+        }
+        .pt-exp-link.pt-exp-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            margin: 0;
+            padding: 0.65rem 0.75rem;
+            background-color: var(--pt-row);
+            border: 1px solid var(--pt-line);
+            border-left: 4px solid var(--pt-soon);
+            border-radius: 0.65rem;
+            box-shadow: 0 0.15rem 0.4rem rgba(31, 42, 36, 0.05);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .pt-exp-link.pt-exp-card:hover,
+        .pt-exp-link.pt-exp-card:focus-visible {
+            background-color: var(--pt-white);
+            transform: translateY(-1px);
+            box-shadow: 0 0.35rem 0.8rem rgba(31, 42, 36, 0.1);
+        }
+        .pt-exp-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 2.1rem;
+            height: 2.1rem;
+            border-radius: 50%;
+            background-color: #FCEFD2;
+            color: #8A5A00;
+            font-size: 0.95rem;
+        }
+        .pt-exp-card:has(.pt-badge-today) {
+            border-left-color: var(--pt-warning);
+        }
+        .pt-exp-card:has(.pt-badge-today) .pt-exp-icon {
+            background-color: #FBE3D6;
+            color: var(--pt-warning);
+        }
+        .pt-exp-card:has(.pt-badge-expired) {
+            border-left-color: var(--pt-expired);
+        }
+        .pt-exp-card:has(.pt-badge-expired) .pt-exp-icon {
+            background-color: #FDECEC;
+            color: var(--pt-expired);
+        }
+        .pt-exp-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .pt-exp-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            color: rgba(31, 42, 36, 0.65);
+        }
+        .pt-exp-meta .bi {
+            margin-right: 0.25rem;
+        }
         .pt-batches-toggle {
             display: inline-flex;
             align-items: center;

@@ -64,6 +64,8 @@
     <div class="card shadow-sm pt-side-card">
         <div class="pt-side-head">
             <h2 class="h5 mb-0">Expiring Soon</h2>
+            <span th:unless="${overview.expiringSoon().isEmpty()}" class="badge rounded-pill pt-exp-count"
+                  th:text="${overview.expiringSoon().size()}">2</span>
         </div>
         <div class="pt-side-scroll">
             <div th:if="${overview.expiringSoon().isEmpty()}" class="text-center py-3">
@@ -72,18 +74,25 @@
                 <p class="text-muted small mb-0 mx-auto pt-empty-text">You have no items expiring soon. Enjoy your
                     fresh groceries.</p>
             </div>
-            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-expiring-list">
+            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-exp-cards">
                 <li th:each="e : ${overview.expiringSoon()}">
-                    <a class="pt-exp-link" th:href="'#group-card-' + ${e.locationId()}"
+                    <a class="pt-exp-link pt-exp-card" th:href="'#group-card-' + ${e.locationId()}"
                        th:data-group-id="${e.locationId()}" th:data-item-id="${e.itemId()}"
                        th:title="'Go to ' + ${e.itemName()} + ' in ' + ${e.locationName()}">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
-                            <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
-                                  th:text="${e.freshnessLabel()}">Expires today</span>
-                        </div>
-                        <div class="small text-muted"
-                             th:text="${e.locationName()} + ' · ' + ${e.expirationDate()}">Shelf · 2026-01-01</div>
+                        <span class="pt-exp-icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                        <span class="pt-exp-body">
+                            <span class="d-flex justify-content-between align-items-start gap-2">
+                                <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
+                                <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
+                                      th:text="${e.freshnessLabel()}">Expires today</span>
+                            </span>
+                            <span class="pt-exp-meta">
+                                <span><i class="bi bi-geo-alt"></i><span th:text="${e.locationName()}">Shelf</span></span>
+                                <span><i class="bi bi-calendar-event"></i><span
+                                        th:text="${#temporals.format(e.expirationDate(), 'MMM d, yyyy')}">Jan 1, 2026</span></span>
+                                <span><i class="bi bi-box-seam"></i><span th:text="'×' + ${e.quantity()}">×1</span></span>
+                            </span>
+                        </span>
                     </a>
                 </li>
             </ul>
