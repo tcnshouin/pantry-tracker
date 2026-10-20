@@ -5,7 +5,7 @@
     <aside class="pt-home-side">
         <div class="card shadow-sm pt-side-card pt-side-fixed">
             <div class="pt-side-head">
-                <h2 class="h5 mb-0">Shopping summary</h2>
+                <h2 class="h5 mb-0">Shopping Summary</h2>
             </div>
             <div class="px-3 pb-3">
                 <div class="row g-2 text-center">
@@ -39,7 +39,7 @@
 
         <div class="card shadow-sm pt-side-card">
             <div class="pt-side-head">
-                <h2 class="h5 mb-0">Quick add</h2>
+                <h2 class="h5 mb-0">Quick Add</h2>
             </div>
             <div class="px-3">
                 <label for="quick-search" class="visually-hidden">Search your pantry</label>
@@ -71,7 +71,7 @@
 
         <div class="card shadow-sm pt-side-card">
             <div class="pt-side-head">
-                <h2 class="h5 mb-0">Recently stocked</h2>
+                <h2 class="h5 mb-0">Recently Stocked</h2>
             </div>
             <div class="pt-side-scroll">
                 <div th:if="${page.recentlyPutAway().isEmpty()}" class="text-muted small">
@@ -97,7 +97,7 @@
         <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h1 class="h4 mb-0">Grocery list</h1>
+            <h1 class="h4 mb-0">Grocery List</h1>
             <form th:action="@{/grocery/put-away}" method="post" id="put-away-form"
                   class="d-flex align-items-center gap-3" th:unless="${page.rows().isEmpty()}">
                 <div class="form-check mb-0">
@@ -105,12 +105,12 @@
                     <label class="form-check-label" for="pick-all">Select all</label>
                 </div>
                 <button type="submit" class="btn btn-pt" id="put-away-btn" disabled>
-                    <i class="bi bi-box-arrow-in-down me-1"></i>Put away (<span id="put-away-count">0</span>)
+                    <i class="bi bi-box-arrow-in-down me-1"></i>Put Away (<span id="put-away-count">0</span>)
                 </button>
             </form>
         </div>
         <p class="text-muted small mb-3">
-            Bought something? Tick it and press <span class="fw-semibold">Put away</span> to add it to your pantry
+            Bought something? Tick it and press <span class="fw-semibold">Put Away</span> to add it to your pantry
             with its expiry worked out from the category.
         </p>
 
@@ -120,7 +120,7 @@
                 <p class="h5 fw-bold mb-2 pt-empty-title">Your cart is waiting</p>
                 <p class="text-muted mb-0 mx-auto pt-empty-text">Let's fill it up! We'll automatically add your
                     running-low items here, or you can manually drop things in using
-                    <span class="fw-semibold">Quick add</span>.</p>
+                    <span class="fw-semibold">Quick Add</span>.</p>
             </div>
         </div>
 

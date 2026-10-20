@@ -68,12 +68,12 @@ class GroceryPageTest {
         mockMvc.perform(get("/grocery").with(signedIn))
                 .andExpect(status().isOk())
                 .andExpect(content().string(Matchers.allOf(
-                        Matchers.containsString("Shopping summary"),
-                        Matchers.containsString("Quick add"),
-                        Matchers.containsString("Recently stocked"),
+                        Matchers.containsString("Shopping Summary"),
+                        Matchers.containsString("Quick Add"),
+                        Matchers.containsString("Recently Stocked"),
                         Matchers.containsString("Rice"),
                         Matchers.containsString("Not in inventory"),
-                        Matchers.containsString("Put away"))));
+                        Matchers.containsString("Put Away"))));
         verify(groceryService).syncAutoSuggestions(userId);
     }
 
@@ -81,7 +81,7 @@ class GroceryPageTest {
     void quantityChangeReturnsJustTheGroceryBody() throws Exception {
         mockMvc.perform(post("/grocery/1/quantity").with(signedIn).with(csrf()).param("delta", "1"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Matchers.containsString("Shopping summary")))
+                .andExpect(content().string(Matchers.containsString("Shopping Summary")))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("<html"))));
         verify(groceryService).changeQuantity(userId, 1L, 1);
     }
