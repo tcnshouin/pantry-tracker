@@ -607,7 +607,7 @@
         .pt-batch-grid {
             display: grid;
             grid-template-columns: 7.5rem minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 11.5rem;
-            align-items: start;
+            align-items: center;
             gap: 0.85rem;
         }
         .pt-batch-head {
@@ -632,12 +632,22 @@
         }
         .pt-batch-date {
             display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .pt-batch-date > .form-control {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .pt-batch-row .pt-qty > .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .pt-auto-check {
             font-size: 0.85rem;
             margin: 0;
+            white-space: nowrap;
         }
         .pt-batch-status {
             display: flex;
