@@ -152,6 +152,43 @@
             background-color: #FDECEC;
             color: var(--pt-expired) !important;
         }
+        .pt-menu-list {
+            padding: 0.5rem;
+            min-width: 190px;
+        }
+        .pt-menu-list li + li {
+            margin-top: 0.4rem;
+        }
+        .pt-menu-list .dropdown-item {
+            border-radius: 12px;
+            padding: 0.6rem 0.9rem;
+            font-weight: 600;
+            background-color: var(--pt-surface);
+            color: var(--pt-fresh-text);
+            display: flex;
+            align-items: center;
+        }
+        .pt-menu-list .dropdown-item:hover,
+        .pt-menu-list .dropdown-item:focus {
+            background-color: #CBE3CE;
+            color: var(--pt-fresh-text);
+        }
+        .pt-menu-list .dropdown-item:active {
+            background-color: #BBDABF;
+            color: var(--pt-fresh-text);
+        }
+        .pt-menu-list .dropdown-item.text-danger {
+            background-color: #FBE3E3;
+            color: var(--pt-expired) !important;
+        }
+        .pt-menu-list .dropdown-item.text-danger:hover,
+        .pt-menu-list .dropdown-item.text-danger:focus {
+            background-color: #F6CFCF;
+            color: var(--pt-expired) !important;
+        }
+        .pt-menu-list li form {
+            margin: 0;
+        }
         .pt-icon-btn {
             color: var(--pt-link);
             background-color: transparent;
@@ -1793,6 +1830,83 @@
                 padding: 1.1rem;
             }
         }
+
+        /* Auth pages (login / register) */
+        .auth-card {
+            border: none;
+            border-radius: 22px;
+        }
+        .auth-card .card-body {
+            padding: 2.25rem 2rem;
+        }
+        .auth-icon-badge {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background-color: var(--pt-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.1rem;
+            padding: 13px;
+        }
+        .auth-icon-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .auth-title {
+            text-align: center;
+            font-weight: 700;
+        }
+        .auth-subtitle {
+            text-align: center;
+            color: #6B7A72;
+            margin-bottom: 1.75rem;
+        }
+        .auth-field-icon-wrap {
+            position: relative;
+        }
+        .auth-field-icon-wrap > .bi {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA9A1;
+            pointer-events: none;
+        }
+        .auth-input {
+            border-radius: 14px;
+            background-color: var(--pt-row);
+            border: 1px solid var(--pt-line);
+            padding: 0.65rem 1rem 0.65rem 2.6rem;
+        }
+        .auth-input:focus {
+            background-color: var(--pt-card);
+        }
+        .auth-field-icon-wrap .auth-toggle-password {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9CA9A1;
+            padding: 0.4rem 0.6rem;
+            line-height: 1;
+        }
+        .auth-field-icon-wrap .auth-toggle-password:hover {
+            color: var(--pt-primary);
+        }
+        .btn-pt-pill {
+            border-radius: 999px;
+            padding: 0.7rem 1rem;
+            font-weight: 600;
+        }
+        .auth-divider {
+            border-top: 1px solid var(--pt-line);
+            margin: 1.5rem 0 1.1rem;
+        }
     </style>
 </head>
 <body>
@@ -2271,6 +2385,24 @@
     });
 
     document.addEventListener('click', function (event) {
+        var step = event.target.closest('.pt-batch-step');
+        if (!step) {
+            return;
+        }
+        var form = step.closest('form');
+        var hidden = form.querySelector('input[name="quantity"]');
+        var display = form.querySelector('.pt-qty-value');
+        var current = parseInt(hidden.value, 10) || 0;
+        var next = Math.max(0, current + parseInt(step.dataset.step, 10));
+        hidden.value = next;
+        display.textContent = next;
+        var minusBtn = form.querySelector('.pt-batch-step[data-step="-1"]');
+        if (minusBtn) {
+            minusBtn.disabled = next === 0;
+        }
+    });
+
+    document.addEventListener('click', function (event) {
         var link = event.target.closest('.pt-exp-link, .pt-jump');
         if (!link) {
             return;
@@ -2489,6 +2621,25 @@
                 form.reset();
             }
             ptSyncAllAutoCalc();
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        var toggle = event.target.closest('.auth-toggle-password');
+        if (!toggle) {
+            return;
+        }
+        var input = document.getElementById(toggle.dataset.toggleFor);
+        if (!input) {
+            return;
+        }
+        var icon = toggle.querySelector('i');
+        var showing = input.type === 'text';
+        input.type = showing ? 'password' : 'text';
+        toggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        if (icon) {
+            icon.classList.toggle('bi-eye', showing);
+            icon.classList.toggle('bi-eye-slash', !showing);
         }
     });
 </script>

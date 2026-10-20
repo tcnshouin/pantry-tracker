@@ -82,7 +82,7 @@ public class InventoryService {
                 }
                 FreshnessStatus freshness = batchFreshness(batch.getExpirationDate(), today, expiringSoonDays);
                 if (freshness == FreshnessStatus.EXPIRING_SOON || freshness == FreshnessStatus.EXPIRES_TODAY) {
-                    expiringThisWeek++;
+                    expiringThisWeek += batch.getQuantity();
                 }
                 if (freshness != FreshnessStatus.FRESH && freshness != FreshnessStatus.NONE) {
                     heap.add(new ExpiringEntry(item.getName(), item.getLocationGroup().getName(),
@@ -229,6 +229,14 @@ public class InventoryService {
                          UndoStack undo) {
         Item item = findItem(userId, itemId);
         LocalDate expiry = resolveExpiry(item.getCategory(), LocalDate.now(), expirationDate, autoExpiry);
+        Batch existing = expiry == null ? null : findBatchByExpiry(item, expiry);
+        if (existing != null) {
+            rememberBatch(existing, undo, "Add batch to \"" + item.getName() + "\"");
+            existing.setQuantity(existing.getQuantity() + Math.max(0, quantity));
+            applyEmptySince(existing);
+            refreshItemEmptySince(item);
+            return item.getLocationGroup().getId();
+        }
         Batch batch = new Batch(item, Math.max(0, quantity), expiry);
         batch.setAutoExpiry(autoExpiry);
         applyEmptySince(batch);
@@ -241,6 +249,15 @@ public class InventoryService {
             undo.push(action);
         }
         return item.getLocationGroup().getId();
+    }
+
+    private static Batch findBatchByExpiry(Item item, LocalDate expiry) {
+        for (Batch existing : item.getBatches()) {
+            if (expiry.equals(existing.getExpirationDate())) {
+                return existing;
+            }
+        }
+        return null;
     }
 
     @Transactional

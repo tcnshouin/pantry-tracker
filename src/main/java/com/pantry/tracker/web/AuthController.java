@@ -71,8 +71,9 @@ public class AuthController {
             return "auth/register";
         }
         try {
+            String redirectTo = ServletUriComponentsBuilder.fromCurrentContextPath().path("/login").toUriString();
             boolean needsConfirmation = supabase.signUp(SupabaseAuthClient.normalizeEmail(form.getEmail()),
-                    form.getPassword());
+                    form.getPassword(), redirectTo);
             return needsConfirmation ? "redirect:/login?confirm" : "redirect:/login?registered";
         } catch (AuthException ex) {
             result.reject("supabase", ex.getMessage());

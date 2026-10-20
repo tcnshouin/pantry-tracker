@@ -145,16 +145,25 @@ public class CategoryService {
         return new CategoryOption(c.getId(), c.getName(), c.getGroupName(), c.getShelfLifeDays());
     }
 
+    private static final int NAME_MAX_LENGTH = 120;
+    private static final int GROUP_NAME_MAX_LENGTH = 60;
+
     private static String requireName(String name) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty()) {
             throw new IllegalArgumentException("Category name is required");
+        }
+        if (trimmed.length() > NAME_MAX_LENGTH) {
+            throw new IllegalArgumentException("Category name must be " + NAME_MAX_LENGTH + " characters or fewer");
         }
         return trimmed;
     }
 
     private static String cleanGroup(String groupName) {
         String trimmed = groupName == null ? "" : groupName.trim();
+        if (trimmed.length() > GROUP_NAME_MAX_LENGTH) {
+            throw new IllegalArgumentException("Category group must be " + GROUP_NAME_MAX_LENGTH + " characters or fewer");
+        }
         return trimmed.isEmpty() ? "Others" : trimmed;
     }
 }

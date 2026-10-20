@@ -1,6 +1,7 @@
 package com.pantry.tracker.web;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -98,12 +99,12 @@ class SecurityTest {
                         .param("password", "password123")
                         .param("confirmPassword", "password123"))
                 .andExpect(status().isForbidden());
-        verify(supabase, never()).signUp(anyString(), anyString());
+        verify(supabase, never()).signUp(anyString(), anyString(), anyString());
     }
 
     @Test
     void registerAsksTheUserToConfirmTheirEmail() throws Exception {
-        when(supabase.signUp("new@example.com", "password123")).thenReturn(true);
+        when(supabase.signUp(eq("new@example.com"), eq("password123"), anyString())).thenReturn(true);
 
         mockMvc.perform(post("/register").with(csrf())
                         .param("email", "new@example.com")

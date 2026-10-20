@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
+<div th:fragment="groupBodyWithStats(group, items, categories, prompt, addError, overview)">
+    <div th:replace="~{home :: statsCards(${overview})}"></div>
+    <div th:replace="~{home :: expiringSoonCard(${overview})}"></div>
+    <div th:replace="~{inventory/fragments :: groupBody(${group}, ${items}, ${categories}, ${prompt}, ${addError})}"></div>
+</div>
+
 <div th:fragment="groupBody(group, items, categories, prompt, addError)"
      th:with="target='#group-body-' + ${group.id()}">
 
@@ -121,7 +127,6 @@
                                 <i class="bi bi-pencil me-2"></i>Edit item
                             </button>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
                         <li>
                             <button type="button" class="dropdown-item text-danger"
                                     th:attr="hx-post=@{/items/{id}/delete(id=${it.id()})},hx-target=${target}"
@@ -183,15 +188,12 @@
                 <form th:each="b : ${it.batches()}" class="pt-batch-grid pt-batch-row"
                       th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
                     <input type="hidden" name="quantity" th:value="${b.quantity()}">
-                    <div class="pt-qty" role="group" aria-label="Batch quantity">
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                th:disabled="${b.quantity() == 0}"
-                                th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
-                                hx-swap="innerHTML" hx-vals='{"delta": -1}'>−</button>
+                    <div class="pt-qty" role="group" aria-label="Batch quantity (click Save to apply)">
+                        <button type="button" class="btn btn-sm btn-outline-secondary pt-batch-step"
+                                th:disabled="${b.quantity() == 0}" data-step="-1">−</button>
                         <span class="btn btn-sm btn-outline-secondary disabled pt-qty-value" th:text="${b.quantity()}">0</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
-                                hx-swap="innerHTML" hx-vals='{"delta": 1}'>+</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary pt-batch-step"
+                                data-step="1">+</button>
                     </div>
                     <div class="pt-batch-date">
                         <input type="date" name="expirationDate" class="form-control pt-date"

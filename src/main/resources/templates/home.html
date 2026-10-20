@@ -62,7 +62,8 @@
         </div>
     </div>
 
-    <div class="card shadow-sm pt-side-card pt-fit-card" data-fit="4">
+    <div id="pt-expiring-soon" th:fragment="expiringSoonCard(overview)" hx-swap-oob="true"
+         class="card shadow-sm pt-side-card pt-fit-card" data-fit="4">
         <div class="pt-side-head pt-head-tight">
             <h2 class="h5 mb-0"><i class="bi bi-calendar-event-fill pt-head-icon" aria-hidden="true"></i><span class="pt-head-text">Expiring Soon</span></h2>
             <span th:unless="${overview.expiringSoon().isEmpty()}" class="badge rounded-pill pt-exp-count"
@@ -118,7 +119,7 @@
         Undone: <span th:text="${undone}">action</span>
     </div>
 
-    <div class="row g-3 mb-4">
+    <div id="pt-stats" th:fragment="statsCards(overview)" hx-swap-oob="true" class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
@@ -187,7 +188,6 @@
                                 <i class="bi bi-pencil me-2"></i>Rename location
                             </button>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
                         <li>
                             <form th:action="@{/locations/{id}/delete(id=${g.group().id()})}" method="post"
                                   data-confirm="Delete this location?" data-confirm-note="It must be empty first. This can't be undone.">

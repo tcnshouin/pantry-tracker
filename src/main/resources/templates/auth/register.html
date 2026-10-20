@@ -10,39 +10,63 @@
 <div layout:fragment="content">
     <div class="row justify-content-center">
         <div class="col-md-5">
-            <div class="card shadow-sm">
+            <div class="card auth-card shadow-sm">
                 <div class="card-body">
-                    <h1 class="h4 mb-3">Create account</h1>
+                    <div class="auth-icon-badge">
+                        <img th:src="@{/img/logo.png}" alt="Pantry Tracker">
+                    </div>
+                    <h1 class="h3 auth-title mb-2">Create account</h1>
+                    <p class="auth-subtitle">Set up your pantry so you can start tracking stock and expiry dates.</p>
 
                     <form th:action="@{/register}" th:object="${registerForm}" method="post">
                         <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}"
                              th:text="${#fields.globalErrors()[0]}">Error</div>
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" id="email" th:field="*{email}" class="form-control"
-                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
+                            <label for="email" class="form-label">Email address</label>
+                            <div class="auth-field-icon-wrap">
+                                <i class="bi bi-envelope"></i>
+                                <input type="email" id="email" th:field="*{email}" class="form-control auth-input"
+                                       th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+                            </div>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('email')}"
                                  th:errors="*{email}">Email error</div>
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
-                            <input type="password" id="password" th:field="*{password}" class="form-control"
-                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
+                            <div class="auth-field-icon-wrap">
+                                <i class="bi bi-lock"></i>
+                                <input type="password" id="password" th:field="*{password}" class="form-control auth-input"
+                                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
+                                <button type="button" class="auth-toggle-password" data-toggle-for="password"
+                                        aria-label="Show password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('password')}"
                                  th:errors="*{password}">Password error</div>
                         </div>
                         <div class="mb-3">
                             <label for="confirmPassword" class="form-label">Confirm password</label>
-                            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" class="form-control"
-                                   th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}"
+                            <div class="auth-field-icon-wrap">
+                                <i class="bi bi-lock"></i>
+                                <input type="password" id="confirmPassword" th:field="*{confirmPassword}" class="form-control auth-input"
+                                       th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'">
+                                <button type="button" class="auth-toggle-password" data-toggle-for="confirmPassword"
+                                        aria-label="Show password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('confirmPassword')}"
                                  th:errors="*{confirmPassword}">Confirm error</div>
                         </div>
-                        <button type="submit" class="btn btn-pt w-100">Create account</button>
+                        <button type="submit" class="btn btn-pt btn-pt-pill w-100">
+                            Create account <i class="bi bi-arrow-right"></i>
+                        </button>
                     </form>
 
-                    <p class="mt-3 mb-0 text-center">
-                        Already have an account? <a th:href="@{/login}">Log in</a>
+                    <hr class="auth-divider">
+                    <p class="mb-0 text-center">
+                        Already have an account? <a th:href="@{/login}"><strong>Log in</strong></a>
                     </p>
                 </div>
             </div>

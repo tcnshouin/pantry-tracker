@@ -221,7 +221,8 @@ public class HomeController {
         model.addAttribute("prompt", prompt);
         model.addAttribute("addError", addError);
         model.addAttribute("inlineUndo", undoStack(session).peekLabel());
-        return "inventory/fragments :: groupBody";
+        model.addAttribute("overview", inventory.overview(userId));
+        return "inventory/fragments :: groupBodyWithStats";
     }
 
     private UndoStack undoStack(HttpSession session) {

@@ -35,8 +35,8 @@ public class SupabaseAuthClient {
         return toUser((Map<?, ?>) body.get("user"));
     }
 
-    public boolean signUp(String email, String password) {
-        Map<?, ?> body = post("/auth/v1/signup", Map.of("email", email, "password", password));
+    public boolean signUp(String email, String password, String redirectTo) {
+        Map<?, ?> body = post("/auth/v1/signup?redirect_to=" + redirectTo, Map.of("email", email, "password", password));
         return body.get("access_token") == null;
     }
 
