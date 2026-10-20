@@ -116,10 +116,11 @@
 
         <div th:if="${page.rows().isEmpty()}" class="card shadow-sm">
             <div class="card-body text-center py-5">
-                <div class="fs-1 mb-2">🛒</div>
-                <p class="fw-semibold mb-1">Your list is empty</p>
-                <p class="text-muted small mb-0">Low and out-of-stock items show up here automatically, or add
-                    something from <span class="fw-semibold">Quick add</span>.</p>
+                <img class="pt-empty-art mb-3" th:src="@{/img/empty-cart.png}" alt="">
+                <p class="h5 fw-bold mb-2 pt-empty-title">Your cart is waiting</p>
+                <p class="text-muted mb-0 mx-auto pt-empty-text">Let's fill it up! We'll automatically add your
+                    running-low items here, or you can manually drop things in using
+                    <span class="fw-semibold">Quick add</span>.</p>
             </div>
         </div>
 
