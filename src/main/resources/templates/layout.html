@@ -1022,9 +1022,13 @@
         .pt-cat-table td {
             border-bottom: 0;
         }
+        .pt-cat-table th:first-child,
+        .pt-cat-table tr.pt-cat-row > td:first-child {
+            padding-left: calc(1.25rem + 8px);
+        }
         .pt-cat-table th:last-child,
-        .pt-cat-table td:last-child {
-            padding-right: calc(1.1rem + 8px);
+        .pt-cat-table tr.pt-cat-row > td:last-child {
+            padding-right: calc(1.25rem + 8px);
         }
         .pt-cat-table tr.pt-cat-row > td {
             background-image: linear-gradient(var(--pt-line), var(--pt-line));
