@@ -102,6 +102,9 @@ public final class Views {
     public record GroupWithItems(LocationGroupView group, List<ItemView> items) {
     }
 
+    public record AddedItem(ItemView item, Long locationId, String locationName, LocalDate addedOn) {
+    }
+
     public record DuplicatePrompt(ItemView existing, String name, Long categoryId, int quantity,
                                   String expirationDate, boolean autoExpiry) {
     }

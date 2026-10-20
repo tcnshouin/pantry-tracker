@@ -12,6 +12,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     List<Item> findByUserId(UUID userId);
 
+    List<Item> findByUserIdOrderByCreatedAtAscIdAsc(UUID userId);
+
     List<Item> findByLocationGroupOrderByNameAsc(LocationGroup locationGroup);
 
     List<Item> findByPurgeOverrideFalseAndEmptySinceBefore(Instant cutoff);

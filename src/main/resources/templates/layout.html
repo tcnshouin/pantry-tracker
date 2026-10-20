@@ -415,6 +415,24 @@
         .pt-empty-text {
             max-width: 26rem;
         }
+        .pt-all-table th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(31, 42, 36, 0.65);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom-color: var(--pt-line);
+        }
+        .pt-all-table td {
+            border-color: var(--pt-line);
+        }
+        .pt-jump {
+            cursor: pointer;
+        }
+        .pt-jump:hover > td,
+        .pt-jump:focus-visible > td {
+            background-color: var(--pt-tint);
+        }
         .pt-batches-toggle {
             display: inline-flex;
             align-items: center;
@@ -861,7 +879,7 @@
     window.addEventListener('load', ptSyncTopbarHeight);
 
     function ptGroupIdFromHash() {
-        var match = window.location.hash.match(/^#group-card-(\d+)$/);
+        var match = window.location.hash.match(/^#group-card-(\d+|all)$/);
         return match ? match[1] : null;
     }
 
@@ -900,6 +918,8 @@
         }
     }
 
+    var ptAllStale = false;
+
     document.addEventListener('click', function (event) {
         var link = event.target.closest('.pt-loc-link');
         if (!link) {
@@ -907,6 +927,10 @@
         }
         event.preventDefault();
         history.replaceState(null, '', '#group-card-' + link.dataset.groupId);
+        if (link.dataset.groupId === 'all' && ptAllStale) {
+            window.location.reload();
+            return;
+        }
         ptShowGroup(link.dataset.groupId);
     });
 
@@ -922,6 +946,7 @@
         if (!target || !target.id || target.id.indexOf('group-body-') !== 0) {
             return;
         }
+        ptAllStale = true;
         var groupId = target.id.substring('group-body-'.length);
         var link = document.querySelector('.pt-loc-link[data-group-id="' + groupId + '"] .pt-loc-count');
         if (link) {
@@ -965,7 +990,7 @@
     });
 
     document.addEventListener('click', function (event) {
-        var link = event.target.closest('.pt-exp-link');
+        var link = event.target.closest('.pt-exp-link, .pt-jump');
         if (!link) {
             return;
         }

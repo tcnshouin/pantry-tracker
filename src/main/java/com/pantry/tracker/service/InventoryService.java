@@ -5,6 +5,7 @@ import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views;
+import com.pantry.tracker.model.Views.AddedItem;
 import com.pantry.tracker.model.Views.BatchView;
 import com.pantry.tracker.model.Views.CategoryOption;
 import com.pantry.tracker.model.Views.ExpiringEntry;
@@ -26,6 +27,7 @@ import com.pantry.tracker.service.DataStructures.UndoStack;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,6 +113,18 @@ public class InventoryService {
             result.add(groupWithItems(group));
         }
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AddedItem> allItemsByDateAdded(UUID userId) {
+        LocalDate today = LocalDate.now();
+        Instant now = Instant.now();
+        List<AddedItem> rows = new ArrayList<>();
+        for (Item item : itemRepository.findByUserIdOrderByCreatedAtAscIdAsc(userId)) {
+            rows.add(new AddedItem(toView(item, today, now), item.getLocationGroup().getId(),
+                    item.getLocationGroup().getName(), LocalDate.ofInstant(item.getCreatedAt(), ZoneId.systemDefault())));
+        }
+        return rows;
     }
 
     @Transactional(readOnly = true)

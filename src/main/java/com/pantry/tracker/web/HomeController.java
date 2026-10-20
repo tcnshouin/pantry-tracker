@@ -38,6 +38,7 @@ public class HomeController {
         groceryService.syncAutoSuggestions(userId);
         model.addAttribute("overview", inventory.overview(userId));
         model.addAttribute("groups", inventory.groupsWithItems(userId));
+        model.addAttribute("allItems", inventory.allItemsByDateAdded(userId));
         model.addAttribute("categories", inventory.categoryOptions());
         model.addAttribute("undoLabel", undoStack(session).peekLabel());
         return "home";
