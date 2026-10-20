@@ -212,7 +212,7 @@
             </form>
         </div>
         <div th:id="'collapse-' + ${g.group().id()}" class="collapse show">
-            <div class="card-body">
+            <div class="card-body pt-group-scroll">
                 <div th:id="'group-body-' + ${g.group().id()}">
                     <div th:replace="~{inventory/fragments :: groupBody(${g.group()}, ${g.items()}, ${categories}, null, null)}"></div>
                 </div>

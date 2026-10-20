@@ -1091,6 +1091,40 @@
             padding: 0.55rem 1.1rem;
             box-shadow: 0 0.4rem 0.9rem rgba(47, 107, 69, 0.35);
         }
+        .pt-select-all {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            min-height: 2.6rem;
+            margin: 0;
+            padding: 0.5rem 1rem 0.5rem 0.8rem;
+            background-color: var(--pt-white);
+            border: 1px solid var(--pt-line);
+            border-radius: 0.65rem;
+            box-shadow: 0 0.25rem 0.6rem rgba(31, 42, 36, 0.08);
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .pt-select-all .form-check-input {
+            float: none;
+            margin: 0;
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+        .pt-select-all .form-check-label {
+            font-weight: 600;
+            color: #28452F;
+            cursor: pointer;
+        }
+        .pt-select-all:hover {
+            border-color: var(--pt-primary);
+            box-shadow: 0 0.35rem 0.8rem rgba(31, 42, 36, 0.12);
+        }
+        .pt-select-all:has(.form-check-input:checked),
+        .pt-select-all:has(.form-check-input:indeterminate) {
+            background-color: var(--pt-fresh);
+            border-color: var(--pt-primary);
+        }
         .pt-btn-new:disabled {
             background-color: #2F6B45;
             border-color: #2F6B45;
@@ -1111,6 +1145,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            gap: 1.25rem;
             height: calc(100vh - var(--pt-topbar-h));
             padding: 2.75rem 4.5rem 4.5rem;
             overflow: hidden;
@@ -1402,6 +1437,22 @@
         .pt-one-group .pt-group-card:not(.pt-active) {
             display: none;
         }
+        .pt-group-card > .card-header {
+            padding: 1rem calc(1.25rem + 6px);
+        }
+        .pt-one-group .pt-group-card.pt-active {
+            margin-bottom: 0 !important;
+        }
+        .pt-group-scroll.pt-group-fitted .pt-item-row {
+            margin-bottom: var(--pt-row-gap, 0.5rem) !important;
+        }
+        .pt-group-scroll.pt-group-fitted {
+            overflow-y: auto;
+            padding-bottom: 0;
+            margin-bottom: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--pt-line) transparent;
+        }
         .pt-group-card {
             scroll-margin-top: calc(var(--pt-topbar-h) + 1rem);
         }
@@ -1580,10 +1631,24 @@
             white-space: nowrap;
             transition: background-color 0.15s ease, transform 0.12s ease, color 0.15s ease;
         }
+        .pt-nav a.pt-nav-home {
+            padding: 1.1rem 1.25rem;
+            font-size: calc(1.08rem + 2px);
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+        .pt-nav a.pt-nav-home .bi {
+            font-size: 1.45rem;
+        }
         .pt-nav a.pt-nav-home:not(.active) {
-            background-color: #D1E6D5;
-            box-shadow: 0 0.35rem 0.85rem rgba(31, 42, 36, 0.13);
-            margin-bottom: 0.25rem;
+            background: linear-gradient(180deg, #F4FAF5 0%, #E7F2E9 100%);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            color: #28452F;
+            box-shadow: 0 0.6rem 1.4rem rgba(31, 42, 36, 0.18), 0 0.15rem 0.4rem rgba(31, 42, 36, 0.1);
+        }
+        .pt-nav a.pt-nav-home:not(.active):hover {
+            background: linear-gradient(180deg, #FFFFFF 0%, #EEF6EF 100%);
+            box-shadow: 0 0.75rem 1.6rem rgba(31, 42, 36, 0.22), 0 0.2rem 0.45rem rgba(31, 42, 36, 0.12);
         }
         .pt-nav-end {
             height: 1px;
@@ -1871,7 +1936,45 @@
             localStorage.setItem('pt-group', activeId);
         } catch (e) {
         }
+        ptFitGroup();
     }
+
+    function ptFitGroup() {
+        document.querySelectorAll('.pt-group-card .pt-group-scroll').forEach(function (body) {
+            body.style.maxHeight = '';
+            body.style.removeProperty('--pt-row-gap');
+            body.classList.remove('pt-group-fitted');
+        });
+        var card = document.querySelector('.pt-one-group .pt-group-card.pt-active:not(#group-card-all)');
+        if (!card || window.innerWidth < 992) {
+            return;
+        }
+        var body = card.querySelector('.pt-group-scroll');
+        var rows = body ? body.querySelectorAll('.pt-item-row') : [];
+        if (rows.length < 2) {
+            return;
+        }
+        var first = rows[0].getBoundingClientRect();
+        var pitch = rows[1].getBoundingClientRect().top - first.top;
+        var gap = pitch - first.height;
+        var bodyTop = body.getBoundingClientRect().top + window.scrollY;
+        var padTop = first.top - body.getBoundingClientRect().top;
+        var bottomSpace = (parseFloat(getComputedStyle(document.querySelector('.pt-home-main')).paddingBottom) || 24)
+            + (parseFloat(getComputedStyle(card).marginBottom) || 0);
+        var available = window.innerHeight - bodyTop - bottomSpace - padTop * 2;
+        var fit = Math.floor((available + gap) / pitch);
+        if (fit < 2 || fit >= rows.length) {
+            return;
+        }
+        var extra = available - (fit * pitch - gap);
+        var newGap = Math.min(gap + extra / (fit - 1), gap + 14);
+        body.classList.add('pt-group-fitted');
+        body.style.setProperty('--pt-row-gap', newGap + 'px');
+        body.style.maxHeight = Math.floor(padTop + fit * (first.height + newGap) - newGap) + 'px';
+    }
+
+    window.addEventListener('resize', ptFitGroup);
+    document.body.addEventListener('htmx:afterSwap', ptFitGroup);
 
     function ptInitGroups() {
         if (!document.querySelector('.pt-group-card')) {
@@ -2052,6 +2155,16 @@
         if (event.target.id === 'pick-all' || event.target.classList.contains('pt-pick')) {
             ptSyncPutAway();
         }
+    });
+
+    document.addEventListener('click', function (event) {
+        var chip = event.target.closest('.pt-select-all');
+        if (!chip || event.target.closest('input, label')) {
+            return;
+        }
+        var box = chip.querySelector('input');
+        box.checked = !box.checked;
+        box.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
     document.addEventListener('input', function (event) {

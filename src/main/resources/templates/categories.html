@@ -184,16 +184,30 @@
             }
 
             function sizeTable() {
+                var page = document.querySelector('.pt-cat-page');
                 var card = document.querySelector('.pt-cat-table-card');
                 var table = card.querySelector('table');
-                var rows = document.querySelectorAll('.pt-cat-row');
-                if (rows.length < 11 || window.innerWidth < 768) {
-                    card.style.height = '';
+                var rows = Array.prototype.filter.call(document.querySelectorAll('.pt-cat-row'), function (r) {
+                    return !r.hidden;
+                });
+                card.style.height = '';
+                if (rows.length < 3 || window.innerWidth < 768) {
                     return;
                 }
+                var style = getComputedStyle(page);
+                var gap = parseFloat(style.rowGap) || 0;
+                var available = page.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+                Array.prototype.forEach.call(page.children, function (child) {
+                    if (child !== card && getComputedStyle(child).display !== 'none' && child.tagName !== 'SCRIPT') {
+                        available -= child.getBoundingClientRect().height + gap;
+                    }
+                });
                 var top = table.getBoundingClientRect().top;
-                var bottom = rows[10].getBoundingClientRect().bottom;
-                card.style.height = Math.round(bottom - top) + 'px';
+                var fit = Math.min(11, rows.length);
+                while (fit > 3 && rows[fit - 1].getBoundingClientRect().bottom - top > available) {
+                    fit--;
+                }
+                card.style.height = Math.round(rows[fit - 1].getBoundingClientRect().bottom - top) + 'px';
             }
 
             sizeTable();

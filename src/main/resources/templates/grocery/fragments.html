@@ -109,7 +109,7 @@
             </div>
             <form th:action="@{/grocery/put-away}" method="post" id="put-away-form"
                   class="d-flex align-items-center gap-3" th:unless="${page.rows().isEmpty()}">
-                <div class="form-check mb-0">
+                <div class="form-check mb-0 pt-select-all">
                     <input class="form-check-input" type="checkbox" id="pick-all">
                     <label class="form-check-label" for="pick-all">Select all</label>
                 </div>
