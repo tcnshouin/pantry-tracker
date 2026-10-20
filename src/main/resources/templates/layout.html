@@ -238,13 +238,21 @@
             flex: 1 1 auto;
             min-height: 0;
             overflow-y: auto;
-            padding: 0 1rem 0.25rem;
+            padding: 0 1.25rem 0.25rem;
             margin-bottom: 1rem;
             scrollbar-width: thin;
             scrollbar-color: var(--pt-line) transparent;
         }
         .pt-side-card.pt-side-fixed {
             flex: none;
+        }
+        .pt-side-card > .px-3 {
+            padding-left: 1.25rem !important;
+            padding-right: 1.25rem !important;
+        }
+        .pt-side-scroll .pt-list-end {
+            margin-left: 0;
+            margin-right: 0;
         }
         .pt-summary-body {
             padding-left: 1.25rem !important;
