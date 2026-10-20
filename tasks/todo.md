@@ -197,5 +197,7 @@
 - [x] Tests: 35 (32 pass anywhere, 3 DB tests skip without `.env`).
 - [x] Verified V1–V5 + schema validation on a scratch Postgres, and the full
       login → grocery → put-away flow in a browser against a stand-in auth server.
-- [ ] Run against the real Supabase project once `.env` exists (DB tests,
-      confirmation email, reset email).
+- [x] Ran against the real Supabase project: V1–V5 applied (Flyway baselines at 0
+      because new projects ship an `rls_auto_enable` function in `public`), RLS on
+      all 7 tables, 35/35 tests pass with no skips.
+- [ ] Check the confirmation and reset emails in the browser.

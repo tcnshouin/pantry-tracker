@@ -93,19 +93,18 @@ On the first start, Flyway creates every table in Supabase (look for
 
 Docker works too: `docker compose up --build` reads the same `.env`.
 
-## 7. One last security switch (after the first run)
+## 7. Check the security switch (after the first run)
 
 Supabase exposes every table in the `public` schema through its web API. Our
-migration already locks the app tables with Row Level Security. Flyway's own
-history table gets created during the first run, so lock that one by hand:
-open **SQL Editor**, paste this, and click **Run**:
+migration locks the app tables with Row Level Security, and newer Supabase
+projects also switch it on automatically for new tables (that's the
+`rls_auto_enable` function you may see in the schema). To confirm, open
+**Advisors → Security Advisor**: there should be no "RLS disabled" warnings. If
+`flyway_schema_history` is listed, open **SQL Editor** and run:
 
 ```sql
 alter table flyway_schema_history enable row level security;
 ```
-
-Afterwards, **Advisors → Security Advisor** should show no "RLS disabled"
-warnings.
 
 ---
 
