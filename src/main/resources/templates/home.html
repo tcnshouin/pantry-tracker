@@ -58,6 +58,7 @@
                 </li>
             </ul>
             <div id="loc-no-match" class="text-muted small" hidden>No locations match your search.</div>
+            <div th:unless="${groups.isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
         </div>
     </div>
 
