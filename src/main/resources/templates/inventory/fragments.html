@@ -134,120 +134,123 @@
             </div>
         </div>
 
-        <div th:id="'edit-' + ${it.id()}" class="collapse mt-2">
+        <div th:id="'edit-' + ${it.id()}" class="collapse">
             <form th:attr="hx-post=@{/items/{id}(id=${it.id()})},hx-target=${target}"
-                  hx-swap="innerHTML" class="row g-2 align-items-end">
-                <div class="col-md-6">
-                    <label class="form-label small mb-1">Name</label>
-                    <input type="text" name="name" class="form-control form-control-sm"
-                           th:value="${it.name()}" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small mb-1">Category</label>
-                    <select name="categoryId" class="form-select form-select-sm" required>
-                        <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}"
-                                th:selected="${c.name() == it.categoryName()}">Category</option>
-                    </select>
-                </div>
-                <div class="col-md-3 form-check ms-2 mt-2">
-                    <input class="form-check-input" type="checkbox" name="lowStockEnabled" value="true"
-                           th:checked="${it.lowStockEnabled()}" th:id="'low-' + ${it.id()}">
-                    <label class="form-check-label small" th:for="'low-' + ${it.id()}">Low-stock alerts</label>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Threshold</label>
-                    <input type="number" name="lowStockThreshold" min="0" class="form-control form-control-sm"
-                           th:value="${it.lowStockThreshold()}">
-                </div>
-                <div class="col-md-2 d-grid">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">Save item</button>
+                  hx-swap="innerHTML" class="pt-panel">
+                <div class="pt-panel-title"><i class="bi bi-pencil-square me-2"></i>Edit item</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label pt-field-label" th:for="'en-' + ${it.id()}">Name</label>
+                        <input type="text" name="name" class="form-control" th:id="'en-' + ${it.id()}"
+                               th:value="${it.name()}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label pt-field-label" th:for="'ec-' + ${it.id()}">Category</label>
+                        <select name="categoryId" class="form-select" th:id="'ec-' + ${it.id()}" required>
+                            <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}"
+                                    th:selected="${c.name() == it.categoryName()}">Category</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch pt-switch-box">
+                            <input class="form-check-input" type="checkbox" role="switch" name="lowStockEnabled"
+                                   value="true" th:checked="${it.lowStockEnabled()}" th:id="'low-' + ${it.id()}">
+                            <label class="form-check-label" th:for="'low-' + ${it.id()}">Low-stock alerts</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label pt-field-label" th:for="'th-' + ${it.id()}">Threshold</label>
+                        <input type="number" name="lowStockThreshold" min="0" class="form-control"
+                               th:id="'th-' + ${it.id()}" th:value="${it.lowStockThreshold()}" placeholder="e.g. 2">
+                    </div>
+                    <div class="col-6 col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn pt-btn-save w-100"><i class="bi bi-check2 me-1"></i>Save item</button>
+                    </div>
                 </div>
             </form>
         </div>
 
-        <div th:id="'batches-' + ${it.id()}" class="collapse mt-2">
-            <table class="table table-sm align-middle mb-2">
-                <thead>
-                <tr>
-                    <th scope="col">Quantity</th>
-                    <th scope="col">Expiration</th>
-                    <th scope="col">Added</th>
-                    <th scope="col"></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="b : ${it.batches()}">
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-secondary"
-                                    th:disabled="${b.quantity() == 0}"
-                                    th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
-                                    hx-swap="innerHTML" hx-vals='{"delta": -1}'>−</button>
-                            <span class="btn btn-outline-secondary disabled" th:text="${b.quantity()}">0</span>
-                            <button type="button" class="btn btn-outline-secondary"
-                                    th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
-                                    hx-swap="innerHTML" hx-vals='{"delta": 1}'>+</button>
+        <div th:id="'batches-' + ${it.id()}" class="collapse">
+            <div class="pt-panel">
+                <div class="pt-panel-title"><i class="bi bi-stack me-2"></i>Batches</div>
+                <div class="pt-batch-grid pt-batch-head" aria-hidden="true">
+                    <span>Quantity</span>
+                    <span>Expiration</span>
+                    <span>Added</span>
+                    <span>Status</span>
+                    <span></span>
+                </div>
+                <form th:each="b : ${it.batches()}" class="pt-batch-grid pt-batch-row"
+                      th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
+                    <input type="hidden" name="quantity" th:value="${b.quantity()}">
+                    <div class="pt-qty" role="group" aria-label="Batch quantity">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                th:disabled="${b.quantity() == 0}"
+                                th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
+                                hx-swap="innerHTML" hx-vals='{"delta": -1}'>−</button>
+                        <span class="btn btn-sm btn-outline-secondary disabled pt-qty-value" th:text="${b.quantity()}">0</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                th:attr="hx-post=@{/batches/{id}/quantity(id=${b.id()})},hx-target=${target}"
+                                hx-swap="innerHTML" hx-vals='{"delta": 1}'>+</button>
+                    </div>
+                    <div class="pt-batch-date">
+                        <input type="date" name="expirationDate" class="form-control pt-date"
+                               th:value="${b.expirationDate()}" aria-label="Expiration">
+                        <div class="form-check pt-auto-check">
+                            <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
+                                   value="true" th:checked="${b.autoExpiry()}" th:id="'auto-' + ${b.id()}">
+                            <label class="form-check-label" th:for="'auto-' + ${b.id()}">Auto</label>
                         </div>
-                    </td>
-                    <td>
-                        <input type="date" name="expirationDate" class="form-control form-control-sm"
-                               th:value="${b.expirationDate()}" th:attr="form='bf-' + ${b.id()}">
-                        <span class="badge rounded-pill mt-1" th:classappend="${b.freshness().cssClass()}"
+                    </div>
+                    <input type="date" name="dateAdded" class="form-control pt-date"
+                           th:value="${b.dateAdded()}" aria-label="Date added">
+                    <div class="pt-batch-status">
+                        <span class="badge rounded-pill" th:classappend="${b.freshness().cssClass()}"
                               th:text="${b.freshness().label()}">Fresh</span>
-                        <span th:if="${b.expiryText() != null and b.daysUntilExpiry() != 0}" class="small pt-expiry ms-1"
+                        <span th:if="${b.expiryText() != null and b.daysUntilExpiry() != 0}" class="small pt-expiry"
                               th:classappend="${b.daysUntilExpiry() < 0} ? 'pt-expiry-past'"
                               th:text="${b.expiryText()}">Expiring in 5 days</span>
-                    </td>
-                    <td>
-                        <input type="date" name="dateAdded" class="form-control form-control-sm"
-                               th:value="${b.dateAdded()}" th:attr="form='bf-' + ${b.id()}">
-                    </td>
-                    <td class="text-nowrap">
-                        <form th:id="'bf-' + ${b.id()}" class="d-inline"
-                              th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
-                            <input type="hidden" name="quantity" th:value="${b.quantity()}">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
-                                       value="true" th:checked="${b.autoExpiry()}" th:id="'auto-' + ${b.id()}">
-                                <label class="form-check-label small" th:for="'auto-' + ${b.id()}">Auto</label>
-                            </div>
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
-                        </form>
-                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                th:attr="hx-post=@{/batches/{id}/delete(id=${b.id()})},hx-target=${target}"
-                                hx-swap="innerHTML">Delete</button>
-                        <span th:if="${b.purgeOverride()}" class="badge rounded-pill pt-badge pt-badge-muted ms-1">Kept</span>
-                        <span th:if="${b.daysUntilPurge() != null}"
-                              class="badge rounded-pill pt-badge pt-badge-warning ms-1"
+                        <span th:if="${b.purgeOverride()}" class="badge rounded-pill pt-badge pt-badge-muted">Kept</span>
+                        <span th:if="${b.daysUntilPurge() != null}" class="badge rounded-pill pt-badge pt-badge-warning"
                               th:text="${b.daysUntilPurge() == 0} ? 'Purges today' : 'Purges in ' + ${b.daysUntilPurge()} + ' d'">Purges soon</span>
-                        <button th:if="${b.daysUntilPurge() != null}" type="button"
-                                class="btn btn-sm btn-outline-secondary ms-1"
+                    </div>
+                    <div class="pt-batch-actions">
+                        <button th:if="${b.daysUntilPurge() != null}" type="button" class="btn btn-sm btn-outline-secondary"
                                 th:attr="hx-post=@{/batches/{id}/keep(id=${b.id()})},hx-target=${target}"
-                                hx-swap="innerHTML">Keep batch</button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            <form th:attr="hx-post=@{/items/{id}/batches(id=${it.id()})},hx-target=${target}"
-                  hx-swap="innerHTML" class="row g-2 align-items-end">
-                <div class="col-auto">
-                    <label class="form-label small mb-1">New batch qty</label>
-                    <input type="number" name="quantity" min="0" value="1"
-                           class="form-control form-control-sm" style="width: 7rem;">
-                </div>
-                <div class="col-auto">
-                    <label class="form-label small mb-1">Expiration</label>
-                    <input type="date" name="expirationDate" class="form-control form-control-sm">
-                </div>
-                <div class="col-auto form-check mt-4">
-                    <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry" value="true"
-                           checked th:id="'ab-auto-' + ${it.id()}">
-                    <label class="form-check-label small" th:for="'ab-auto-' + ${it.id()}">Auto expiry</label>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-sm btn-pt">Add batch</button>
-                </div>
-            </form>
+                                hx-swap="innerHTML">Keep</button>
+                        <button type="submit" class="btn btn-sm pt-btn-save"><i class="bi bi-check2 me-1"></i>Save</button>
+                        <button type="button" class="btn btn-sm pt-btn-delete" title="Delete batch"
+                                th:attr="hx-post=@{/batches/{id}/delete(id=${b.id()})},hx-target=${target}"
+                                hx-swap="innerHTML"><i class="bi bi-trash3 me-1"></i>Delete</button>
+                    </div>
+                </form>
+                <form th:attr="hx-post=@{/items/{id}/batches(id=${it.id()})},hx-target=${target}"
+                      hx-swap="innerHTML" class="pt-new-batch">
+                    <div class="pt-new-batch-title"><i class="bi bi-plus-circle me-2"></i>Add a new batch</div>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label pt-field-label" th:for="'nb-q-' + ${it.id()}">Quantity</label>
+                            <input type="number" name="quantity" min="0" value="1" class="form-control"
+                                   th:id="'nb-q-' + ${it.id()}">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label pt-field-label" th:for="'nb-e-' + ${it.id()}">Expiration</label>
+                            <input type="date" name="expirationDate" class="form-control pt-date"
+                                   th:id="'nb-e-' + ${it.id()}">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="form-check pt-auto-check mb-2">
+                                <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry" value="true"
+                                       checked th:id="'ab-auto-' + ${it.id()}">
+                                <label class="form-check-label" th:for="'ab-auto-' + ${it.id()}">Auto expiry</label>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="submit" class="btn pt-btn-add w-100"><i class="bi bi-plus-lg me-1"></i>Add batch</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
