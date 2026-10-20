@@ -136,7 +136,7 @@
                            th:value="${row.id()}" th:id="'pick-' + ${row.id()}" th:disabled="${!row.linked()}"
                            th:attr="aria-label='Select ' + ${row.itemName()}">
                     <label class="pt-grocery-name" th:for="'pick-' + ${row.id()}">
-                        <span class="d-block fw-semibold text-break" th:text="${row.itemName()}">Item</span>
+                        <span class="d-block fw-semibold text-break pt-grocery-title" th:text="${row.itemName()}">Item</span>
                         <span class="d-flex flex-wrap align-items-center gap-1 small">
                             <span th:if="${row.linked()}" class="badge pt-cat-badge"
                                   th:text="${row.categoryName()}">Category</span>
