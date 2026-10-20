@@ -1,58 +1,173 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
-<div th:fragment="groceryBody(list)" class="row g-3">
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h2 class="h5 mb-3">Suggested</h2>
-                <div th:if="${list.suggested().isEmpty()}" class="text-muted small">
-                    Nothing suggested. Items appear here when they run low or out.
+<th:block th:fragment="groceryBody(page)">
+    <aside class="pt-home-side">
+        <div class="card shadow-sm pt-side-card pt-side-fixed">
+            <div class="pt-side-head pt-head-tight">
+                <h2 class="h5 mb-0"><i class="bi bi-bag-fill pt-head-icon" aria-hidden="true"></i><span class="pt-head-text">Shopping Summary</span></h2>
+            </div>
+            <div class="px-3 pt-summary-body">
+                <div class="row g-2 text-center">
+                    <div class="col-6">
+                        <div class="pt-mini-stat">
+                            <div class="h4 mb-0" th:text="${page.summary().items()}">0</div>
+                            <div class="small text-muted">On the list</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="pt-mini-stat">
+                            <div class="h4 mb-0" th:text="${page.summary().units()}">0</div>
+                            <div class="small text-muted">Units to buy</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="pt-mini-stat">
+                            <div class="h4 mb-0 pt-stat-warning" th:text="${page.summary().suggested()}">0</div>
+                            <div class="small text-muted">Suggested</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="pt-mini-stat">
+                            <div class="h4 mb-0" th:text="${page.summary().added()}">0</div>
+                            <div class="small text-muted">Added by you</div>
+                        </div>
+                    </div>
                 </div>
-                <ul class="list-group list-group-flush" th:unless="${list.suggested().isEmpty()}">
-                    <th:block th:each="row : ${list.suggested()}">
-                        <li th:replace="~{grocery/fragments :: groceryRow(${row})}"></li>
-                    </th:block>
-                </ul>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h2 class="h5 mb-3">Added by you</h2>
-                <div th:if="${list.manual().isEmpty()}" class="text-muted small">
-                    Use "Add to list" on an inventory item to add it here.
-                </div>
-                <ul class="list-group list-group-flush" th:unless="${list.manual().isEmpty()}">
-                    <th:block th:each="row : ${list.manual()}">
-                        <li th:replace="~{grocery/fragments :: groceryRow(${row})}"></li>
-                    </th:block>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
 
-<li th:fragment="groceryRow(row)"
-    class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
-    <div class="d-flex align-items-center">
-        <input type="checkbox" class="form-check-input me-2" th:checked="${row.purchased()}"
-               hx-target="#grocery-body" hx-swap="innerHTML"
-               th:attr="hx-post=@{/grocery/{id}/purchase(id=${row.id()})}">
-        <span th:classappend="${row.purchased()} ? 'text-decoration-line-through text-muted' : ''"
-              th:text="${row.itemName()}">Item</span>
-        <span class="text-muted small ms-2" th:text="'× ' + ${row.quantityNeeded()}">× 1</span>
-    </div>
-    <div class="d-flex gap-2">
-        <button th:if="${row.purchased() and row.linked()}" type="button" class="btn btn-sm btn-pt"
-                hx-target="#grocery-body" hx-swap="innerHTML"
-                th:attr="hx-post=@{/grocery/{id}/restock(id=${row.id()})}">Add to inventory</button>
-        <button type="button" class="btn btn-sm btn-outline-danger"
-                hx-target="#grocery-body" hx-swap="innerHTML"
-                th:attr="hx-post=@{/grocery/{id}/remove(id=${row.id()})}">Remove</button>
-    </div>
-</li>
+        <div class="card shadow-sm pt-side-card" data-min-rows="2" data-max-rows="3" data-max-rows-short="2" data-min-items="#quick-list > li">
+            <div class="pt-side-head pt-head-tight">
+                <h2 class="h5 mb-0"><i class="bi bi-plus-circle-fill pt-head-icon" aria-hidden="true"></i><span class="pt-head-text">Quick Add</span></h2>
+            </div>
+            <div class="px-3">
+                <label for="quick-search" class="visually-hidden">Search your pantry</label>
+                <input type="search" id="quick-search" class="form-control form-control-sm mb-2"
+                       placeholder="Search your pantry" autocomplete="off">
+            </div>
+            <div class="pt-side-scroll">
+                <div th:if="${page.quickAdd().isEmpty()}" class="text-muted small">
+                    Everything in your pantry is already on the list.
+                </div>
+                <ul th:unless="${page.quickAdd().isEmpty()}" class="list-unstyled mb-0" id="quick-list">
+                    <li th:each="o : ${page.quickAdd()}">
+                        <button type="button" class="pt-quick-btn"
+                                th:hx-vals="|{&quot;itemId&quot;: ${o.itemId()}}|"
+                                th:hx-post="@{/grocery/add}" hx-target="#grocery-body" hx-swap="innerHTML"
+                                th:title="'Add ' + ${o.name()} + ' to the list'">
+                            <span class="text-start">
+                                <span class="d-block fw-semibold pt-quick-name" th:text="${o.name()}">Item</span>
+                                <span class="d-block small text-muted"
+                                      th:text="${o.locationName()} + ' · ' + ${o.totalQuantity()} + ' left'">Shelf · 2 left</span>
+                            </span>
+                            <span class="pt-quick-plus" aria-hidden="true"><i class="bi bi-plus-lg"></i></span>
+                        </button>
+                    </li>
+                </ul>
+                <div id="quick-no-match" class="text-muted small" hidden>No pantry items match your search.</div>
+                <div th:unless="${page.quickAdd().isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm pt-side-card pt-fit-card" data-fit="3">
+            <div class="pt-side-head pt-head-tight">
+                <h2 class="h5 mb-0"><svg class="pt-head-icon pt-shelf-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.6 0.8v14.6M14.4 0.8v14.6M1.6 5.6h12.8M1.6 10.4h12.8M1.6 15.2h12.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="2.2" width="2.4" height="2.8" rx="0.6" fill="currentColor"/><rect x="6.2" y="1.6" width="2.2" height="3.4" rx="0.3" fill="currentColor" opacity="0.6"/><rect x="9.3" y="2.8" width="3.4" height="2.2" rx="1.1" fill="currentColor"/><rect x="3.2" y="6.3" width="1.6" height="3.5" rx="0.6" fill="currentColor" opacity="0.6"/><rect x="5.6" y="7" width="3" height="2.8" rx="0.3" fill="currentColor"/><rect x="9.5" y="6.8" width="3" height="3" rx="0.7" fill="currentColor" opacity="0.6"/><rect x="3" y="11.6" width="3" height="3" rx="0.3" fill="currentColor"/><rect x="6.8" y="11.1" width="1.8" height="3.5" rx="0.6" fill="currentColor" opacity="0.6"/><rect x="9.4" y="12" width="3.3" height="2.6" rx="0.4" fill="currentColor"/></svg><span class="pt-head-text pt-head-text-low">Recently Stocked</span></h2>
+            </div>
+            <div class="pt-side-scroll">
+                <div th:if="${page.recentlyPutAway().isEmpty()}" class="text-muted small">
+                    Nothing stocked yet.
+                </div>
+                <ul th:unless="${page.recentlyPutAway().isEmpty()}" class="list-unstyled mb-0 pt-expiring-list pt-recent-list pt-fit-list">
+                    <li th:each="r : ${page.recentlyPutAway()}">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <span class="fw-semibold text-break" th:text="${r.itemName()}">Item</span>
+                            <span class="badge rounded-pill pt-badge pt-badge-fresh flex-shrink-0"
+                                  th:text="'+' + ${r.quantity()}">+1</span>
+                        </div>
+                        <div class="small text-muted"
+                             th:text="${r.locationName()} + ' · ' + ${r.dateAdded()}">Shelf · 2026-01-01</div>
+                    </li>
+                </ul>
+                <div th:unless="${page.recentlyPutAway().isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
+            </div>
+        </div>
+    </aside>
+
+    <section class="pt-home-main">
+        <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+        <div class="pt-page-head">
+            <div class="d-flex align-items-center gap-3">
+                <span class="pt-page-icon" aria-hidden="true"><i class="bi bi-cart3"></i></span>
+                <div>
+                    <h1 class="pt-page-title mb-0">Grocery List</h1>
+                    <p class="text-muted mb-0">Bought something? Tick it and press <span class="fw-semibold">Add to Pantry</span>.
+                        It moves to your inventory with its expiry worked out from the category.</p>
+                </div>
+            </div>
+            <form th:action="@{/grocery/put-away}" method="post" id="put-away-form"
+                  class="d-flex align-items-center gap-3" th:unless="${page.rows().isEmpty()}">
+                <div class="form-check mb-0 pt-select-all">
+                    <input class="form-check-input" type="checkbox" id="pick-all">
+                    <label class="form-check-label" for="pick-all">Select all</label>
+                </div>
+                <button type="submit" class="btn pt-btn-new" id="put-away-btn" disabled>
+                    <i class="bi bi-box-arrow-in-down me-1"></i>Add to Pantry (<span id="put-away-count">0</span>)
+                </button>
+            </form>
+        </div>
+
+        <div th:if="${page.rows().isEmpty()}" class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <img class="pt-empty-art mb-3" th:src="@{/img/empty-cart.png}" alt="">
+                <p class="h5 fw-bold mb-2 pt-empty-title">Your cart is waiting</p>
+                <p class="text-muted mb-0 mx-auto pt-empty-text">Let's fill it up! We'll automatically add your
+                    running-low items here, or you can manually drop things in using
+                    <span class="fw-semibold">Quick Add</span>.</p>
+            </div>
+        </div>
+
+        <div th:unless="${page.rows().isEmpty()}" class="card shadow-sm pt-grocery-card">
+            <ul class="list-group list-group-flush">
+                <li th:each="row : ${page.rows()}" class="list-group-item pt-grocery-row">
+                    <input type="checkbox" class="form-check-input pt-pick" name="ids" form="put-away-form"
+                           th:value="${row.id()}" th:id="'pick-' + ${row.id()}" th:disabled="${!row.linked()}"
+                           th:attr="aria-label='Select ' + ${row.itemName()}">
+                    <label class="pt-grocery-name" th:for="'pick-' + ${row.id()}">
+                        <span class="d-block fw-semibold text-break pt-grocery-title" th:text="${row.itemName()}">Item</span>
+                        <span class="d-flex flex-wrap align-items-center gap-1 small">
+                            <span th:if="${row.linked()}" class="badge pt-cat-badge"
+                                  th:text="${row.categoryName()}">Category</span>
+                            <span th:unless="${row.linked()}" class="text-muted">Not in inventory</span>
+                            <span class="badge rounded-pill"
+                                  th:classappend="${row.suggested()} ? 'pt-badge-accent' : 'pt-badge pt-badge-muted'"
+                                  th:text="${row.suggested()} ? 'Suggested' : 'Added'">Added</span>
+                        </span>
+                    </label>
+                    <div class="pt-qty" role="group" th:attr="aria-label='Quantity of ' + ${row.itemName()}">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="One less"
+                                th:disabled="${row.quantityNeeded() <= 1}"
+                                th:hx-post="@{/grocery/{id}/quantity(id=${row.id()})}"
+                                hx-target="#grocery-body" hx-swap="innerHTML" hx-vals='{"delta": -1}'>−</button>
+                        <span class="btn btn-sm btn-outline-secondary disabled pt-qty-value"
+                              th:text="${row.quantityNeeded()}">1</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="One more"
+                                th:hx-post="@{/grocery/{id}/quantity(id=${row.id()})}"
+                                hx-target="#grocery-body" hx-swap="innerHTML" hx-vals='{"delta": 1}'>+</button>
+                    </div>
+                    <button type="button" class="btn btn-sm pt-icon-btn" title="Remove from list"
+                            th:attr="aria-label='Remove ' + ${row.itemName()}"
+                            th:hx-post="@{/grocery/{id}/remove(id=${row.id()})}"
+                            hx-target="#grocery-body" hx-swap="innerHTML">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </section>
+</th:block>
 
 <span th:fragment="addedBadge" class="badge pt-badge pt-badge-fresh">On list ✓</span>
 </body>

@@ -54,7 +54,67 @@ public final class Views {
         }
     }
 
-    public record CategoryOption(Long id, String name, Integer shelfLifeDays) {
+    public record CategoryOption(Long id, String name, String groupName, Integer shelfLifeDays) {
+
+        public String shelfLifeText() {
+            return Views.shelfLifeText(shelfLifeDays);
+        }
+
+        public boolean manualExpiry() {
+            return shelfLifeDays == null;
+        }
+
+        public int shelfLifeAmount() {
+            if (shelfLifeDays == null) {
+                return 1;
+            }
+            return shelfLifeDays / Views.unitDays(shelfLifeUnit());
+        }
+
+        public String shelfLifeUnit() {
+            if (shelfLifeDays == null || shelfLifeDays == 0) {
+                return "days";
+            }
+            if (shelfLifeDays % 365 == 0) {
+                return "years";
+            }
+            if (shelfLifeDays % 30 == 0) {
+                return "months";
+            }
+            return "days";
+        }
+    }
+
+    public record CategoryRow(CategoryOption category, long itemCount) {
+    }
+
+    public static int unitDays(String unit) {
+        return switch (unit == null ? "days" : unit) {
+            case "years" -> 365;
+            case "months" -> 30;
+            case "weeks" -> 7;
+            default -> 1;
+        };
+    }
+
+    public static String shelfLifeText(Integer days) {
+        if (days == null) {
+            return "Set manually";
+        }
+        if (days >= 365 && days % 365 == 0) {
+            return plural(days / 365, "year") + " (" + plural(days, "day") + ")";
+        }
+        if (days >= 30 && days % 30 == 0) {
+            return plural(days / 30, "month") + " (" + plural(days, "day") + ")";
+        }
+        if (days >= 7 && days % 7 == 0) {
+            return plural(days / 7, "week") + " (" + plural(days, "day") + ")";
+        }
+        return plural(days, "day");
+    }
+
+    private static String plural(int count, String word) {
+        return count + " " + word + (count == 1 ? "" : "s");
     }
 
     public record LocationGroupView(Long id, String name, long itemCount) {
@@ -92,7 +152,7 @@ public final class Views {
                            FreshnessStatus freshness, Integer daysUntilExpiry, StockStatus stockStatus,
                            boolean lowStockEnabled, Integer lowStockThreshold,
                            boolean purgeOverride, Integer daysUntilPurge,
-                           List<BatchView> batches) {
+                           List<BatchView> batches, boolean manualExpiry) {
 
         public String expiryText() {
             return Views.expiryText(daysUntilExpiry);
@@ -100,6 +160,9 @@ public final class Views {
     }
 
     public record GroupWithItems(LocationGroupView group, List<ItemView> items) {
+    }
+
+    public record AddedItem(ItemView item, Long locationId, String locationName, LocalDate addedOn) {
     }
 
     public record DuplicatePrompt(ItemView existing, String name, Long categoryId, int quantity,
@@ -115,10 +178,24 @@ public final class Views {
                            List<ExpiringEntry> expiringSoon) {
     }
 
-    public record GroceryRow(Long id, String itemName, int quantityNeeded, boolean purchased,
-                             boolean linked, Long itemId) {
+    public record GroceryRow(Long id, String itemName, String categoryName, int quantityNeeded,
+                             boolean suggested, Long itemId) {
+
+        public boolean linked() {
+            return itemId != null;
+        }
     }
 
-    public record GroceryList(List<GroceryRow> suggested, List<GroceryRow> manual) {
+    public record GrocerySummary(int items, int units, int suggested, int added) {
+    }
+
+    public record QuickAddOption(Long itemId, String name, String locationName, int totalQuantity) {
+    }
+
+    public record PutAwayEntry(String itemName, int quantity, LocalDate dateAdded, String locationName) {
+    }
+
+    public record GroceryPage(List<GroceryRow> rows, GrocerySummary summary, List<QuickAddOption> quickAdd,
+                              List<PutAwayEntry> recentlyPutAway) {
     }
 }

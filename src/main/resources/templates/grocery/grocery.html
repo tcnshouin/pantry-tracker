@@ -4,18 +4,11 @@
       layout:decorate="~{layout}"
       lang="en">
 <head>
-    <title>Grocery list</title>
+    <title>Grocery List</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <h1 class="h3 mb-3">Grocery list</h1>
-    <p class="text-muted small mb-3">
-        Suggested items come from low or out-of-stock inventory. Check one off to mark it
-        purchased, then add it back to your pantry.
-    </p>
-    <div id="grocery-body">
-        <div th:replace="~{grocery/fragments :: groceryBody(${list})}"></div>
-    </div>
+<div layout:fragment="content" class="pt-home" id="grocery-body">
+    <th:block th:replace="~{grocery/fragments :: groceryBody(${page})}"></th:block>
 </div>
 </body>
 </html>

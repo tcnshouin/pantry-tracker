@@ -354,51 +354,37 @@ per-brand expiry validation, automatic partial-consumption detection.
 
 ## Running the app
 
-### Option A — Docker Compose (recommended, no local Java/Postgres needed)
+> **Update (2026-10-20): the app now runs purely on Supabase.** All data lives in a
+> Supabase Postgres database and logins use Supabase Auth (email + password, with
+> email confirmation and password reset). There is no local database and no
+> users table or password hashing of our own. Sections above that mention form
+> login, BCrypt, the `User` table or the grocery "purchased" flag describe the
+> original spec. The grocery page now uses checkboxes + **Put away** instead.
 
-From the `pantry-tracker/` directory:
+1. Set up a Supabase project and your `.env` file: **[SUPABASE-SETUP.md](SUPABASE-SETUP.md)**.
+2. Run natively (JDK 25):
 
-```bash
-docker compose up --build
-```
+   ```bash
+   ./mvnw spring-boot:run
+   ```
 
-This builds the app image and starts both the app and a PostgreSQL 16 database,
-wired together automatically. Open <http://localhost:8080>, then register an
-account and log in. Data persists in a named volume across restarts.
+   or with Docker (reads the same `.env`):
 
-- Stop: `Ctrl+C`, then `docker compose down` (add `-v` to also wipe the database).
-- The first build downloads Maven dependencies and takes a few minutes; later
-  builds are cached and fast.
-- The DB password defaults to `pantry`; override it by exporting `DB_PASSWORD`
-  before `docker compose up` (both services read it).
+   ```bash
+   docker compose up --build
+   ```
 
-### Option B — Run natively (faster edit/reload while coding)
+3. Open <http://localhost:8080>, create an account, confirm the email, log in.
 
-Needs JDK 25 and a reachable PostgreSQL. Configuration is externalized — the app
-reads the database connection from environment variables (`application.properties`
-supplies dev-safe defaults for the URL and username, but **no password default**):
+| Variable            | What it is                                        |
+| ------------------- | ------------------------------------------------- |
+| `SUPABASE_URL`      | Project URL, `https://<ref>.supabase.co`          |
+| `SUPABASE_ANON_KEY` | Publishable / anon key (never the service key)    |
+| `DB_URL`            | Session pooler JDBC URL with `?sslmode=require`   |
+| `DB_USERNAME`       | `postgres.<ref>`                                  |
+| `DB_PASSWORD`       | The project's database password                   |
 
-| Variable      | Default (dev)                                | Required |
-| ------------- | -------------------------------------------- | -------- |
-| `DB_URL`      | `jdbc:postgresql://localhost:5432/pantry`    | no       |
-| `DB_USERNAME` | `pantry`                                      | no       |
-| `DB_PASSWORD` | (none)                                        | **yes**  |
-
-Start a throwaway Postgres and run with the Maven wrapper:
-
-```bash
-docker run -d --name pantry-pg \
-  -e POSTGRES_DB=pantry -e POSTGRES_USER=pantry -e POSTGRES_PASSWORD=devpw \
-  -p 5432:5432 postgres:16
-
-DB_PASSWORD=devpw ./mvnw spring-boot:run
-```
-
-Run the tests (needs a reachable Postgres as above):
-
-```bash
-DB_PASSWORD=devpw ./mvnw test
-```
+Tests: `./mvnw test`. The database tests run only when `.env` is present.
 
 ---
 

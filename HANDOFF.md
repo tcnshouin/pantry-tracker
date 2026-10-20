@@ -7,7 +7,7 @@ run the project, where things live, and what's still left to build.
 - **Branch:** `main`
 - **Project root:** the repository root (no subfolder)
 - **Stack:** Java 25 · Spring Boot 4.0.8 · Thymeleaf + HTMX + Bootstrap 5 ·
-  Spring Data JPA · PostgreSQL 16 · Flyway · Maven
+  Spring Data JPA · Supabase (hosted Postgres + Supabase Auth) · Flyway · Maven
 
 > This repository was split out of the original group repo
 > (`Rarityl/DLSL---Computer-Engineering---1st-Year`, branch
@@ -18,18 +18,14 @@ run the project, where things live, and what's still left to build.
 
 ## 1. What you need installed
 
-You have two ways to run it. Pick one.
-
-### The easy way — Docker only (recommended)
-- **Git** — to clone the repo.
-- **Docker Desktop** (includes Docker Compose) — the app and database run inside
-  containers, so you do **not** need Java, Maven, or PostgreSQL installed.
-
-### The dev way — run natively (faster edit/reload while coding)
-- **Git**
-- **JDK 25** (Temurin/OpenJDK 25). Check with `java -version`.
-- **PostgreSQL 16** running locally, OR Docker to start just the database.
-- Maven is **not** required — the project ships the Maven wrapper (`mvnw`).
+- **Git**, to clone the repo.
+- **A Supabase project + `.env` file.** All data and logins live in Supabase;
+  there is no local database. Follow **[SUPABASE-SETUP.md](SUPABASE-SETUP.md)** once,
+  or get the `.env` file privately from a teammate who already did.
+- Then **one** of:
+  - **JDK 25** (Temurin/OpenJDK 25), checked with `java -version`. Maven isn't
+    needed because the project ships the wrapper (`mvnw`).
+  - **Docker Desktop**, if you'd rather not install Java.
 
 If the repository is private, ask the owner (**tcnshouin**) to add you under
 **Settings → Collaborators** before cloning.
@@ -49,55 +45,35 @@ That's it — the project files are at the top level of the repo.
 
 ## 3. Run it
 
-### Option A — Docker Compose (one command)
+Make sure `.env` is in the project folder (see section 1), then:
+
 ```bash
-docker compose up --build
+./mvnw spring-boot:run
 ```
-Open <http://localhost:8080>, click **Create one** to register, and log in. The
-first build downloads dependencies and takes a few minutes; later builds are
-cached.
+On Windows: `.\mvnw.cmd spring-boot:run`. Or with Docker: `docker compose up --build`
+(it reads the same `.env`; rebuild after code changes).
 
-- Run it in the background instead: `docker compose up --build -d`
-- Stop it: `Ctrl+C`, then `docker compose down` (add `-v` to also **erase** the
-  database).
-- **After changing code or templates, rebuild** (`docker compose up --build`) —
-  the running container does not pick up edits on its own.
-
-### Option B — Native
-```bash
-# start a throwaway database
-docker run -d --name pantry-pg -e POSTGRES_DB=pantry -e POSTGRES_USER=pantry -e POSTGRES_PASSWORD=devpw -p 5432:5432 postgres:16
-
-# run the app (macOS/Linux)
-DB_PASSWORD=devpw ./mvnw spring-boot:run
-```
-On Windows PowerShell, set the variable first:
-```powershell
-$env:DB_PASSWORD = 'devpw'; .\mvnw.cmd spring-boot:run
-```
+Open <http://localhost:8080>, click **Create one**, confirm the email from
+Supabase, and log in. **Forgot password?** on the login page sends a reset link.
 
 ### Run the tests
 ```bash
-DB_PASSWORD=devpw ./mvnw test
+./mvnw test
 ```
-The suite has **26 tests**. The repository and full-app tests need a reachable
-Postgres (as in Option B); the service and data-structure tests run without one:
-```bash
-./mvnw test -Dtest=InventoryServiceTest,DataStructuresTest,GroceryServiceTest,UserServiceTest
-```
+The suite has **35 tests**. Unit and page tests run anywhere. The 3 database tests
+(`RepositoryTest`, `PantryTrackerApplicationTests`) run against Supabase only
+when `.env` is present and are skipped otherwise. They roll back their changes.
 
-> Config is externalized: `DB_URL` and `DB_USERNAME` default to the local
-> `pantry`/`pantry` database; `DB_PASSWORD` has **no default** and must be set
-> (Compose sets it for you). No secrets are hardcoded.
+> Config is externalized: the app reads `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+> `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` from `.env` (or real environment
+> variables). Nothing secret is in Git. If startup fails with
+> `'url' must start with "jdbc"`, the `.env` file is missing or not in the
+> project folder.
 
 ### Looking at the database
-With the Compose setup running:
-```bash
-docker compose exec db psql -U pantry -d pantry
-```
-Then `\dt` lists tables and `\q` quits. The data itself lives in a Docker volume
-on your machine — it is **not** in Git. A fresh clone starts with an empty
-database that Flyway sets up on first start.
+Open your project at <https://supabase.com/dashboard>:
+**Table Editor** to browse rows, **SQL Editor** to run queries, and
+**Authentication → Users** for accounts.
 
 ---
 
@@ -105,25 +81,31 @@ database that Flyway sets up on first start.
 
 ```
 pantry-tracker/                      (repo root)
-├── Dockerfile, docker-compose.yml   # containerized run
+├── Dockerfile, docker-compose.yml   # containerized run (app only, reads .env)
+├── .env.example                     # the 5 settings to copy into your own .env
+├── SUPABASE-SETUP.md                # one-time Supabase project setup
 ├── README.md                        # full build spec + phase log
 ├── DATABASE-CHANGES.md              # how to change the schema (Flyway V5, V6, …)
 ├── src/main/java/com/pantry/tracker/
-│   ├── config/      # AppConfig: security, password encoder, layout dialect
-│   ├── model/       # entities (User, Category, Item, Batch, LocationGroup,
-│   │                #   GroceryListItem) + Views.java (status enums, view
+│   ├── config/      # AppConfig: security rules, layout dialect
+│   ├── model/       # entities (Category, Item, Batch, LocationGroup,
+│   │                #   GroceryListItem), SupabaseUser + Views.java (status enums, view
 │   │                #   records, "Expiring in N days" wording)
 │   ├── repository/  # Spring Data repositories
-│   ├── service/     # InventoryService (most rules), GroceryService, UserService,
+│   ├── service/     # InventoryService (most rules), GroceryService,
+│   │                #   SupabaseAuthClient (login/sign-up/reset via Supabase),
+│   │                #   UserService (current user's id),
 │   │                #   DataStructures.java (the 4 required data structures)
 │   └── web/         # HomeController, GroceryController, CategoryController,
 │                    #   AuthController
 ├── src/main/resources/
-│   ├── application.properties   # DB connection settings
-│   ├── db/migration/            # Flyway V1–V4 (schema + seed categories)
+│   ├── application.properties   # reads the .env settings
+│   ├── db/migration/            # Flyway V1–V5 (schema, seed categories, Supabase switch)
 │   └── templates/               # Thymeleaf pages + HTMX fragments
 │       ├── layout.html          #   title bar, ☰ menu, ALL colors/CSS, page JS
 │       ├── home.html            #   home page + left panel
+│       ├── grocery/             #   grocery page (summary, quick add, add to pantry)
+│       ├── auth/                #   login, register, forgot/reset password
 │       └── inventory/fragments.html  # item rows, steppers, menus, undo toast
 └── tasks/todo.md                # per-phase checklists, decisions, deferrals
 ```
@@ -137,24 +119,27 @@ are CSS variables at the top of `layout.html`). To change how something
 ## 5. Where development stopped (status)
 
 **Core features (done):**
-- Auth (register / login / logout, BCrypt, CSRF).
+- Auth through **Supabase Auth**: register (with email confirmation), login,
+  logout, forgot/reset password. CSRF on every form.
+- All data in a **Supabase** Postgres database; tables locked with Row Level Security.
 - Categories with seeded shelf-life reference (searchable dropdown).
 - Locations + two-level inventory (Item = product, Batch = dated purchase),
   duplicate detection.
 - Expiry auto-calculation and freshness status: fresh / expiring soon /
   **expires today** / expired; low-stock and out-of-stock flags.
-- Grocery list: auto-suggests low/out-of-stock items, manual add, and the
-  inventory loop (check off → add back into inventory).
+- Grocery list: auto-suggests low/out-of-stock items, manual add (🛒 on an item
+  or **Quick add**), inline − / + quantity, and **Add to Pantry**: tick what you
+  bought and it is added to inventory as new batches with auto-calculated expiry.
 - Auto-purge sweep (7-day item / 3-day batch) with Keep overrides.
 - Per-session undo stack.
-- Docker Compose packaging.
+- Docker Compose packaging (app only; the database is Supabase).
 
 **Home page (current design):**
 - Fresh market color scheme (green actions, mint title bar, white cards on a
   light yellow page). Colors meet WCAG AA contrast.
 - ☰ slide-out navigation (hover or click) to Home / Grocery / Categories.
 - Full-height left panel that stays in place, each card scrolling on its own:
-  - **By location** — pick which location is shown, with 🔍 search and ＋ add.
+  - **My Pantry** (locations list) — pick which location is shown, with 🔍 search and ＋ add.
   - **Expiring soon** — click an entry to jump to that item (it flashes).
 - One location's inventory shown at a time; the choice is remembered.
 - Item rows: − / + quantity stepper (− uses the soonest-expiring batch first,
@@ -162,6 +147,13 @@ are CSS variables at the top of `layout.html`). To change how something
   quantity picker, ⋯ menu for edit/delete. Badges appear only when something
   needs attention.
 - Single undo pop-up (bottom right) instead of inline undo buttons.
+
+**Grocery page:**
+- Same layout as Home. The left panel holds **Shopping summary** (items, units,
+  suggested vs. added), **Quick add** (searchable pantry items not on the list),
+  and **Recently stocked** (last 8 batches added). It refreshes with every action.
+- One merged list with Suggested / Added tags, checkboxes, **Select all**, and
+  **Add to Pantry (N)**.
 
 **Required data structures (for the report)** — all in `service/DataStructures.java`:
 - **HashMap** — duplicate detection (`DuplicateIndex`).
@@ -183,18 +175,19 @@ From the latest design review (small, high-value first):
 3. **Screen-reader labels** — add the item name to the −, +, 🛒 and ⋯ button
    labels (e.g. `aria-label="Remove one Bread Pan"`).
 4. **Flag locations that need attention** — a warning dot/count next to each
-   location in the By location list.
+   location in the My Pantry list.
 5. **Make the stat boxes filters** — clicking "Low / out of stock" should show
    just those items.
 
 Still open from the original plan:
-6. **Profile / change-password page** — reuse `UserService` + BCrypt.
+6. **Profile / change-password page**: add a signed-in version of the reset
+   form that calls `SupabaseAuthClient.updatePassword` (needs the access token kept
+   in the session at login).
 7. **Broader test pass** — more secured-controller (`@WebMvcTest`) tests and a
    couple of end-to-end flows.
 8. **Move an item between locations** — item edit changes name + category only.
-9. **Grocery page** — merge "Suggested" and "Added by you" into one list.
-10. **Categories page** — the "Category picker" there doesn't do anything yet.
-11. **Undo of "Keep"** — intentionally not undoable; revisit if wanted.
+9. **Categories page** — the "Category picker" there doesn't do anything yet.
+10. **Undo of "Keep"** — intentionally not undoable; revisit if wanted.
 
 ---
 
@@ -206,16 +199,16 @@ Still open from the original plan:
   `TestEntityManager` in `org.springframework.boot.jpa.test.autoconfigure`; use
   `@MockitoBean` (not the removed `@MockBean`). The web starter is
   `spring-boot-starter-webmvc`.
-- **The users table is `app_user`** (`user` is reserved in PostgreSQL).
+- **There is no users table.** Accounts live in Supabase Auth; our tables store
+  the Supabase user id in `user_id` (UUID). `UserService.currentId()` returns it.
 - **Thymeleaf precedence:** `th:replace` runs before both `th:each` *and*
   `th:if`. Put the loop or condition on an outer `<th:block>` and the
   `th:replace` on the inner element.
 - **Port 8080 must be free.** If another copy of the app is already running,
-  stop it (`docker compose down` in that folder) before starting this one.
-- **The Docker database volume is named after the folder** you run Compose
-  from, so cloning into a different folder name gives you a separate, empty
-  database.
-- **Database changes go in a new migration** (`V5__...sql`), never by editing
-  V1–V4 — see `DATABASE-CHANGES.md`.
+  stop it before starting this one.
+- **Free Supabase projects pause after about a week idle.** If the app can't
+  connect, open the dashboard and click **Restore project**.
+- **Database changes go in a new migration** (`V6__...sql`), never by editing
+  V1–V5. See `DATABASE-CHANGES.md`.
 - **Code style:** the code is kept **comment-free**; history and decisions live
   in `tasks/todo.md`, the README, and commit messages.

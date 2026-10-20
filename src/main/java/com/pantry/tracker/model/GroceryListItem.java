@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -29,9 +30,8 @@ public class GroceryListItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @ManyToOne
     @JoinColumn(name = "item_id")
@@ -47,15 +47,12 @@ public class GroceryListItem {
     @Column(nullable = false)
     private Source source;
 
-    @Column(nullable = false)
-    private boolean purchased = false;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public GroceryListItem(User user, Item item, String itemName, int quantityNeeded, Source source) {
-        this.user = user;
+    public GroceryListItem(UUID userId, Item item, String itemName, int quantityNeeded, Source source) {
+        this.userId = userId;
         this.item = item;
         this.itemName = itemName;
         this.quantityNeeded = quantityNeeded;

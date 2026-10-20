@@ -10,9 +10,9 @@
 <div layout:fragment="content" class="pt-home">
 
     <aside class="pt-home-side">
-    <div class="card shadow-sm pt-side-card">
-        <div class="pt-side-head">
-            <h2 class="h5 mb-0">By location</h2>
+    <div class="card pt-side-card pt-fit-card pt-loc-card" data-fit="6" data-fit-items=".pt-loc-all, #loc-list > li">
+        <div class="pt-side-head pt-head-tight">
+            <h2 class="h5 mb-0"><i class="bi bi-geo-alt-fill pt-head-icon" aria-hidden="true"></i><span class="pt-head-text">My Pantry</span></h2>
             <div class="d-flex gap-1">
                 <button type="button" class="btn btn-sm pt-icon-btn" data-bs-toggle="collapse"
                         data-bs-target="#loc-search-box" aria-expanded="false" aria-controls="loc-search-box"
@@ -41,6 +41,12 @@
         </div>
         <div class="pt-side-scroll">
             <div th:if="${groups.isEmpty()}" class="text-muted small">No locations yet.</div>
+            <a th:unless="${groups.isEmpty()}" class="pt-loc-link pt-loc-all d-flex justify-content-between align-items-center mb-1"
+               href="#group-card-all" data-group-id="all">
+                <span class="pt-loc-name"><i class="bi bi-grid me-2"></i>All</span>
+                <span class="badge rounded-pill pt-badge pt-badge-muted pt-loc-count"
+                      th:text="${allItems.size()}">0</span>
+            </a>
             <ul th:unless="${groups.isEmpty()}" class="list-group list-group-flush" id="loc-list">
                 <li th:each="g : ${groups}" class="list-group-item bg-transparent border-0 p-0 mb-1">
                     <a class="pt-loc-link d-flex justify-content-between align-items-center"
@@ -52,37 +58,60 @@
                 </li>
             </ul>
             <div id="loc-no-match" class="text-muted small" hidden>No locations match your search.</div>
+            <div th:unless="${groups.isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
         </div>
     </div>
 
-    <div class="card shadow-sm pt-side-card">
-        <div class="pt-side-head">
-            <h2 class="h5 mb-0">Expiring soon</h2>
+    <div class="card shadow-sm pt-side-card pt-fit-card" data-fit="4">
+        <div class="pt-side-head pt-head-tight">
+            <h2 class="h5 mb-0"><i class="bi bi-calendar-event-fill pt-head-icon" aria-hidden="true"></i><span class="pt-head-text">Expiring Soon</span></h2>
+            <span th:unless="${overview.expiringSoon().isEmpty()}" class="badge rounded-pill pt-exp-count"
+                  th:text="${overview.expiringSoon().size()}">2</span>
         </div>
         <div class="pt-side-scroll">
-            <div th:if="${overview.expiringSoon().isEmpty()}" class="text-muted small">
-                Nothing expiring soon 🎉
+            <div th:if="${overview.expiringSoon().isEmpty()}" class="text-center py-3">
+                <img class="pt-fresh-art mb-2" th:src="@{/img/all-fresh.png}" alt="">
+                <p class="fw-bold mb-1 pt-empty-title">All fresh here!</p>
+                <p class="text-muted small mb-0 mx-auto pt-empty-text">You have no items expiring soon. Enjoy your
+                    fresh groceries.</p>
             </div>
-            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-expiring-list">
+            <ul th:unless="${overview.expiringSoon().isEmpty()}" class="list-unstyled mb-0 pt-exp-cards pt-fit-list">
                 <li th:each="e : ${overview.expiringSoon()}">
-                    <a class="pt-exp-link" th:href="'#group-card-' + ${e.locationId()}"
+                    <a class="pt-exp-link pt-exp-card" th:href="'#group-card-' + ${e.locationId()}"
                        th:data-group-id="${e.locationId()}" th:data-item-id="${e.itemId()}"
                        th:title="'Go to ' + ${e.itemName()} + ' in ' + ${e.locationName()}">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
-                            <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
-                                  th:text="${e.freshnessLabel()}">Expires today</span>
-                        </div>
-                        <div class="small text-muted"
-                             th:text="${e.locationName()} + ' · ' + ${e.expirationDate()}">Shelf · 2026-01-01</div>
+                        <span class="pt-exp-icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                        <span class="pt-exp-body">
+                            <span class="d-flex justify-content-between align-items-start gap-2">
+                                <span class="fw-semibold text-break" th:text="${e.itemName()}">Item</span>
+                                <span class="badge rounded-pill flex-shrink-0" th:classappend="${e.freshnessCssClass()}"
+                                      th:text="${e.freshnessLabel()}">Expires today</span>
+                            </span>
+                            <span class="pt-exp-meta">
+                                <span><i class="bi bi-geo-alt"></i><span th:text="${e.locationName()}">Shelf</span></span>
+                                <span><i class="bi bi-calendar-event"></i><span
+                                        th:text="${#temporals.format(e.expirationDate(), 'MMM d, yyyy')}">Jan 1, 2026</span></span>
+                                <span><i class="bi bi-box-seam"></i><span th:text="'×' + ${e.quantity()}">×1</span></span>
+                            </span>
+                        </span>
                     </a>
                 </li>
             </ul>
+            <div th:unless="${overview.expiringSoon().isEmpty()}" class="pt-list-end" aria-hidden="true"></div>
         </div>
     </div>
     </aside>
 
     <section class="pt-home-main">
+    <div class="pt-page-head">
+        <div class="d-flex align-items-center gap-3">
+            <span class="pt-page-icon" aria-hidden="true"><i class="bi bi-box-seam-fill"></i></span>
+            <div>
+                <h1 class="pt-page-title mb-0">Inventory</h1>
+                <p class="text-muted mb-0">Everything in your pantry, one location at a time.</p>
+            </div>
+        </div>
+    </div>
     <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
     <div class="alert alert-secondary" th:if="${undone}">
@@ -91,7 +120,7 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0" th:text="${overview.totalItems()}">0</div>
                     <div class="text-muted small">Total items</div>
@@ -99,7 +128,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0 pt-stat-soon" th:text="${overview.expiringThisWeek()}">0</div>
                     <div class="text-muted small">Expiring this week</div>
@@ -107,7 +136,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0 pt-stat-warning" th:text="${overview.lowStock()}">0</div>
                     <div class="text-muted small">Low / out of stock</div>
@@ -115,7 +144,7 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 pt-stat-card">
                 <div class="card-body text-center py-2">
                     <div class="h3 mb-0" th:text="${overview.onGroceryList()}">0</div>
                     <div class="text-muted small">On grocery list</div>
@@ -124,18 +153,16 @@
         </div>
     </div>
 
-    <h1 class="h4 mb-3">Inventory</h1>
-
     <th:block th:if="${undoLabel}">
         <div th:replace="~{inventory/fragments :: undoToast(${undoLabel})}"></div>
     </th:block>
 
     <div th:if="${groups.isEmpty()}" class="card shadow-sm">
         <div class="card-body text-center py-5">
-            <div class="fs-1 mb-2">📦</div>
-            <p class="fw-semibold mb-1">No locations yet</p>
-            <p class="text-muted small mb-0">Add your first one, like "Pantry shelf", with the
-                <span class="fw-semibold">+</span> next to <span class="fw-semibold">By location</span>.</p>
+            <img class="pt-empty-art mb-3" th:src="@{/img/add-location.png}" alt="">
+            <p class="h5 fw-bold mb-2 pt-empty-title">Ready to get organized?</p>
+            <p class="text-muted mb-0 mx-auto pt-empty-text">Let's build your pantry! Add your first spot, like
+                "Fridge" or "Pantry shelf", using the <span class="fw-semibold">+</span> button.</p>
         </div>
     </div>
 
@@ -163,7 +190,7 @@
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form th:action="@{/locations/{id}/delete(id=${g.group().id()})}" method="post"
-                                  onsubmit="return confirm('Delete this location? It must be empty first.');">
+                                  data-confirm="Delete this location?" data-confirm-note="It must be empty first. This can't be undone.">
                                 <button type="submit" class="dropdown-item text-danger">
                                     <i class="bi bi-trash3 me-2"></i>Delete location
                                 </button>
@@ -185,7 +212,7 @@
             </form>
         </div>
         <div th:id="'collapse-' + ${g.group().id()}" class="collapse show">
-            <div class="card-body">
+            <div class="card-body pt-group-scroll">
                 <div th:id="'group-body-' + ${g.group().id()}">
                     <div th:replace="~{inventory/fragments :: groupBody(${g.group()}, ${g.items()}, ${categories}, null, null)}"></div>
                 </div>
@@ -193,47 +220,64 @@
         </div>
 
         <div class="modal fade" th:id="'addItemModal-' + ${g.group().id()}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered pt-modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2 class="modal-title h5">Add item to <span th:text="${g.group().name()}">group</span></h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <span class="pt-modal-icon" aria-hidden="true"><i class="bi bi-basket2"></i></span>
+                        <div class="me-auto">
+                            <h2 class="modal-title h5 mb-0">Add item</h2>
+                            <div class="small text-muted">to <span class="fw-semibold" th:text="${g.group().name()}">group</span></div>
+                        </div>
+                        <button type="button" class="pt-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
                     <form th:attr="hx-post=@{/locations/{id}/items(id=${g.group().id()})},hx-target='#group-body-' + ${g.group().id()}"
                           hx-swap="innerHTML">
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label" th:for="'ai-name-' + ${g.group().id()}">Item name</label>
-                                <input type="text" name="name" class="form-control"
+                                <input type="text" name="name" class="form-control" placeholder="Enter item name..."
                                        th:id="'ai-name-' + ${g.group().id()}" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label" th:for="'ai-cat-' + ${g.group().id()}">Category</label>
+                                <label class="form-label" th:for="'ai-cat-' + ${g.group().id()}">Category</label><button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Can't find the right category? Add your own on the Categories page (☰ Menu → Categories), or pick Others and enter the date yourself." aria-label="About categories"><i class="bi bi-info-lg"></i></button>
                                 <select name="categoryId" class="form-select"
                                         th:id="'ai-cat-' + ${g.group().id()}" required>
                                     <option value="" selected>Choose…</option>
-                                    <option th:each="c : ${categories}" th:value="${c.id()}"
-                                            th:text="${c.name()}">Category</option>
+                                    <optgroup th:each="cg : ${categoryGroups}" th:label="${cg.key}">
+                                        <option th:each="c : ${cg.value}" th:value="${c.id()}"
+                                                th:data-manual="${c.manualExpiry()}" th:text="${c.name()}">Category</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="row g-2">
                                 <div class="col-6">
                                     <label class="form-label" th:for="'ai-qty-' + ${g.group().id()}">Quantity</label>
-                                    <input type="number" name="quantity" min="0" value="1" class="form-control"
-                                           th:id="'ai-qty-' + ${g.group().id()}">
+                                    <div class="pt-stepper">
+                                        <button type="button" class="pt-step" data-step="-1" aria-label="One less">−</button>
+                                        <input type="number" name="quantity" min="1" value="1" class="pt-qty-input"
+                                               th:id="'ai-qty-' + ${g.group().id()}">
+                                        <button type="button" class="pt-step" data-step="1" aria-label="One more">+</button>
+                                    </div>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label" th:for="'ai-exp-' + ${g.group().id()}">Expiration</label>
-                                    <input type="date" name="expirationDate" class="form-control"
+                                    <input type="date" name="expirationDate" class="form-control pt-date"
                                            th:id="'ai-exp-' + ${g.group().id()}">
                                 </div>
                             </div>
-                            <div class="form-check mt-3">
+                            <div class="form-check pt-modal-option mt-3">
                                 <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
                                        value="true" checked th:id="'ai-auto-' + ${g.group().id()}">
                                 <label class="form-check-label" th:for="'ai-auto-' + ${g.group().id()}">
                                     Auto-calculate expiry from category
                                 </label>
+                                <button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Pick a category and we'll estimate the expiry, e.g. Canned fish lasts 3 years. Have the real date? Untick this and enter it." aria-label="About auto-calculated expiry"><i class="bi bi-info-lg"></i></button>
+                            </div>
+                            <div class="pt-manual-hint mt-2" hidden>
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>This category has no set shelf life,
+                                so enter an expiration date.
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -242,6 +286,58 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:unless="${groups.isEmpty()}" class="card shadow-sm mb-3 pt-group-card" id="group-card-all"
+         data-group-id="all">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h2 class="h5 mb-0 fw-semibold">All items</h2>
+            <span class="small text-muted">In the order they were added</span>
+        </div>
+        <div class="card-body">
+            <div th:if="${allItems.isEmpty()}" class="text-muted small">
+                No items yet. Pick a location and use <span class="fw-semibold">Add item</span>.
+            </div>
+            <div th:unless="${allItems.isEmpty()}" class="table-responsive">
+                <table class="table align-middle mb-0 pt-all-table">
+                    <thead>
+                    <tr>
+                        <th scope="col">Added</th>
+                        <th scope="col">Item</th>
+                        <th scope="col">Location</th>
+                        <th scope="col" class="text-center">Qty</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row : ${allItems}" class="pt-jump" tabindex="0"
+                        th:data-group-id="${row.locationId()}" th:data-item-id="${row.item().id()}"
+                        th:title="'Go to ' + ${row.item().name()} + ' in ' + ${row.locationName()}">
+                        <td class="small text-muted text-nowrap" th:text="${row.addedOn()}">2026-01-01</td>
+                        <td>
+                            <span class="fw-semibold me-1" th:text="${row.item().name()}">Item</span>
+                            <span class="badge pt-cat-badge" th:text="${row.item().categoryName()}">Category</span>
+                        </td>
+                        <td class="text-nowrap"><i class="bi bi-geo-alt me-1 text-muted"></i><span
+                                th:text="${row.locationName()}">Shelf</span></td>
+                        <td class="text-center fw-semibold" th:text="${row.item().totalQuantity()}">0</td>
+                        <td>
+                            <span th:if="${row.item().stockStatus().name() != 'IN_STOCK'}" class="badge rounded-pill"
+                                  th:classappend="${row.item().stockStatus().cssClass()}"
+                                  th:text="${row.item().stockStatus().label()}">Low stock</span>
+                            <span th:if="${row.item().stockStatus().name() != 'OUT_OF_STOCK' and row.item().freshness().name() != 'FRESH' and row.item().freshness().name() != 'NONE'}"
+                                  class="badge rounded-pill" th:classappend="${row.item().freshness().cssClass()}"
+                                  th:text="${row.item().freshness().label()}">Expiring soon</span>
+                            <span th:if="${row.item().stockStatus().name() == 'IN_STOCK' and (row.item().freshness().name() == 'FRESH' or row.item().freshness().name() == 'NONE')}"
+                                  class="small text-muted"
+                                  th:text="${row.item().expiryText() != null} ? ${row.item().expiryText()} : 'In stock'">In stock</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="pt-list-end" aria-hidden="true"></div>
             </div>
         </div>
     </div>

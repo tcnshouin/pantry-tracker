@@ -178,3 +178,26 @@
 - Table named `app_user` (`user` is reserved in Postgres).
 - `mvnw test` currently needs a live Postgres for the context smoke test;
   Testcontainers is the proper fix (deferred to the Phase 6 test pass).
+
+---
+
+## Supabase switch + grocery redesign (2026-10-20, branch `supabase-grocery`)
+
+- [x] Database moved to Supabase only: `.env` read via `spring.config.import`,
+      docker-compose is app-only, no localhost defaults.
+- [x] `V5__supabase.sql`: `user_id` → `uuid` (Supabase Auth user id), dropped
+      `app_user` and `grocery_list_item.purchased`, RLS on every app table.
+      (`flyway_schema_history` RLS is a manual step; doing it inside a migration
+      deadlocks on Flyway's own lock.)
+- [x] Login via Supabase Auth (`SupabaseAuthClient`, server-side REST): login,
+      register with email confirmation, forgot/reset password. Removed `User`,
+      `UserRepository`, BCrypt, `UserDetailsService`, form login.
+- [x] Grocery page: home-style layout, side cards (Shopping summary, Quick add,
+      Recently stocked), merged list, inline − / +, checkboxes + **Put away (N)**.
+- [x] Tests: 35 (32 pass anywhere, 3 DB tests skip without `.env`).
+- [x] Verified V1–V5 + schema validation on a scratch Postgres, and the full
+      login → grocery → put-away flow in a browser against a stand-in auth server.
+- [x] Ran against the real Supabase project: V1–V5 applied (Flyway baselines at 0
+      because new projects ship an `rls_auto_enable` function in `public`), RLS on
+      all 7 tables, 35/35 tests pass with no skips.
+- [ ] Check the confirmation and reset emails in the browser.

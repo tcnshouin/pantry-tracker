@@ -4,10 +4,9 @@ import com.pantry.tracker.model.Batch;
 import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
-import com.pantry.tracker.model.User;
 import com.pantry.tracker.model.Views;
+import com.pantry.tracker.model.Views.AddedItem;
 import com.pantry.tracker.model.Views.BatchView;
-import com.pantry.tracker.model.Views.CategoryOption;
 import com.pantry.tracker.model.Views.ExpiringEntry;
 import com.pantry.tracker.model.Views.FreshnessStatus;
 import com.pantry.tracker.model.Views.GroupWithItems;
@@ -27,9 +26,11 @@ import com.pantry.tracker.service.DataStructures.UndoStack;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -65,18 +66,9 @@ public class InventoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryOption> categoryOptions() {
-        List<CategoryOption> options = new ArrayList<>();
-        for (Object[] row : categoryRepository.findOptionRows()) {
-            options.add(new CategoryOption((Long) row[0], (String) row[1], (Integer) row[2]));
-        }
-        return options;
-    }
-
-    @Transactional(readOnly = true)
-    public Overview overview(User user) {
+    public Overview overview(UUID userId) {
         LocalDate today = LocalDate.now();
-        List<Item> items = itemRepository.findByUser(user);
+        List<Item> items = itemRepository.findByUserId(userId);
         long lowStock = 0;
         long expiringThisWeek = 0;
         ExpiringSoonHeap heap = new ExpiringSoonHeap();
@@ -101,46 +93,58 @@ public class InventoryService {
             }
         }
         return new Overview(items.size(), expiringThisWeek, lowStock,
-                groceryRepository.countByUserAndPurchasedFalse(user), heap.topN(EXPIRING_SOON_LIMIT));
+                groceryRepository.countByUserId(userId), heap.topN(EXPIRING_SOON_LIMIT));
     }
 
     @Transactional(readOnly = true)
-    public List<GroupWithItems> groupsWithItems(User user) {
+    public List<GroupWithItems> groupsWithItems(UUID userId) {
         List<GroupWithItems> result = new ArrayList<>();
-        for (LocationGroup group : groupRepository.findByUserOrderByNameAsc(user)) {
+        for (LocationGroup group : groupRepository.findByUserIdOrderByNameAsc(userId)) {
             result.add(groupWithItems(group));
         }
         return result;
     }
 
     @Transactional(readOnly = true)
-    public GroupWithItems groupBody(User user, Long groupId) {
-        return groupWithItems(findGroup(user, groupId));
+    public List<AddedItem> allItemsByDateAdded(UUID userId) {
+        LocalDate today = LocalDate.now();
+        Instant now = Instant.now();
+        List<AddedItem> rows = new ArrayList<>();
+        for (Item item : itemRepository.findByUserIdOrderByCreatedAtAscIdAsc(userId)) {
+            rows.add(new AddedItem(toView(item, today, now), item.getLocationGroup().getId(),
+                    item.getLocationGroup().getName(), LocalDate.ofInstant(item.getCreatedAt(), ZoneId.systemDefault())));
+        }
+        return rows;
+    }
+
+    @Transactional(readOnly = true)
+    public GroupWithItems groupBody(UUID userId, Long groupId) {
+        return groupWithItems(findGroup(userId, groupId));
     }
 
     @Transactional
-    public LocationGroup createGroup(User user, String name) {
+    public LocationGroup createGroup(UUID userId, String name) {
         String trimmed = requireName(name);
-        if (groupRepository.existsByUserAndNameIgnoreCase(user, trimmed)) {
+        if (groupRepository.existsByUserIdAndNameIgnoreCase(userId, trimmed)) {
             throw new IllegalArgumentException("A location named " + trimmed + " already exists");
         }
-        return groupRepository.save(new LocationGroup(user, trimmed));
+        return groupRepository.save(new LocationGroup(userId, trimmed));
     }
 
     @Transactional
-    public void renameGroup(User user, Long groupId, String name) {
+    public void renameGroup(UUID userId, Long groupId, String name) {
         String trimmed = requireName(name);
-        LocationGroup group = findGroup(user, groupId);
+        LocationGroup group = findGroup(userId, groupId);
         if (!group.getName().equalsIgnoreCase(trimmed)
-                && groupRepository.existsByUserAndNameIgnoreCase(user, trimmed)) {
+                && groupRepository.existsByUserIdAndNameIgnoreCase(userId, trimmed)) {
             throw new IllegalArgumentException("A location named " + trimmed + " already exists");
         }
         group.setName(trimmed);
     }
 
     @Transactional
-    public void deleteGroup(User user, Long groupId) {
-        LocationGroup group = findGroup(user, groupId);
+    public void deleteGroup(UUID userId, Long groupId) {
+        LocationGroup group = findGroup(userId, groupId);
         if (itemRepository.countByLocationGroup(group) > 0) {
             throw new IllegalArgumentException("Move or remove its items before deleting this location");
         }
@@ -148,18 +152,18 @@ public class InventoryService {
     }
 
     @Transactional(readOnly = true)
-    public ItemView findDuplicate(User user, String name, Long categoryId, Long groupId) {
-        Item match = new DuplicateIndex(itemRepository.findByUser(user)).find(name, categoryId, groupId);
+    public ItemView findDuplicate(UUID userId, String name, Long categoryId, Long groupId) {
+        Item match = new DuplicateIndex(itemRepository.findByUserId(userId)).find(name, categoryId, groupId);
         return match == null ? null : toView(match, LocalDate.now(), Instant.now());
     }
 
     @Transactional
-    public void createItem(User user, Long groupId, String name, Long categoryId, int quantity,
+    public void createItem(UUID userId, Long groupId, String name, Long categoryId, int quantity,
                            LocalDate expirationDate, boolean autoExpiry, UndoStack undo) {
-        LocationGroup group = findGroup(user, groupId);
-        Category category = categoryRepository.findById(categoryId).orElseThrow();
-        LocalDate expiry = resolveExpiry(categoryId, LocalDate.now(), expirationDate, autoExpiry);
-        Item item = new Item(user, name.trim(), category, group);
+        LocationGroup group = findGroup(userId, groupId);
+        Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
+        LocalDate expiry = resolveExpiry(category, LocalDate.now(), expirationDate, autoExpiry);
+        Item item = new Item(userId, name.trim(), category, group);
         Batch batch = new Batch(item, Math.max(0, quantity), expiry);
         batch.setAutoExpiry(autoExpiry);
         DataStructures.insertSorted(item.getBatches(), batch);
@@ -172,10 +176,10 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long updateItem(User user, Long itemId, String name, Long categoryId, boolean lowStockEnabled,
+    public Long updateItem(UUID userId, Long itemId, String name, Long categoryId, boolean lowStockEnabled,
                            Integer lowStockThreshold, UndoStack undo) {
-        Item item = findItem(user, itemId);
-        Category category = categoryRepository.findById(categoryId).orElseThrow();
+        Item item = findItem(userId, itemId);
+        Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
         if (undo != null) {
             UndoAction action = new UndoAction(UndoAction.Type.RESTORE_ITEM, "Edit item \"" + item.getName() + "\"");
             action.itemId = item.getId();
@@ -193,15 +197,15 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long keepItem(User user, Long itemId) {
-        Item item = findItem(user, itemId);
+    public Long keepItem(UUID userId, Long itemId) {
+        Item item = findItem(userId, itemId);
         item.setPurgeOverride(true);
         return item.getLocationGroup().getId();
     }
 
     @Transactional
-    public Long deleteItem(User user, Long itemId, UndoStack undo) {
-        Item item = findItem(user, itemId);
+    public Long deleteItem(UUID userId, Long itemId, UndoStack undo) {
+        Item item = findItem(userId, itemId);
         Long groupId = item.getLocationGroup().getId();
         if (undo != null) {
             UndoAction action = new UndoAction(UndoAction.Type.RECREATE_ITEM, "Delete item \"" + item.getName() + "\"");
@@ -221,10 +225,10 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long addBatch(User user, Long itemId, int quantity, LocalDate expirationDate, boolean autoExpiry,
+    public Long addBatch(UUID userId, Long itemId, int quantity, LocalDate expirationDate, boolean autoExpiry,
                          UndoStack undo) {
-        Item item = findItem(user, itemId);
-        LocalDate expiry = resolveExpiry(item.getCategory().getId(), LocalDate.now(), expirationDate, autoExpiry);
+        Item item = findItem(userId, itemId);
+        LocalDate expiry = resolveExpiry(item.getCategory(), LocalDate.now(), expirationDate, autoExpiry);
         Batch batch = new Batch(item, Math.max(0, quantity), expiry);
         batch.setAutoExpiry(autoExpiry);
         applyEmptySince(batch);
@@ -240,11 +244,11 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long updateBatch(User user, Long batchId, int quantity, LocalDate expirationDate, LocalDate dateAdded,
+    public Long updateBatch(UUID userId, Long batchId, int quantity, LocalDate expirationDate, LocalDate dateAdded,
                             boolean autoExpiry, UndoStack undo) {
-        Batch batch = findBatch(user, batchId);
+        Batch batch = findBatch(userId, batchId);
         LocalDate newDateAdded = dateAdded != null ? dateAdded : batch.getDateAdded();
-        LocalDate expiry = resolveExpiry(batch.getItem().getCategory().getId(), newDateAdded, expirationDate,
+        LocalDate expiry = resolveExpiry(batch.getItem().getCategory(), newDateAdded, expirationDate,
                 autoExpiry);
         rememberBatch(batch, undo, "Edit batch in \"" + batch.getItem().getName() + "\"");
         batch.setQuantity(Math.max(0, quantity));
@@ -257,8 +261,8 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long adjustQuantity(User user, Long batchId, int delta, UndoStack undo) {
-        Batch batch = findBatch(user, batchId);
+    public Long adjustQuantity(UUID userId, Long batchId, int delta, UndoStack undo) {
+        Batch batch = findBatch(userId, batchId);
         rememberBatch(batch, undo, "Change quantity in \"" + batch.getItem().getName() + "\"");
         batch.setQuantity(Math.max(0, batch.getQuantity() + delta));
         applyEmptySince(batch);
@@ -267,16 +271,16 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long adjustItemQuantity(User user, Long itemId, int delta, UndoStack undo) {
-        Item item = findItem(user, itemId);
+    public Long adjustItemQuantity(UUID userId, Long itemId, int delta, UndoStack undo) {
+        Item item = findItem(userId, itemId);
         Batch target = delta < 0 ? soonestExpiringStocked(item) : mostRecentlyAdded(item);
         if (target == null) {
             if (delta > 0) {
-                return addBatch(user, itemId, delta, null, true, undo);
+                return addBatch(userId, itemId, delta, null, true, undo);
             }
             return item.getLocationGroup().getId();
         }
-        return adjustQuantity(user, target.getId(), delta, undo);
+        return adjustQuantity(userId, target.getId(), delta, undo);
     }
 
     static Batch soonestExpiringStocked(Item item) {
@@ -320,8 +324,8 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long deleteBatch(User user, Long batchId, UndoStack undo) {
-        Batch batch = findBatch(user, batchId);
+    public Long deleteBatch(UUID userId, Long batchId, UndoStack undo) {
+        Batch batch = findBatch(userId, batchId);
         Item item = batch.getItem();
         if (undo != null) {
             undo.push(UndoAction.copyOf(batch, UndoAction.Type.RECREATE_BATCH,
@@ -334,37 +338,37 @@ public class InventoryService {
     }
 
     @Transactional
-    public Long keepBatch(User user, Long batchId) {
-        Batch batch = findBatch(user, batchId);
+    public Long keepBatch(UUID userId, Long batchId) {
+        Batch batch = findBatch(userId, batchId);
         batch.setPurgeOverride(true);
         return batch.getItem().getLocationGroup().getId();
     }
 
     @Transactional(readOnly = true)
-    public Long groupIdOfItem(User user, Long itemId) {
-        return findItem(user, itemId).getLocationGroup().getId();
+    public Long groupIdOfItem(UUID userId, Long itemId) {
+        return findItem(userId, itemId).getLocationGroup().getId();
     }
 
     @Transactional(readOnly = true)
-    public Long groupIdOfBatch(User user, Long batchId) {
-        return findBatch(user, batchId).getItem().getLocationGroup().getId();
+    public Long groupIdOfBatch(UUID userId, Long batchId) {
+        return findBatch(userId, batchId).getItem().getLocationGroup().getId();
     }
 
     @Transactional
-    public void undo(User user, UndoAction action) {
+    public void undo(UUID userId, UndoAction action) {
         switch (action.type) {
-            case DELETE_ITEM -> itemRepository.findByIdAndUser(action.itemId, user)
+            case DELETE_ITEM -> itemRepository.findByIdAndUserId(action.itemId, userId)
                     .ifPresent(itemRepository::delete);
-            case RESTORE_ITEM -> itemRepository.findByIdAndUser(action.itemId, user).ifPresent(item -> {
+            case RESTORE_ITEM -> itemRepository.findByIdAndUserId(action.itemId, userId).ifPresent(item -> {
                 item.setName(action.name);
-                categoryRepository.findById(action.categoryId).ifPresent(item::setCategory);
+                categoryRepository.findByIdAndUserId(action.categoryId, userId).ifPresent(item::setCategory);
                 item.setLowStockEnabled(action.lowStockEnabled);
                 item.setLowStockThreshold(action.lowStockThreshold);
             });
-            case RECREATE_ITEM -> recreateItem(user, action);
-            case DELETE_BATCH -> batchRepository.findByIdAndItemUser(action.batchId, user)
+            case RECREATE_ITEM -> recreateItem(userId, action);
+            case DELETE_BATCH -> batchRepository.findByIdAndItemUserId(action.batchId, userId)
                     .ifPresent(batchRepository::delete);
-            case RESTORE_BATCH -> batchRepository.findByIdAndItemUser(action.batchId, user).ifPresent(batch -> {
+            case RESTORE_BATCH -> batchRepository.findByIdAndItemUserId(action.batchId, userId).ifPresent(batch -> {
                 batch.setQuantity(action.quantity);
                 batch.setExpirationDate(action.expirationDate);
                 batch.setDateAdded(action.dateAdded);
@@ -372,7 +376,7 @@ public class InventoryService {
                 applyEmptySince(batch);
                 refreshItemEmptySince(batch.getItem());
             });
-            case RECREATE_BATCH -> itemRepository.findByIdAndUser(action.itemId, user)
+            case RECREATE_BATCH -> itemRepository.findByIdAndUserId(action.itemId, userId)
                     .ifPresent(item -> batchRepository.save(newBatchFrom(item, action)));
         }
     }
@@ -500,16 +504,17 @@ public class InventoryService {
                 itemFreshness(item, today, expiringSoonDays), daysUntil(earliestExpiry(item), today),
                 stockStatus(item),
                 item.isLowStockEnabled(), item.getLowStockThreshold(),
-                item.isPurgeOverride(), daysUntilItemPurge(item, now), batches);
+                item.isPurgeOverride(), daysUntilItemPurge(item, now), batches,
+                item.getCategory().getShelfLifeDays() == null);
     }
 
-    private void recreateItem(User user, UndoAction action) {
-        LocationGroup group = groupRepository.findByIdAndUser(action.groupId, user).orElse(null);
-        Category category = categoryRepository.findById(action.categoryId).orElse(null);
+    private void recreateItem(UUID userId, UndoAction action) {
+        LocationGroup group = groupRepository.findByIdAndUserId(action.groupId, userId).orElse(null);
+        Category category = categoryRepository.findByIdAndUserId(action.categoryId, userId).orElse(null);
         if (group == null || category == null) {
             return;
         }
-        Item item = new Item(user, action.name, category, group);
+        Item item = new Item(userId, action.name, category, group);
         item.setLowStockEnabled(action.lowStockEnabled);
         item.setLowStockThreshold(action.lowStockThreshold);
         item.setPurgeOverride(action.purgeOverride);
@@ -533,12 +538,15 @@ public class InventoryService {
         }
     }
 
-    private LocalDate resolveExpiry(Long categoryId, LocalDate dateAdded, LocalDate manualDate, boolean autoExpiry) {
-        if (!autoExpiry) {
+    static LocalDate resolveExpiry(Category category, LocalDate dateAdded, LocalDate manualDate, boolean autoExpiry) {
+        Integer days = category.getShelfLifeDays();
+        if (days == null && manualDate == null) {
+            throw new IllegalArgumentException("\"" + category.getName()
+                    + "\" has no set shelf life. Enter an expiration date.");
+        }
+        if (!autoExpiry || days == null) {
             return manualDate;
         }
-        Integer days = categoryRepository.findShelfLifeDays(categoryId).orElseThrow(() ->
-                new IllegalArgumentException("This category has no shelf-life reference; enter an expiration date manually"));
         LocalDate base = dateAdded == null ? LocalDate.now() : dateAdded;
         return base.plusDays(days);
     }
@@ -571,15 +579,15 @@ public class InventoryService {
         return trimmed;
     }
 
-    private LocationGroup findGroup(User user, Long groupId) {
-        return groupRepository.findByIdAndUser(groupId, user).orElseThrow();
+    private LocationGroup findGroup(UUID userId, Long groupId) {
+        return groupRepository.findByIdAndUserId(groupId, userId).orElseThrow();
     }
 
-    private Item findItem(User user, Long itemId) {
-        return itemRepository.findByIdAndUser(itemId, user).orElseThrow();
+    private Item findItem(UUID userId, Long itemId) {
+        return itemRepository.findByIdAndUserId(itemId, userId).orElseThrow();
     }
 
-    private Batch findBatch(User user, Long batchId) {
-        return batchRepository.findByIdAndItemUser(batchId, user).orElseThrow();
+    private Batch findBatch(UUID userId, Long batchId) {
+        return batchRepository.findByIdAndItemUserId(batchId, userId).orElseThrow();
     }
 }

@@ -5,9 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,28 +22,22 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "user_id")
+    private UUID userId;
+
+    @Column(nullable = false)
     private String name;
-}
 
-@Entity
-@Table(name = "category_expiry_reference")
-@Getter
-@Setter
-@NoArgsConstructor
-class CategoryExpiryReference {
+    @Column(name = "group_name")
+    private String groupName;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "shelf_life_days")
+    private Integer shelfLifeDays;
 
-    @OneToOne
-    @JoinColumn(name = "category_id", nullable = false, unique = true)
-    private Category category;
-
-    @Column(name = "lower_bound_shelf_life_days", nullable = false)
-    private Integer lowerBoundShelfLifeDays;
-
-    @Column(name = "source_note", nullable = false)
-    private String sourceNote;
+    public Category(UUID userId, String name, String groupName, Integer shelfLifeDays) {
+        this.userId = userId;
+        this.name = name;
+        this.groupName = groupName;
+        this.shelfLifeDays = shelfLifeDays;
+    }
 }

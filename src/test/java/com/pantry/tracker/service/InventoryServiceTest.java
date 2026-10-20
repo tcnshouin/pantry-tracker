@@ -8,9 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pantry.tracker.model.Batch;
+import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
-import com.pantry.tracker.model.User;
 import com.pantry.tracker.model.Views;
 import com.pantry.tracker.model.Views.FreshnessStatus;
 import com.pantry.tracker.model.Views.StockStatus;
@@ -23,6 +23,7 @@ import com.pantry.tracker.service.DataStructures.UndoStack;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -50,7 +51,7 @@ class InventoryServiceTest {
     @InjectMocks
     private InventoryService service;
 
-    private final User user = new User("owner@example.com", "hash");
+    private final UUID user = UUID.randomUUID();
     private final LocalDate today = LocalDate.of(2026, 6, 1);
 
     private Item itemWith(int... quantities) {
@@ -146,11 +147,23 @@ class InventoryServiceTest {
     }
 
     @Test
+    void expiryComesFromShelfLifeOrMustBeTypedForOthers() {
+        Category rice = new Category(user, "Rice", "Rice & Grains", 730);
+        Category others = new Category(user, "Others", "Others", null);
+
+        assertThat(InventoryService.resolveExpiry(rice, today, null, true)).isEqualTo(today.plusDays(730));
+        assertThat(InventoryService.resolveExpiry(others, today, today.plusDays(5), true)).isEqualTo(today.plusDays(5));
+        assertThatThrownBy(() -> InventoryService.resolveExpiry(others, today, null, true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Enter an expiration date");
+    }
+
+    @Test
     void createGroupRejectsDuplicateNameAndTrimsNewOnes() {
-        when(groupRepository.existsByUserAndNameIgnoreCase(user, "Pantry")).thenReturn(true);
+        when(groupRepository.existsByUserIdAndNameIgnoreCase(user, "Pantry")).thenReturn(true);
         assertThatThrownBy(() -> service.createGroup(user, "  Pantry ")).isInstanceOf(IllegalArgumentException.class);
 
-        when(groupRepository.existsByUserAndNameIgnoreCase(user, "Shelf")).thenReturn(false);
+        when(groupRepository.existsByUserIdAndNameIgnoreCase(user, "Shelf")).thenReturn(false);
         when(groupRepository.save(any(LocationGroup.class))).thenAnswer(inv -> inv.getArgument(0));
         assertThat(service.createGroup(user, "  Shelf ").getName()).isEqualTo("Shelf");
     }
@@ -158,7 +171,7 @@ class InventoryServiceTest {
     @Test
     void deleteGroupIsBlockedWhileItHasItems() {
         LocationGroup group = new LocationGroup(user, "Pantry");
-        when(groupRepository.findByIdAndUser(7L, user)).thenReturn(Optional.of(group));
+        when(groupRepository.findByIdAndUserId(7L, user)).thenReturn(Optional.of(group));
         when(itemRepository.countByLocationGroup(group)).thenReturn(2L);
 
         assertThatThrownBy(() -> service.deleteGroup(user, 7L)).isInstanceOf(IllegalArgumentException.class);
@@ -173,7 +186,7 @@ class InventoryServiceTest {
         item.setName("Rice");
         item.setLocationGroup(group);
         Batch batch = item.getBatches().get(0);
-        when(batchRepository.findByIdAndItemUser(5L, user)).thenReturn(Optional.of(batch));
+        when(batchRepository.findByIdAndItemUserId(5L, user)).thenReturn(Optional.of(batch));
         UndoStack undo = new UndoStack();
 
         service.adjustQuantity(user, 5L, -5, undo);

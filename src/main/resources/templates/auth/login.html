@@ -14,24 +14,33 @@
                 <div class="card-body">
                     <h1 class="h4 mb-3">Log in</h1>
 
+                    <div class="alert alert-success" th:if="${param.confirm}">
+                        Account created. Check your email and click the confirmation link, then log in.
+                    </div>
                     <div class="alert alert-success" th:if="${param.registered}">
                         Account created. Please log in.
+                    </div>
+                    <div class="alert alert-success" th:if="${param.reset}">
+                        Password updated. Log in with your new password.
                     </div>
                     <div class="alert alert-secondary" th:if="${param.logout}">
                         You have been logged out.
                     </div>
-                    <div class="alert alert-danger" th:if="${param.error}">
-                        Invalid email or password.
-                    </div>
+                    <div class="alert alert-danger" th:if="${error}" th:text="${error}">Invalid email or password.</div>
 
                     <form th:action="@{/login}" method="post">
                         <div class="mb-3">
-                            <label for="username" class="form-label">Email</label>
-                            <input type="email" id="username" name="username" class="form-control" required autofocus>
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" class="form-control" required autofocus
+                                   autocomplete="email" th:value="${email}">
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" id="password" name="password" class="form-control" required>
+                            <div class="d-flex justify-content-between">
+                                <label for="password" class="form-label">Password</label>
+                                <a class="small" th:href="@{/forgot-password}">Forgot password?</a>
+                            </div>
+                            <input type="password" id="password" name="password" class="form-control" required
+                                   autocomplete="current-password">
                         </div>
                         <button type="submit" class="btn btn-pt w-100">Log in</button>
                     </form>
