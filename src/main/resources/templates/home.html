@@ -132,10 +132,10 @@
 
     <div th:if="${groups.isEmpty()}" class="card shadow-sm">
         <div class="card-body text-center py-5">
-            <div class="fs-1 mb-2">📦</div>
-            <p class="fw-semibold mb-1">No locations yet</p>
-            <p class="text-muted small mb-0">Add your first one, like "Pantry shelf", with the
-                <span class="fw-semibold">+</span> next to <span class="fw-semibold">By location</span>.</p>
+            <img class="pt-empty-art mb-3" th:src="@{/img/add-location.png}" alt="">
+            <p class="h5 fw-bold mb-2 pt-empty-title">Ready to get organized?</p>
+            <p class="text-muted mb-0 mx-auto pt-empty-text">Let's build your pantry! Add your first spot, like
+                "Fridge" or "Pantry shelf", using the <span class="fw-semibold">+</span> button.</p>
         </div>
     </div>
 
