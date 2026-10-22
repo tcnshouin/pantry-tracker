@@ -1910,7 +1910,7 @@
     </style>
 </head>
 <body>
-<header class="pt-topbar">
+<header class="pt-topbar" th:unless="${hideTopbar}">
     <div class="pt-topbar-left">
         <div class="pt-menu" sec:authorize="isAuthenticated()">
             <button type="button" class="pt-menu-btn" aria-label="Menu" aria-expanded="false"

@@ -38,7 +38,8 @@ public class AuthController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        model.addAttribute("hideTopbar", true);
         return "auth/login";
     }
 
@@ -52,6 +53,7 @@ public class AuthController {
         } catch (AuthException ex) {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("email", email);
+            model.addAttribute("hideTopbar", true);
             return "auth/login";
         }
     }
