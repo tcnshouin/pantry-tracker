@@ -1910,8 +1910,7 @@
     </style>
 </head>
 <body>
-<header class="pt-topbar"
-        th:unless="${#httpServletRequest.requestURI == '/login' or #httpServletRequest.requestURI == '/register'}">
+<header class="pt-topbar">
     <div class="pt-topbar-left">
         <div class="pt-menu" sec:authorize="isAuthenticated()">
             <button type="button" class="pt-menu-btn" aria-label="Menu" aria-expanded="false"
