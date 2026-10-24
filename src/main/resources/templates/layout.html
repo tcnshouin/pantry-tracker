@@ -1945,6 +1945,20 @@
             padding: 0.7rem 1rem;
             font-weight: 600;
         }
+        .pt-limit-hint {
+            font-size: 0.78rem;
+            color: #5F6F66;
+            text-align: right;
+            margin-top: 0.2rem;
+            min-height: 0;
+        }
+        .pt-limit-hint:empty {
+            display: none;
+        }
+        .pt-limit-hint.over {
+            color: var(--pt-expired);
+            font-weight: 600;
+        }
         .pw-rules {
             list-style: none;
             padding: 0 0 0 0.9rem;
@@ -2441,7 +2455,9 @@
         }
         var input = step.parentElement.querySelector('.pt-qty-input');
         var current = parseInt(input.value, 10) || 1;
-        input.value = Math.max(1, current + parseInt(step.dataset.step, 10));
+        var max = parseInt(input.max, 10) || 9999;
+        input.value = Math.min(max, Math.max(1, current + parseInt(step.dataset.step, 10)));
+        ptCheckNumber(input);
     });
 
     document.addEventListener('click', function (event) {
@@ -2453,7 +2469,7 @@
         var hidden = form.querySelector('input[name="quantity"]');
         var display = form.querySelector('.pt-qty-value');
         var current = parseInt(hidden.value, 10) || 0;
-        var next = Math.max(0, current + parseInt(step.dataset.step, 10));
+        var next = Math.min(9999, Math.max(0, current + parseInt(step.dataset.step, 10)));
         hidden.value = next;
         display.textContent = next;
         var minusBtn = form.querySelector('.pt-batch-step[data-step="-1"]');
@@ -2681,6 +2697,117 @@
                 form.reset();
             }
             ptSyncAllAutoCalc();
+        }
+    });
+
+    function ptLimitHint(input) {
+        var anchor = input.closest('.pt-qty, .input-group, .auth-field-icon-wrap') || input;
+        var parent = anchor.parentElement;
+        var parentStyle = parent ? getComputedStyle(parent) : null;
+        if (parentStyle && parentStyle.display.indexOf('flex') !== -1 && parentStyle.flexDirection.indexOf('row') === 0) {
+            anchor = parent;
+        }
+        var hint = anchor.nextElementSibling;
+        if (!hint || !hint.classList.contains('pt-limit-hint')) {
+            hint = document.createElement('div');
+            hint.className = 'pt-limit-hint';
+            hint.setAttribute('aria-live', 'polite');
+            anchor.insertAdjacentElement('afterend', hint);
+        }
+        return hint;
+    }
+
+    function ptCheckText(input, pasted) {
+        var max = input.maxLength;
+        if (!max || max < 0) {
+            return;
+        }
+        var length = input.value.length;
+        var hint = ptLimitHint(input);
+        var label = input.dataset.limitLabel || 'This field';
+        if (pasted) {
+            hint.textContent = 'Pasted text was cut to ' + max + ' characters. ' + label + ' can be at most ' + max + '.';
+            hint.className = 'pt-limit-hint over';
+        } else if (length >= max) {
+            hint.textContent = label + ' can be at most ' + max + ' characters (' + length + '/' + max + ')';
+            hint.className = 'pt-limit-hint over';
+        } else if (length >= Math.floor(max * 0.7)) {
+            hint.textContent = length + '/' + max + ' characters';
+            hint.className = 'pt-limit-hint';
+        } else {
+            hint.textContent = '';
+            hint.className = 'pt-limit-hint';
+        }
+    }
+
+    function ptCheckNumber(input) {
+        var hint = ptLimitHint(input);
+        var value = input.value === '' ? null : Number(input.value);
+        var max = input.max === '' ? null : Number(input.max);
+        var min = input.min === '' ? null : Number(input.min);
+        if (value !== null && max !== null && value > max) {
+            hint.textContent = 'Maximum is ' + max.toLocaleString('en-US');
+            hint.className = 'pt-limit-hint over';
+        } else if (value !== null && min !== null && value < min) {
+            hint.textContent = 'Minimum is ' + min.toLocaleString('en-US');
+            hint.className = 'pt-limit-hint over';
+        } else if (input.validity.badInput || (value !== null && !Number.isInteger(value))) {
+            hint.textContent = 'Enter a whole number';
+            hint.className = 'pt-limit-hint over';
+        } else {
+            hint.textContent = '';
+            hint.className = 'pt-limit-hint';
+        }
+    }
+
+    function ptCheckDate(input) {
+        var hint = ptLimitHint(input);
+        var year = input.value ? parseInt(input.value.substring(0, 4), 10) : null;
+        if (input.value && (input.value < input.min || input.value > input.max)) {
+            hint.textContent = 'Pick a date between ' + input.min.substring(0, 4) + ' and ' + input.max.substring(0, 4);
+            hint.className = 'pt-limit-hint over';
+        } else if (input.validity.badInput || (year !== null && isNaN(year))) {
+            hint.textContent = 'Enter a valid date';
+            hint.className = 'pt-limit-hint over';
+        } else {
+            hint.textContent = '';
+            hint.className = 'pt-limit-hint';
+        }
+    }
+
+    document.addEventListener('input', function (event) {
+        var input = event.target;
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+        if (input.type === 'number' && input.max !== '') {
+            ptCheckNumber(input);
+        } else if (input.type === 'date' && input.max !== '') {
+            ptCheckDate(input);
+        } else if (input.dataset.limitLabel !== undefined) {
+            ptCheckText(input, false);
+        }
+    });
+
+    document.addEventListener('paste', function (event) {
+        var input = event.target;
+        if (!(input instanceof HTMLInputElement) || input.dataset.limitLabel === undefined || input.maxLength < 0) {
+            return;
+        }
+        var text = (event.clipboardData || window.clipboardData).getData('text') || '';
+        var selected = (input.selectionEnd || 0) - (input.selectionStart || 0);
+        var cut = input.value.length - selected + text.length > input.maxLength;
+        setTimeout(function () {
+            ptCheckText(input, cut);
+        }, 0);
+    });
+
+    document.addEventListener('change', function (event) {
+        var input = event.target;
+        if (input instanceof HTMLInputElement && input.type === 'number' && input.max !== ''
+                && input.classList.contains('pt-qty-input') && Number(input.value) > Number(input.max)) {
+            input.value = input.max;
+            ptCheckNumber(input);
         }
     });
 

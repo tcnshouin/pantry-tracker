@@ -1,6 +1,7 @@
 package com.pantry.tracker.web;
 
 import com.pantry.tracker.model.SupabaseUser;
+import com.pantry.tracker.service.InputLimits;
 import com.pantry.tracker.service.LoginAttemptService;
 import com.pantry.tracker.service.LoginAttemptService.Failure;
 import com.pantry.tracker.service.SupabaseAuthClient;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -92,6 +94,9 @@ public class AuthController {
     static String passwordProblem(String password) {
         String value = password == null ? "" : password;
         List<String> missing = new ArrayList<>();
+        if (value.length() > InputLimits.PASSWORD) {
+            return "Password can be at most " + InputLimits.PASSWORD + " characters.";
+        }
         if (value.length() < 8) {
             missing.add("at least 8 characters");
         }
@@ -219,6 +224,7 @@ public class AuthController {
 
         @NotBlank
         @Email
+        @Size(max = InputLimits.EMAIL, message = "Email can be at most " + InputLimits.EMAIL + " characters")
         private String email;
 
         @NotBlank

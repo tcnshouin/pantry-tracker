@@ -31,7 +31,7 @@
                     <label for="cat-search" class="form-label pt-field-label">Search categories</label>
                     <div class="pt-search">
                         <i class="bi bi-search" aria-hidden="true"></i>
-                        <input type="search" id="cat-search" class="form-control" placeholder="Search categories..."
+                        <input type="search" id="cat-search" class="form-control" placeholder="Search categories..." th:maxlength="${limits.search}"
                                autocomplete="off">
                     </div>
                 </div>
@@ -243,12 +243,12 @@
         <div class="col-md-6">
             <label class="form-label pt-field-label" th:for="${prefix} + '-name'">Category name</label>
             <input type="text" name="name" class="form-control" th:id="${prefix} + '-name'" th:value="${name}"
-                   placeholder="e.g. Canned fish" required maxlength="120">
+                   placeholder="e.g. Canned fish" required th:maxlength="${limits.categoryName}" data-limit-label="Category name">
         </div>
         <div class="col-md-6">
             <label class="form-label pt-field-label" th:for="${prefix} + '-group'">Category Group</label>
             <input type="text" name="groupName" class="form-control" list="cat-group-list"
-                   th:id="${prefix} + '-group'" th:value="${group}" placeholder="e.g. Canned Goods" maxlength="60">
+                   th:id="${prefix} + '-group'" th:value="${group}" placeholder="e.g. Canned Goods" th:maxlength="${limits.categoryGroup}" data-limit-label="Category group">
         </div>
         <div class="col-md-6 d-flex align-items-end">
             <div class="form-check form-switch pt-switch-box w-100">
@@ -261,7 +261,7 @@
         <div class="col-md-6">
             <label class="form-label pt-field-label" th:for="${prefix} + '-amount'">Shelf life</label>
             <div class="input-group">
-                <input type="number" name="amount" min="1" class="form-control pt-shelf-input"
+                <input type="number" name="amount" min="1" th:max="${limits.shelfLifeDays}" class="form-control pt-shelf-input"
                        th:id="${prefix} + '-amount'" th:value="${amount}" required>
                 <select name="unit" class="form-select pt-shelf-input" aria-label="Shelf life unit">
                     <option value="days" th:selected="${unit == 'days'}">days</option>

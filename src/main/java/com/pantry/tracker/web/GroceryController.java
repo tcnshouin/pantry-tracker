@@ -4,12 +4,14 @@ import com.pantry.tracker.service.GroceryService;
 import com.pantry.tracker.service.UserService;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -33,21 +35,33 @@ public class GroceryController {
 
     @PostMapping("/items/{itemId}/grocery")
     public String addFromInventory(@PathVariable Long itemId, @RequestParam(defaultValue = "1") int quantity) {
-        groceryService.addManual(userService.currentId(), itemId, quantity);
+        try {
+            groceryService.addManual(userService.currentId(), itemId, quantity);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
         return "grocery/fragments :: addedBadge";
     }
 
     @PostMapping("/grocery/add")
     public String quickAdd(@RequestParam Long itemId, Model model) {
         UUID userId = userService.currentId();
-        groceryService.addManual(userId, itemId, 1);
+        try {
+            groceryService.addManual(userId, itemId, 1);
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("error", ex.getMessage());
+        }
         return body(userId, model);
     }
 
     @PostMapping("/grocery/{id}/quantity")
     public String changeQuantity(@PathVariable Long id, @RequestParam int delta, Model model) {
         UUID userId = userService.currentId();
-        groceryService.changeQuantity(userId, id, delta);
+        try {
+            groceryService.changeQuantity(userId, id, delta);
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("error", ex.getMessage());
+        }
         return body(userId, model);
     }
 
@@ -64,7 +78,13 @@ public class GroceryController {
             ra.addFlashAttribute("error", "Tick the items you bought first");
             return "redirect:/grocery";
         }
-        GroceryService.PutAwayResult result = groceryService.putAway(userService.currentId(), ids);
+        GroceryService.PutAwayResult result;
+        try {
+            result = groceryService.putAway(userService.currentId(), ids);
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/grocery";
+        }
         int count = result.putAway();
         if (count > 0) {
             ra.addFlashAttribute("success", "Added " + count + (count == 1 ? " item" : " items")

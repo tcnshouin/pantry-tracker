@@ -160,11 +160,14 @@ public class InventoryService {
     @Transactional
     public void createItem(UUID userId, Long groupId, String name, Long categoryId, int quantity,
                            LocalDate expirationDate, boolean autoExpiry, UndoStack undo) {
+        String itemName = InputLimits.text(name, InputLimits.ITEM_NAME, "Item name");
+        InputLimits.quantity(quantity, 1);
+        InputLimits.date(expirationDate, "Expiration date");
         LocationGroup group = findGroup(userId, groupId);
         Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
         LocalDate expiry = resolveExpiry(category, LocalDate.now(), expirationDate, autoExpiry);
-        Item item = new Item(userId, name.trim(), category, group);
-        Batch batch = new Batch(item, Math.max(0, quantity), expiry);
+        Item item = new Item(userId, itemName, category, group);
+        Batch batch = new Batch(item, quantity, expiry);
         batch.setAutoExpiry(autoExpiry);
         DataStructures.insertSorted(item.getBatches(), batch);
         itemRepository.save(item);
@@ -178,6 +181,11 @@ public class InventoryService {
     @Transactional
     public Long updateItem(UUID userId, Long itemId, String name, Long categoryId, boolean lowStockEnabled,
                            Integer lowStockThreshold, UndoStack undo) {
+        String itemName = InputLimits.text(name, InputLimits.ITEM_NAME, "Item name");
+        if (lowStockEnabled) {
+            InputLimits.number(lowStockThreshold == null ? 0 : lowStockThreshold, 0, InputLimits.QUANTITY_MAX,
+                    "Low-stock threshold");
+        }
         Item item = findItem(userId, itemId);
         Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
         if (undo != null) {
@@ -189,7 +197,7 @@ public class InventoryService {
             action.lowStockThreshold = item.getLowStockThreshold();
             undo.push(action);
         }
-        item.setName(name.trim());
+        item.setName(itemName);
         item.setCategory(category);
         item.setLowStockEnabled(lowStockEnabled);
         item.setLowStockThreshold(lowStockEnabled ? lowStockThreshold : null);
@@ -227,17 +235,20 @@ public class InventoryService {
     @Transactional
     public Long addBatch(UUID userId, Long itemId, int quantity, LocalDate expirationDate, boolean autoExpiry,
                          UndoStack undo) {
+        InputLimits.quantity(quantity, 1);
+        InputLimits.date(expirationDate, "Expiration date");
         Item item = findItem(userId, itemId);
         LocalDate expiry = resolveExpiry(item.getCategory(), LocalDate.now(), expirationDate, autoExpiry);
         Batch existing = expiry == null ? null : findBatchByExpiry(item, expiry);
         if (existing != null) {
+            int total = InputLimits.total(existing.getQuantity() + quantity);
             rememberBatch(existing, undo, "Add batch to \"" + item.getName() + "\"");
-            existing.setQuantity(existing.getQuantity() + Math.max(0, quantity));
+            existing.setQuantity(total);
             applyEmptySince(existing);
             refreshItemEmptySince(item);
             return item.getLocationGroup().getId();
         }
-        Batch batch = new Batch(item, Math.max(0, quantity), expiry);
+        Batch batch = new Batch(item, quantity, expiry);
         batch.setAutoExpiry(autoExpiry);
         applyEmptySince(batch);
         DataStructures.insertSorted(item.getBatches(), batch);
@@ -263,12 +274,15 @@ public class InventoryService {
     @Transactional
     public Long updateBatch(UUID userId, Long batchId, int quantity, LocalDate expirationDate, LocalDate dateAdded,
                             boolean autoExpiry, UndoStack undo) {
+        InputLimits.quantity(quantity, 0);
+        InputLimits.date(expirationDate, "Expiration date");
+        InputLimits.date(dateAdded, "Date added");
         Batch batch = findBatch(userId, batchId);
         LocalDate newDateAdded = dateAdded != null ? dateAdded : batch.getDateAdded();
         LocalDate expiry = resolveExpiry(batch.getItem().getCategory(), newDateAdded, expirationDate,
                 autoExpiry);
         rememberBatch(batch, undo, "Edit batch in \"" + batch.getItem().getName() + "\"");
-        batch.setQuantity(Math.max(0, quantity));
+        batch.setQuantity(quantity);
         batch.setDateAdded(newDateAdded);
         batch.setAutoExpiry(autoExpiry);
         batch.setExpirationDate(expiry);
@@ -280,8 +294,9 @@ public class InventoryService {
     @Transactional
     public Long adjustQuantity(UUID userId, Long batchId, int delta, UndoStack undo) {
         Batch batch = findBatch(userId, batchId);
+        int total = InputLimits.total(batch.getQuantity() + delta);
         rememberBatch(batch, undo, "Change quantity in \"" + batch.getItem().getName() + "\"");
-        batch.setQuantity(Math.max(0, batch.getQuantity() + delta));
+        batch.setQuantity(total);
         applyEmptySince(batch);
         refreshItemEmptySince(batch.getItem());
         return batch.getItem().getLocationGroup().getId();
@@ -589,11 +604,7 @@ public class InventoryService {
     }
 
     private String requireName(String name) {
-        String trimmed = name == null ? "" : name.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Group name is required");
-        }
-        return trimmed;
+        return InputLimits.text(name, InputLimits.LOCATION_NAME, "Location name");
     }
 
     private LocationGroup findGroup(UUID userId, Long groupId) {

@@ -40,7 +40,7 @@
                             <label for="email" class="form-label">Email address</label>
                             <div class="auth-field-icon-wrap">
                                 <i class="bi bi-envelope"></i>
-                                <input type="email" id="email" name="email" class="form-control auth-input" required
+                                <input type="email" id="email" name="email" class="form-control auth-input" required th:maxlength="${limits.email}"
                                        autofocus autocomplete="email" th:value="${email}">
                             </div>
                         </div>
@@ -51,7 +51,7 @@
                             </div>
                             <div class="auth-field-icon-wrap">
                                 <i class="bi bi-lock"></i>
-                                <input type="password" id="password" name="password" class="form-control auth-input"
+                                <input type="password" id="password" name="password" class="form-control auth-input" th:maxlength="${limits.password}"
                                        required autocomplete="current-password">
                                 <button type="button" class="auth-toggle-password" data-toggle-for="password"
                                         aria-label="Show password">

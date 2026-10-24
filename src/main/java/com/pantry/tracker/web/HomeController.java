@@ -7,10 +7,12 @@ import com.pantry.tracker.service.DataStructures.UndoAction;
 import com.pantry.tracker.service.CategoryService;
 import com.pantry.tracker.service.DataStructures.UndoStack;
 import com.pantry.tracker.service.GroceryService;
+import com.pantry.tracker.service.InputLimits;
 import com.pantry.tracker.service.InventoryService;
 import com.pantry.tracker.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -100,6 +102,10 @@ public class HomeController {
         if (trimmed.isEmpty() || categoryId == null) {
             return groupBody(userId, id, model, session, null, "Enter a name and choose a category");
         }
+        if (trimmed.length() > InputLimits.ITEM_NAME) {
+            return groupBody(userId, id, model, session, null, "Item name can be at most " + InputLimits.ITEM_NAME
+                    + " characters (you entered " + trimmed.length() + ")");
+        }
         ItemView existing = inventory.findDuplicate(userId, trimmed, categoryId, id);
         if (existing != null) {
             DuplicatePrompt prompt = new DuplicatePrompt(existing, trimmed, categoryId, quantity,
@@ -121,9 +127,13 @@ public class HomeController {
                            @RequestParam(required = false) Integer lowStockThreshold,
                            Model model, HttpSession session) {
         UUID userId = userService.currentId();
-        Long groupId = inventory.updateItem(userId, id, name, categoryId, lowStockEnabled, lowStockThreshold,
-                undoStack(session));
-        return groupBody(userId, groupId, model, session, null, null);
+        try {
+            Long groupId = inventory.updateItem(userId, id, name, categoryId, lowStockEnabled, lowStockThreshold,
+                    undoStack(session));
+            return groupBody(userId, groupId, model, session, null, null);
+        } catch (IllegalArgumentException ex) {
+            return groupBody(userId, inventory.groupIdOfItem(userId, id), model, session, null, ex.getMessage());
+        }
     }
 
     @PostMapping("/items/{id}/delete")
@@ -174,8 +184,13 @@ public class HomeController {
     @PostMapping("/batches/{id}/quantity")
     public String adjustQuantity(@PathVariable Long id, @RequestParam int delta, Model model, HttpSession session) {
         UUID userId = userService.currentId();
-        Long groupId = inventory.adjustQuantity(userId, id, delta, undoStack(session));
-        return groupBody(userId, groupId, model, session, null, null);
+        Long groupId = inventory.groupIdOfBatch(userId, id);
+        try {
+            inventory.adjustQuantity(userId, id, delta, undoStack(session));
+            return groupBody(userId, groupId, model, session, null, null);
+        } catch (IllegalArgumentException ex) {
+            return groupBody(userId, groupId, model, session, null, ex.getMessage());
+        }
     }
 
     @PostMapping("/items/{id}/quantity")
@@ -235,6 +250,13 @@ public class HomeController {
     }
 
     private static LocalDate parseDate(String raw) {
-        return raw == null || raw.isBlank() ? null : LocalDate.parse(raw);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(raw);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Enter a valid date");
+        }
     }
 }

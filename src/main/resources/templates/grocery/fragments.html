@@ -43,7 +43,7 @@
             </div>
             <div class="px-3">
                 <label for="quick-search" class="visually-hidden">Search your pantry</label>
-                <input type="search" id="quick-search" class="form-control form-control-sm mb-2"
+                <input type="search" id="quick-search" class="form-control form-control-sm mb-2" th:maxlength="${limits.search}"
                        placeholder="Search your pantry" autocomplete="off">
             </div>
             <div class="pt-side-scroll">

@@ -234,3 +234,37 @@ running app (see lessons.md); it only adds the empty `login_attempt` table.
       and shown as a live checklist under the password box.
 - [x] Login doesn't apply the rules, so accounts made before this still work.
 - [x] 58 tests pass; checklist checked in the browser (nothing submitted).
+
+---
+
+## Input limits (2026-10-24, branch `andreu/login-lockout`)
+
+One place for every limit (`service/InputLimits`), used by both the pages
+(maxlength / min / max) and the server (friendly error instead of a crash).
+
+| Field | Limit |
+|---|---|
+| Item name | 60 characters |
+| Location name | 40 characters |
+| Category name | 50 characters |
+| Category group | 40 characters |
+| Search boxes | 60 characters |
+| Email | 254 characters |
+| Password | 72 characters (Supabase/bcrypt maximum) |
+| Quantities (add item, batch, grocery) | 1–9,999 (batch edit 0–9,999) |
+| Low-stock threshold | 0–9,999 |
+| Shelf life | up to 10 years (3,650 days) |
+| Dates | years 2000–2099 |
+
+- [x] `InputLimits` with the numbers + `text()`/`number()`/`date()` checks.
+- [x] Server checks in InventoryService, GroceryService, CategoryService, AuthController;
+      item edit errors shown instead of a server error.
+- [x] Pages: maxlength/min/max from `InputLimits`; live "12/60" counter that turns
+      red with "Maximum 60 characters" at the limit (also when pasting).
+- [x] Tests for each check; browser check of the counter.
+
+Review: 64 tests pass. On a test copy (scratch DB + stand-in login): typing stops
+at each limit with a red "can be at most N characters" note under the field;
+sending over-limit values straight to the server returns the same friendly
+messages for add item, edit item (used to be a server error), new category and
+shelf life; every input on Home, Categories and Grocery carries its limit.

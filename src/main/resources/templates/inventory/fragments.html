@@ -40,9 +40,9 @@
         <form th:each="b : ${prompt.existing().batches()}" class="pt-dup-grid pt-dup-row"
               th:attr="hx-post=@{/batches/{id}(id=${b.id()})},hx-target=${target}" hx-swap="innerHTML">
             <span th:text="${b.dateAdded()}">2026-01-01</span>
-            <input type="number" name="quantity" min="0" class="form-control pt-dup-qty" th:value="${b.quantity()}"
+            <input type="number" name="quantity" min="0" th:max="${limits.quantity}" class="form-control pt-dup-qty" th:value="${b.quantity()}"
                    aria-label="Quantity">
-            <input type="date" name="expirationDate" class="form-control" th:value="${b.expirationDate()}"
+            <input type="date" name="expirationDate" class="form-control" th:min="${limits.dateMin}" th:max="${limits.dateMax}" th:value="${b.expirationDate()}"
                    aria-label="Expiration">
             <button type="submit" class="btn btn-pt pt-dup-save">Save</button>
         </form>
@@ -104,7 +104,7 @@
                         <div class="small fw-semibold mb-2 d-flex align-items-center">How many to buy?<button type="button" class="pt-info-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="pt-tooltip" data-bs-title="Puts this item on your Grocery List with this amount. If it's already on the list, the amount is added to what's there." aria-label="About adding to the grocery list"><i class="bi bi-info-lg"></i></button></div>
                         <div class="pt-qty mb-2 w-100" role="group" aria-label="Quantity to buy">
                             <button type="button" class="btn btn-sm btn-outline-secondary pt-step" data-step="-1">−</button>
-                            <input type="number" name="quantity" min="1" value="1"
+                            <input type="number" name="quantity" min="1" value="1" th:max="${limits.quantity}"
                                    class="pt-qty-input flex-grow-1" aria-label="Quantity to buy">
                             <button type="button" class="btn btn-sm btn-outline-secondary pt-step" data-step="1">+</button>
                         </div>
@@ -147,6 +147,7 @@
                     <div class="col-md-6">
                         <label class="form-label pt-field-label" th:for="'en-' + ${it.id()}">Name</label>
                         <input type="text" name="name" class="form-control" th:id="'en-' + ${it.id()}"
+                               th:maxlength="${limits.itemName}" data-limit-label="Item name"
                                th:value="${it.name()}" required>
                     </div>
                     <div class="col-md-6">
@@ -165,7 +166,7 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label pt-field-label" th:for="'th-' + ${it.id()}">Threshold</label>
-                        <input type="number" name="lowStockThreshold" min="0" class="form-control"
+                        <input type="number" name="lowStockThreshold" min="0" th:max="${limits.quantity}" class="form-control"
                                th:id="'th-' + ${it.id()}" th:value="${it.lowStockThreshold()}" placeholder="e.g. 2">
                     </div>
                     <div class="col-6 col-md-3 d-flex align-items-end">
@@ -196,7 +197,7 @@
                                 data-step="1">+</button>
                     </div>
                     <div class="pt-batch-date">
-                        <input type="date" name="expirationDate" class="form-control pt-date"
+                        <input type="date" name="expirationDate" class="form-control pt-date" th:min="${limits.dateMin}" th:max="${limits.dateMax}"
                                th:value="${b.expirationDate()}" aria-label="Expiration">
                         <div class="form-check pt-auto-check">
                             <input class="form-check-input pt-autocalc" type="checkbox" name="autoExpiry"
@@ -204,7 +205,7 @@
                             <label class="form-check-label" th:for="'auto-' + ${b.id()}">Auto</label>
                         </div>
                     </div>
-                    <input type="date" name="dateAdded" class="form-control pt-date"
+                    <input type="date" name="dateAdded" class="form-control pt-date" th:min="${limits.dateMin}" th:max="${limits.dateMax}"
                            th:value="${b.dateAdded()}" aria-label="Date added">
                     <div class="pt-batch-status">
                         <span class="badge rounded-pill" th:classappend="${b.freshness().cssClass()}"
@@ -232,12 +233,12 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-6 col-md-3">
                             <label class="form-label pt-field-label" th:for="'nb-q-' + ${it.id()}">Quantity</label>
-                            <input type="number" name="quantity" min="0" value="1" class="form-control"
+                            <input type="number" name="quantity" min="1" value="1" class="form-control" th:max="${limits.quantity}"
                                    th:id="'nb-q-' + ${it.id()}">
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label pt-field-label" th:for="'nb-e-' + ${it.id()}">Expiration</label>
-                            <input type="date" name="expirationDate" class="form-control pt-date"
+                            <input type="date" name="expirationDate" class="form-control pt-date" th:min="${limits.dateMin}" th:max="${limits.dateMax}"
                                    th:id="'nb-e-' + ${it.id()}" th:required="${it.manualExpiry()}">
                         </div>
                         <div class="col-6 col-md-2">
