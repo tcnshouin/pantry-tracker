@@ -1859,7 +1859,15 @@
         .auth-card-login .card-body {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            padding-top: 1.8rem;
+        }
+        .auth-card-login .card-body::before,
+        .auth-card-login .card-body::after {
+            content: "";
+            flex: 2 1 0;
+        }
+        .auth-card-login .card-body::after {
+            flex-grow: 3;
         }
         @media (max-height: 760px) {
             .auth-card-login {
