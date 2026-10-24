@@ -1852,6 +1852,27 @@
         .auth-card .card-body {
             padding: 2.25rem 2rem;
         }
+        .auth-card-login {
+            margin-top: 2.4rem;
+            min-height: min(calc(100vh - 3.2rem - 4.8rem), 760px);
+        }
+        .auth-card-login .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        @media (max-height: 760px) {
+            .auth-card-login {
+                margin-top: 0.5rem;
+                min-height: 0;
+            }
+        }
+        @media (max-width: 767.98px) {
+            .auth-card-login {
+                margin-top: 0.75rem;
+                min-height: 0;
+            }
+        }
         .auth-icon-badge {
             width: 68px;
             height: 68px;
