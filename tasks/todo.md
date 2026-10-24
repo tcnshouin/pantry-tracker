@@ -226,3 +226,11 @@ with a stand-in Supabase: 2 → 1 attempts left, locked on the 3rd, correct pass
 refused while locked (Supabase not called), reset link cleared the lock, login
 worked. V7 also reached the real Supabase early, via DevTools restarting the
 running app (see lessons.md); it only adds the empty `login_attempt` table.
+
+## Password rules (2026-10-24, branch `andreu/login-lockout`)
+
+- [x] New passwords (Create account and reset) need 8+ characters, a letter, a
+      number and a symbol. Checked on the server (`AuthController.passwordProblem`)
+      and shown as a live checklist under the password box.
+- [x] Login doesn't apply the rules, so accounts made before this still work.
+- [x] 58 tests pass; checklist checked in the browser (nothing submitted).

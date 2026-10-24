@@ -1903,6 +1903,24 @@
             padding: 0.7rem 1rem;
             font-weight: 600;
         }
+        .pw-rules {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.2rem 0.75rem;
+            font-size: 0.82rem;
+            color: #5F6F66;
+        }
+        .pw-rules li {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .pw-rules li.met {
+            color: var(--pt-primary);
+        }
         .auth-divider {
             border-top: 1px solid var(--pt-line);
             margin: 1.5rem 0 1.1rem;
@@ -2622,6 +2640,39 @@
             }
             ptSyncAllAutoCalc();
         }
+    });
+
+    var ptPasswordRules = {
+        length: function (v) { return v.length >= 8; },
+        letter: function (v) { return /\p{L}/u.test(v); },
+        number: function (v) { return /\p{Nd}/u.test(v); },
+        symbol: function (v) { return /[^\p{L}\p{Nd}\s]/u.test(v); }
+    };
+
+    function ptCheckPassword(input) {
+        var list = document.querySelector('[data-pw-rules-for="' + input.id + '"]');
+        var missing = [];
+        Object.keys(ptPasswordRules).forEach(function (rule) {
+            var met = ptPasswordRules[rule](input.value);
+            if (!met) {
+                missing.push(rule);
+            }
+            var item = list && list.querySelector('[data-rule="' + rule + '"]');
+            if (item) {
+                item.classList.toggle('met', met);
+                var icon = item.querySelector('i');
+                icon.classList.toggle('bi-check-circle-fill', met);
+                icon.classList.toggle('bi-circle', !met);
+            }
+        });
+        input.setCustomValidity(missing.length ? 'Password needs a letter, a number, a symbol and at least 8 characters.' : '');
+    }
+
+    document.querySelectorAll('input[data-pw-rules]').forEach(function (input) {
+        ptCheckPassword(input);
+        input.addEventListener('input', function () {
+            ptCheckPassword(input);
+        });
     });
 
     document.addEventListener('click', function (event) {

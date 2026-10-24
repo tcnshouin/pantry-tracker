@@ -36,6 +36,7 @@
                             <div class="auth-field-icon-wrap">
                                 <i class="bi bi-lock"></i>
                                 <input type="password" id="password" th:field="*{password}" class="form-control auth-input"
+                                       autocomplete="new-password" data-pw-rules
                                        th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
                                 <button type="button" class="auth-toggle-password" data-toggle-for="password"
                                         aria-label="Show password">
@@ -44,6 +45,12 @@
                             </div>
                             <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('password')}"
                                  th:errors="*{password}">Password error</div>
+                            <ul class="pw-rules" data-pw-rules-for="password" aria-live="polite">
+                                <li data-rule="length"><i class="bi bi-circle"></i> At least 8 characters</li>
+                                <li data-rule="letter"><i class="bi bi-circle"></i> A letter</li>
+                                <li data-rule="number"><i class="bi bi-circle"></i> A number</li>
+                                <li data-rule="symbol"><i class="bi bi-circle"></i> A symbol (! @ # $)</li>
+                            </ul>
                         </div>
                         <div class="mb-3">
                             <label for="confirmPassword" class="form-label">Confirm password</label>

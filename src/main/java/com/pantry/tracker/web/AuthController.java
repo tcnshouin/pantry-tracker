@@ -10,9 +10,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
@@ -89,6 +89,29 @@ public class AuthController {
         return "auth/login";
     }
 
+    static String passwordProblem(String password) {
+        String value = password == null ? "" : password;
+        List<String> missing = new ArrayList<>();
+        if (value.length() < 8) {
+            missing.add("at least 8 characters");
+        }
+        if (value.chars().noneMatch(Character::isLetter)) {
+            missing.add("a letter");
+        }
+        if (value.chars().noneMatch(Character::isDigit)) {
+            missing.add("a number");
+        }
+        if (value.chars().noneMatch(c -> !Character.isLetterOrDigit(c) && !Character.isWhitespace(c))) {
+            missing.add("a symbol (like ! @ # $)");
+        }
+        if (missing.isEmpty()) {
+            return null;
+        }
+        String list = missing.size() == 1 ? missing.get(0)
+                : String.join(", ", missing.subList(0, missing.size() - 1)) + " and " + missing.getLast();
+        return "Password needs " + list + ".";
+    }
+
     static String timeLeft(Duration left) {
         long minutes = Math.max(1, (left.toSeconds() + 59) / 60);
         long hours = minutes / 60;
@@ -107,6 +130,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@Valid @ModelAttribute("registerForm") RegisterForm form, BindingResult result) {
+        String weakness = passwordProblem(form.getPassword());
+        if (form.getPassword() != null && !form.getPassword().isEmpty() && weakness != null) {
+            result.rejectValue("password", "password.weak", weakness);
+        }
         if (form.getPassword() != null && !form.getPassword().equals(form.getConfirmPassword())) {
             result.rejectValue("confirmPassword", "password.mismatch", "Passwords do not match");
         }
@@ -150,8 +177,9 @@ public class AuthController {
     public String resetPassword(@RequestParam String accessToken, @RequestParam String password,
                                 @RequestParam String confirmPassword, Model model) {
         String error = null;
-        if (password.length() < 8) {
-            error = "Password must be at least 8 characters";
+        String weakness = passwordProblem(password);
+        if (weakness != null) {
+            error = weakness;
         } else if (!password.equals(confirmPassword)) {
             error = "Passwords do not match";
         } else if (accessToken.isBlank()) {
@@ -194,7 +222,6 @@ public class AuthController {
         private String email;
 
         @NotBlank
-        @Size(min = 8, message = "Password must be at least 8 characters")
         private String password;
 
         @NotBlank

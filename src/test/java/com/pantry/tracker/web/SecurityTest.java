@@ -160,12 +160,12 @@ class SecurityTest {
 
     @Test
     void passwordResetUnlocksTheEmail() throws Exception {
-        when(supabase.updatePassword("token", "newpassword1")).thenReturn("owner@example.com");
+        when(supabase.updatePassword("token", "NewPass#99")).thenReturn("owner@example.com");
 
         mockMvc.perform(post("/reset-password").with(csrf())
                         .param("accessToken", "token")
-                        .param("password", "newpassword1")
-                        .param("confirmPassword", "newpassword1"))
+                        .param("password", "NewPass#99")
+                        .param("confirmPassword", "NewPass#99"))
                 .andExpect(redirectedUrl("/login?reset"));
         verify(loginAttempts).clearEmail("owner@example.com");
     }
@@ -182,21 +182,55 @@ class SecurityTest {
     void registerWithoutCsrfTokenIsRejected() throws Exception {
         mockMvc.perform(post("/register")
                         .param("email", "new@example.com")
-                        .param("password", "password123")
-                        .param("confirmPassword", "password123"))
+                        .param("password", "Pantry#2026")
+                        .param("confirmPassword", "Pantry#2026"))
                 .andExpect(status().isForbidden());
         verify(supabase, never()).signUp(anyString(), anyString(), anyString());
     }
 
     @Test
     void registerAsksTheUserToConfirmTheirEmail() throws Exception {
-        when(supabase.signUp(eq("new@example.com"), eq("password123"), anyString())).thenReturn(true);
+        when(supabase.signUp(eq("new@example.com"), eq("Pantry#2026"), anyString())).thenReturn(true);
 
+        mockMvc.perform(post("/register").with(csrf())
+                        .param("email", "new@example.com")
+                        .param("password", "Pantry#2026")
+                        .param("confirmPassword", "Pantry#2026"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?confirm"));
+    }
+
+    @Test
+    void registerRejectsAPasswordWithoutASymbol() throws Exception {
         mockMvc.perform(post("/register").with(csrf())
                         .param("email", "new@example.com")
                         .param("password", "password123")
                         .param("confirmPassword", "password123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?confirm"));
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Password needs a symbol (like ! @ # $).")));
+        verify(supabase, never()).signUp(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void resetRejectsAWeakPassword() throws Exception {
+        mockMvc.perform(post("/reset-password").with(csrf())
+                        .param("accessToken", "token")
+                        .param("password", "abcdefgh")
+                        .param("confirmPassword", "abcdefgh"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Password needs a number and a symbol")));
+        verify(supabase, never()).updatePassword(anyString(), anyString());
+    }
+
+    @Test
+    void passwordRulesNameEverythingThatIsMissing() {
+        assertThat(AuthController.passwordProblem("Pantry#2026")).isNull();
+        assertThat(AuthController.passwordProblem("ñandú#99x")).isNull();
+        assertThat(AuthController.passwordProblem("")).isEqualTo(
+                "Password needs at least 8 characters, a letter, a number and a symbol (like ! @ # $).");
+        assertThat(AuthController.passwordProblem("12345678!")).isEqualTo("Password needs a letter.");
+        assertThat(AuthController.passwordProblem("abc1!")).isEqualTo("Password needs at least 8 characters.");
+        assertThat(AuthController.passwordProblem("abcd 1234")).isEqualTo("Password needs a symbol (like ! @ # $).");
+        assertThat(AuthController.passwordProblem(null)).startsWith("Password needs at least 8 characters");
     }
 }
