@@ -22,12 +22,13 @@ pantry-tracker/src/main/resources/db/migration/
     V4__grocery_list.sql
     V5__supabase.sql
     V6__user_categories.sql
-    ...            <-- your new file goes here as V7, V8, ...
+    V7__login_attempt.sql
+    ...            <-- your new file goes here as V8, V9, ...
 ```
 
 File name format: **`V<number>__<short_description>.sql`** — capital `V`, a number,
 then **two** underscores, then a snake_case description. Example:
-`V7__add_item_notes.sql`.
+`V8__add_item_notes.sql`.
 
 ---
 
@@ -41,7 +42,7 @@ git pull
 **2. Create the next migration file** (one higher than the last one) and write your
 SQL in it. Example — add a `notes` column to the `item` table:
 ```sql
--- V7__add_item_notes.sql
+-- V8__add_item_notes.sql
 alter table item add column notes varchar(500);
 ```
 
@@ -64,7 +65,7 @@ That confirms it worked.
 **5. Commit and push** the migration file (plus any code changes).
 ```bash
 git add -A
-git commit -m "Add notes column to item (V7)"
+git commit -m "Add notes column to item (V8)"
 git push
 ```
 
@@ -77,11 +78,11 @@ They only do two things:
 git pull
 ./mvnw spring-boot:run             # or restart their running app
 ```
-On their next start, Flyway applies the new `V7` if their database doesn't have
+On their next start, Flyway applies the new `V8` if their database doesn't have
 it yet. On a shared Supabase project it is usually already applied, and Flyway
 just skips it. Existing data is kept.
 
-> **Shared project tip:** once someone applies `V7` to the shared database,
+> **Shared project tip:** once someone applies `V8` to the shared database,
 > teammates on older code usually still start fine. If one of them gets a
 > "Schema-validation" error on startup, the fix is `git pull` and restart.
 
@@ -111,9 +112,9 @@ teammate:  git pull  →  restart app      <-- Flyway auto-applies it here
   already applied). Flyway stores a checksum of each file; changing one makes the
   app refuse to start. To change something, always add a **new, higher-numbered**
   file instead.
-- **Only go up in version number.** `V6`, then `V7`, and so on. Never reuse a number.
-- **Coordinate the number with your team.** If two people both create `V7`, they
-  clash — whoever pushes second renames theirs to `V8`. Pulling first (step 1)
+- **Only go up in version number.** `V7`, then `V8`, and so on. Never reuse a number.
+- **Coordinate the number with your team.** If two people both create `V8`, they
+  clash — whoever pushes second renames theirs to `V9`. Pulling first (step 1)
   avoids most of this.
 - **Keep SQL and entities in sync.** Add the column in the migration *and* map it in
   the entity class, or the app fails validation on startup.
@@ -138,9 +139,9 @@ the `flyway_schema_history` RLS line from `SUPABASE-SETUP.md` step 7 again.
 
 ## Copy-paste template for a new migration
 
-Create `src/main/resources/db/migration/V7__your_change.sql` (bump the number):
+Create `src/main/resources/db/migration/V8__your_change.sql` (bump the number):
 ```sql
--- V7__your_change.sql
+-- V8__your_change.sql
 -- Describe what this change does.
 
 -- examples:

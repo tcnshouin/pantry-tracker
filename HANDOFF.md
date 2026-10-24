@@ -9,7 +9,7 @@ their work without breaking anyone else's.
   Spring Data JPA · Supabase (hosted Postgres + Supabase Auth) · Flyway · Maven
 - **Status (Oct 20, 2026):** Supabase login + database, redesigned Grocery
   page, and per-user editable Categories are merged into `main` (PR #1).
-  42 tests, all passing.
+  55 tests, all passing.
 
 ---
 
@@ -70,7 +70,7 @@ grocery lists or categories.
 ```bash
 ./mvnw test
 ```
-42 tests. Unit and page tests run anywhere. The database tests
+55 tests. Unit and page tests run anywhere. The database tests
 (`RepositoryTest`, `PantryTrackerApplicationTests`) run against Supabase only
 when `.env` exists, and roll back everything they write.
 
@@ -140,7 +140,7 @@ pantry-tracker/
 │                                #   CategoryController, AuthController
 ├── src/main/resources/
 │   ├── application.properties   # reads values from .env
-│   ├── db/migration/            # Flyway V1–V6
+│   ├── db/migration/            # Flyway V1–V7
 │   ├── static/img/              # logo, favicon, empty-state pictures
 │   └── templates/
 │       ├── layout.html          # title bar, ☰ menu, ALL CSS + page JS
@@ -161,7 +161,7 @@ CSS variables at the top of `layout.html`); change how it *behaves* in
 ## 6. Changing the database
 
 Read **[DATABASE-CHANGES.md](DATABASE-CHANGES.md)**. Short version:
-1. `git pull`, then add the **next** file: `V7__what_you_changed.sql`.
+1. `git pull`, then add the **next** file: `V8__what_you_changed.sql`.
 2. Update the matching Java entity (the app refuses to start if they disagree).
 3. Run the app. Flyway applies it.
 4. Commit and push the migration together with the Java change.
@@ -177,6 +177,10 @@ running, and tell the group when you push a migration.
 - **Accounts:** Supabase Auth sign-up (email confirmation), login, logout,
   forgot/reset password. No users table of our own; every row stores the
   Supabase user id (`user_id`, UUID). Tables locked with Row Level Security.
+- **Login lockout:** 3 wrong passwords for the same email from the same IP
+  lock that email on that network for 24 hours (the login page counts down
+  "N attempts left"). A password reset clears the lock. Stored in the
+  `login_attempt` table (`LoginAttemptService`).
 - **Inventory (Home):** My Pantry location list (search, add, **All** view
   in date-added order), one location at a time, items with batches, − / +
   stepper, expiry auto-calculation, fresh / expiring soon / expires today /

@@ -30,7 +30,10 @@
                     <div class="alert alert-secondary" th:if="${param.logout}">
                         You have been logged out.
                     </div>
-                    <div class="alert alert-danger" th:if="${error}" th:text="${error}">Invalid email or password.</div>
+                    <div class="alert alert-danger" th:if="${error}">
+                        <span th:text="${error}">Invalid email or password.</span>
+                        <a th:if="${locked}" class="alert-link d-block mt-1" th:href="@{/forgot-password}">Reset your password</a>
+                    </div>
 
                     <form th:action="@{/login}" method="post">
                         <div class="mb-3">

@@ -1,6 +1,8 @@
 package com.pantry.tracker.web;
 
 import com.pantry.tracker.model.SupabaseUser;
+import com.pantry.tracker.service.LoginAttemptService;
+import com.pantry.tracker.service.LoginAttemptService.Failure;
 import com.pantry.tracker.service.SupabaseAuthClient;
 import com.pantry.tracker.service.SupabaseAuthClient.AuthException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,7 +11,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,10 +36,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class AuthController {
 
     private final SupabaseAuthClient supabase;
+    private final LoginAttemptService loginAttempts;
     private final SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
 
-    public AuthController(SupabaseAuthClient supabase) {
+    public AuthController(SupabaseAuthClient supabase, LoginAttemptService loginAttempts) {
         this.supabase = supabase;
+        this.loginAttempts = loginAttempts;
     }
 
     @GetMapping("/login")
@@ -46,16 +53,50 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestParam String email, @RequestParam String password, Model model,
                         HttpServletRequest request, HttpServletResponse response) {
+        String normalized = SupabaseAuthClient.normalizeEmail(email);
+        String ip = request.getRemoteAddr();
+        model.addAttribute("email", email);
+        model.addAttribute("hideTopbar", true);
+        Optional<Instant> lockedUntil = loginAttempts.lockedUntil(normalized, ip);
+        if (lockedUntil.isPresent()) {
+            return locked(model, lockedUntil.get());
+        }
         try {
-            SupabaseUser user = supabase.signIn(SupabaseAuthClient.normalizeEmail(email), password);
+            SupabaseUser user = supabase.signIn(normalized, password);
+            loginAttempts.clear(normalized, ip);
             signIn(user, request, response);
             return "redirect:/";
         } catch (AuthException ex) {
-            model.addAttribute("error", ex.getMessage());
-            model.addAttribute("email", email);
-            model.addAttribute("hideTopbar", true);
+            if (!ex.isWrongPassword()) {
+                model.addAttribute("error", ex.getMessage());
+                return "auth/login";
+            }
+            Failure failure = loginAttempts.recordFailure(normalized, ip);
+            if (failure.locked()) {
+                return locked(model, failure.lockedUntil());
+            }
+            model.addAttribute("error", ex.getMessage() + " " + failure.attemptsLeft()
+                    + (failure.attemptsLeft() == 1 ? " attempt" : " attempts")
+                    + " left before this login is locked for 24 hours.");
             return "auth/login";
         }
+    }
+
+    private String locked(Model model, Instant until) {
+        model.addAttribute("error", "Too many failed attempts. Try again in "
+                + timeLeft(Duration.between(Instant.now(), until)) + ", or reset your password.");
+        model.addAttribute("locked", true);
+        return "auth/login";
+    }
+
+    static String timeLeft(Duration left) {
+        long minutes = Math.max(1, (left.toSeconds() + 59) / 60);
+        long hours = minutes / 60;
+        long rest = minutes % 60;
+        if (hours == 0) {
+            return rest + " min";
+        }
+        return rest == 0 ? hours + " h" : hours + " h " + rest + " min";
     }
 
     @GetMapping("/register")
@@ -118,7 +159,10 @@ public class AuthController {
         }
         if (error == null) {
             try {
-                supabase.updatePassword(accessToken, password);
+                String email = supabase.updatePassword(accessToken, password);
+                if (email != null) {
+                    loginAttempts.clearEmail(email);
+                }
                 return "redirect:/login?reset";
             } catch (AuthException ex) {
                 error = ex.getMessage();

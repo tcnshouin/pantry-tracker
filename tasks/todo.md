@@ -201,3 +201,28 @@
       because new projects ship an `rls_auto_enable` function in `public`), RLS on
       all 7 tables, 35/35 tests pass with no skips.
 - [ ] Check the confirmation and reset emails in the browser.
+
+---
+
+## Login lockout (2026-10-24, branch `andreu/login-lockout`)
+
+Rule: 3 wrong passwords for the same email + IP lock that pair for 24 hours.
+
+- [x] `V7__login_attempt.sql`: table keyed by (email, ip) with failed_count,
+      last_failed_at, locked_until; RLS on.
+- [x] `LoginAttemptService`: lockedUntil, recordFailure (atomic upsert; locks on
+      the 3rd), clearPair on success, clearEmail on password reset, daily clean-up.
+      Failures older than 24 h start the count over.
+- [x] `SupabaseAuthClient`: errors carry a reason so only wrong passwords count;
+      `updatePassword` returns the email.
+- [x] `AuthController`: check lock before calling Supabase; "N attempts left";
+      lock message with a reset link; reset clears the email's locks.
+- [x] Tests: service (DB) + controller (lock blocks Supabase, 3rd failure locks,
+      unconfirmed email doesn't count, reset clears).
+- [x] Verify on a scratch database and in the browser, then on Supabase.
+
+Review: 55 tests pass on a scratch Postgres (V1–V7). Browser check on a test copy
+with a stand-in Supabase: 2 → 1 attempts left, locked on the 3rd, correct password
+refused while locked (Supabase not called), reset link cleared the lock, login
+worked. V7 also reached the real Supabase early, via DevTools restarting the
+running app (see lessons.md); it only adds the empty `login_attempt` table.
