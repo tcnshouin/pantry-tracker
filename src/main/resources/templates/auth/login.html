@@ -10,7 +10,7 @@
 <div layout:fragment="content">
     <div class="row justify-content-center">
         <div class="col-md-5">
-            <div class="card auth-card shadow-sm">
+            <div class="card auth-card auth-card-login shadow-sm">
                 <div class="card-body">
                     <div class="auth-icon-badge">
                         <img th:src="@{/img/logo.png}" alt="Pantry Tracker">
@@ -30,14 +30,17 @@
                     <div class="alert alert-secondary" th:if="${param.logout}">
                         You have been logged out.
                     </div>
-                    <div class="alert alert-danger" th:if="${error}" th:text="${error}">Invalid email or password.</div>
+                    <div class="alert alert-danger" th:if="${error}">
+                        <span th:text="${error}">Invalid email or password.</span>
+                        <a th:if="${locked}" class="alert-link d-block mt-1" th:href="@{/forgot-password}">Reset your password</a>
+                    </div>
 
                     <form th:action="@{/login}" method="post">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email address</label>
                             <div class="auth-field-icon-wrap">
                                 <i class="bi bi-envelope"></i>
-                                <input type="email" id="email" name="email" class="form-control auth-input" required
+                                <input type="email" id="email" name="email" class="form-control auth-input" required th:maxlength="${limits.email}"
                                        autofocus autocomplete="email" th:value="${email}">
                             </div>
                         </div>
@@ -48,7 +51,7 @@
                             </div>
                             <div class="auth-field-icon-wrap">
                                 <i class="bi bi-lock"></i>
-                                <input type="password" id="password" name="password" class="form-control auth-input"
+                                <input type="password" id="password" name="password" class="form-control auth-input" th:maxlength="${limits.password}"
                                        required autocomplete="current-password">
                                 <button type="button" class="auth-toggle-password" data-toggle-for="password"
                                         aria-label="Show password">

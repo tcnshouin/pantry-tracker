@@ -80,10 +80,10 @@ public class GroceryService {
     @Transactional
     public void addManual(UUID userId, Long itemId, int quantity) {
         Item item = itemRepository.findByIdAndUserId(itemId, userId).orElseThrow();
-        int amount = Math.max(1, quantity);
+        int amount = InputLimits.quantity(Math.max(1, quantity), 1);
         for (GroceryListItem e : groceryRepository.findByUserIdOrderByCreatedAtDesc(userId)) {
             if (e.getItem() != null && e.getItem().getId().equals(itemId)) {
-                e.setQuantityNeeded(e.getQuantityNeeded() + amount);
+                e.setQuantityNeeded(InputLimits.total(e.getQuantityNeeded() + amount));
                 return;
             }
         }
@@ -93,7 +93,7 @@ public class GroceryService {
     @Transactional
     public void changeQuantity(UUID userId, Long id, int delta) {
         GroceryListItem entry = find(userId, id);
-        entry.setQuantityNeeded(Math.max(1, entry.getQuantityNeeded() + delta));
+        entry.setQuantityNeeded(Math.max(1, InputLimits.total(entry.getQuantityNeeded() + delta)));
     }
 
     @Transactional

@@ -25,8 +25,20 @@ public class SupabaseAuthClient {
     }
 
     public static class AuthException extends RuntimeException {
+
+        private final boolean wrongPassword;
+
         public AuthException(String message) {
+            this(message, false);
+        }
+
+        public AuthException(String message, boolean wrongPassword) {
             super(message);
+            this.wrongPassword = wrongPassword;
+        }
+
+        public boolean isWrongPassword() {
+            return wrongPassword;
         }
     }
 
@@ -44,8 +56,8 @@ public class SupabaseAuthClient {
         post("/auth/v1/recover?redirect_to=" + redirectTo, Map.of("email", email));
     }
 
-    public void updatePassword(String accessToken, String newPassword) {
-        call(() -> http.put()
+    public String updatePassword(String accessToken, String newPassword) {
+        Map<?, ?> body = call(() -> http.put()
                 .uri(endpoint("/auth/v1/user"))
                 .header("apikey", anonKey)
                 .header("Authorization", "Bearer " + accessToken)
@@ -53,6 +65,7 @@ public class SupabaseAuthClient {
                 .body(Map.of("password", newPassword))
                 .retrieve()
                 .body(Map.class));
+        return body.get("email") instanceof String email ? normalizeEmail(email) : null;
     }
 
     public static String normalizeEmail(String email) {
@@ -81,10 +94,16 @@ public class SupabaseAuthClient {
             Map<?, ?> body = request.get();
             return body == null ? Map.of() : body;
         } catch (RestClientResponseException ex) {
-            throw new AuthException(friendly(ex.getResponseBodyAsString()));
+            String error = ex.getResponseBodyAsString();
+            throw new AuthException(friendly(error), wrongPassword(error));
         } catch (ResourceAccessException ex) {
             throw new AuthException("Can't reach Supabase right now. Check your internet connection and try again.");
         }
+    }
+
+    static boolean wrongPassword(String error) {
+        String text = error == null ? "" : error.toLowerCase(Locale.ROOT);
+        return text.contains("invalid_credentials") || text.contains("invalid login credentials");
     }
 
     static String friendly(String error) {
@@ -92,7 +111,7 @@ public class SupabaseAuthClient {
         if (text.contains("email_not_confirmed") || text.contains("email not confirmed")) {
             return "Please confirm your email first. Check your inbox for the link from Supabase.";
         }
-        if (text.contains("invalid_credentials") || text.contains("invalid login credentials")) {
+        if (wrongPassword(error)) {
             return "Invalid email or password.";
         }
         if (text.contains("user_already_exists") || text.contains("already registered")) {

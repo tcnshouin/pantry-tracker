@@ -196,4 +196,30 @@ class InventoryServiceTest {
         assertThat(item.getEmptySince()).isNotNull();
         assertThat(undo.peekLabel()).isEqualTo("Change quantity in \"Rice\"");
     }
+
+    @Test
+    void tooLongNamesAreRejectedBeforeAnythingIsSaved() {
+        String longName = "x".repeat(61);
+
+        assertThatThrownBy(
+                        () -> service.createItem(user, 1L, longName, 2L, 1, null, true, null))
+                .hasMessage("Item name can be at most 60 characters (you entered 61)");
+        assertThatThrownBy(
+                        () -> service.updateItem(user, 1L, longName, 2L, false, null, null))
+                .hasMessage("Item name can be at most 60 characters (you entered 61)");
+        assertThatThrownBy(() -> service.createGroup(user, "y".repeat(41)))
+                .hasMessage("Location name can be at most 40 characters (you entered 41)");
+        verify(itemRepository, never()).save(any());
+        verify(groupRepository, never()).save(any());
+    }
+
+    @Test
+    void quantitiesAboveTheLimitAreRejected() {
+        assertThatThrownBy(
+                        () -> service.createItem(user, 1L, "Rice", 2L, 10000, null, true, null))
+                .hasMessage("Quantity must be between 1 and 9,999");
+        assertThatThrownBy(
+                        () -> service.updateItem(user, 1L, "Rice", 2L, true, 10000, null))
+                .hasMessage("Low-stock threshold must be between 0 and 9,999");
+    }
 }

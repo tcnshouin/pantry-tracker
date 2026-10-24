@@ -19,7 +19,7 @@
                         title="Search locations" aria-label="Search locations">
                     <i class="bi bi-search"></i>
                 </button>
-                <button type="button" class="btn btn-sm pt-icon-btn" data-bs-toggle="collapse"
+                <button type="button" class="btn btn-sm pt-icon-btn pt-icon-btn-strong" data-bs-toggle="collapse"
                         data-bs-target="#new-location" aria-expanded="false" aria-controls="new-location"
                         title="Add location" aria-label="Add location">
                     <i class="bi bi-plus-lg"></i>
@@ -28,13 +28,14 @@
         </div>
         <div id="loc-search-box" class="collapse px-3">
             <label for="loc-search" class="visually-hidden">Search locations</label>
-            <input type="search" id="loc-search" class="form-control form-control-sm mb-2"
+            <input type="search" id="loc-search" class="form-control form-control-sm mb-2" th:maxlength="${limits.search}"
                    placeholder="Search locations" autocomplete="off">
         </div>
         <div id="new-location" class="collapse px-3" th:classappend="${groups.isEmpty()} ? 'show'">
             <form th:action="@{/locations}" method="post" class="d-flex gap-2 mb-2">
                 <label for="new-group-name" class="visually-hidden">Location name</label>
                 <input type="text" id="new-group-name" name="name" class="form-control form-control-sm"
+                       th:maxlength="${limits.locationName}" data-limit-label="Location name"
                        placeholder="New location, e.g. Pantry shelf" required>
                 <button type="submit" class="btn btn-sm btn-pt">Add</button>
             </form>
@@ -205,6 +206,7 @@
                   class="d-flex gap-2 px-3 pt-3">
                 <label class="visually-hidden" th:for="'rename-input-' + ${g.group().id()}">New name</label>
                 <input type="text" name="name" class="form-control form-control-sm" required
+                       th:maxlength="${limits.locationName}" data-limit-label="Location name"
                        th:id="'rename-input-' + ${g.group().id()}" th:value="${g.group().name()}">
                 <button type="submit" class="btn btn-sm btn-pt">Save</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse"
@@ -238,6 +240,7 @@
                             <div class="mb-3">
                                 <label class="form-label" th:for="'ai-name-' + ${g.group().id()}">Item name</label>
                                 <input type="text" name="name" class="form-control" placeholder="Enter item name..."
+                                       th:maxlength="${limits.itemName}" data-limit-label="Item name"
                                        th:id="'ai-name-' + ${g.group().id()}" required>
                             </div>
                             <div class="mb-3">
@@ -257,14 +260,14 @@
                                     <div class="pt-stepper">
                                         <button type="button" class="pt-step" data-step="-1" aria-label="One less">−</button>
                                         <input type="number" name="quantity" min="1" value="1" class="pt-qty-input"
-                                               th:id="'ai-qty-' + ${g.group().id()}">
+                                               th:max="${limits.quantity}" th:id="'ai-qty-' + ${g.group().id()}">
                                         <button type="button" class="pt-step" data-step="1" aria-label="One more">+</button>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label" th:for="'ai-exp-' + ${g.group().id()}">Expiration</label>
                                     <input type="date" name="expirationDate" class="form-control pt-date"
-                                           th:id="'ai-exp-' + ${g.group().id()}">
+                                           th:min="${limits.dateMin}" th:max="${limits.dateMax}" th:id="'ai-exp-' + ${g.group().id()}">
                                 </div>
                             </div>
                             <div class="form-check pt-modal-option mt-3">

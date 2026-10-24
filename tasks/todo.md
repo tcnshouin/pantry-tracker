@@ -201,3 +201,70 @@
       because new projects ship an `rls_auto_enable` function in `public`), RLS on
       all 7 tables, 35/35 tests pass with no skips.
 - [ ] Check the confirmation and reset emails in the browser.
+
+---
+
+## Login lockout (2026-10-24, branch `andreu/login-lockout`)
+
+Rule: 3 wrong passwords for the same email + IP lock that pair for 24 hours.
+
+- [x] `V7__login_attempt.sql`: table keyed by (email, ip) with failed_count,
+      last_failed_at, locked_until; RLS on.
+- [x] `LoginAttemptService`: lockedUntil, recordFailure (atomic upsert; locks on
+      the 3rd), clearPair on success, clearEmail on password reset, daily clean-up.
+      Failures older than 24 h start the count over.
+- [x] `SupabaseAuthClient`: errors carry a reason so only wrong passwords count;
+      `updatePassword` returns the email.
+- [x] `AuthController`: check lock before calling Supabase; "N attempts left";
+      lock message with a reset link; reset clears the email's locks.
+- [x] Tests: service (DB) + controller (lock blocks Supabase, 3rd failure locks,
+      unconfirmed email doesn't count, reset clears).
+- [x] Verify on a scratch database and in the browser, then on Supabase.
+
+Review: 55 tests pass on a scratch Postgres (V1–V7). Browser check on a test copy
+with a stand-in Supabase: 2 → 1 attempts left, locked on the 3rd, correct password
+refused while locked (Supabase not called), reset link cleared the lock, login
+worked. V7 also reached the real Supabase early, via DevTools restarting the
+running app (see lessons.md); it only adds the empty `login_attempt` table.
+
+## Password rules (2026-10-24, branch `andreu/login-lockout`)
+
+- [x] New passwords (Create account and reset) need 8+ characters, a letter, a
+      number and a symbol. Checked on the server (`AuthController.passwordProblem`)
+      and shown as a live checklist under the password box.
+- [x] Login doesn't apply the rules, so accounts made before this still work.
+- [x] 58 tests pass; checklist checked in the browser (nothing submitted).
+
+---
+
+## Input limits (2026-10-24, branch `andreu/login-lockout`)
+
+One place for every limit (`service/InputLimits`), used by both the pages
+(maxlength / min / max) and the server (friendly error instead of a crash).
+
+| Field | Limit |
+|---|---|
+| Item name | 60 characters |
+| Location name | 40 characters |
+| Category name | 50 characters |
+| Category group | 40 characters |
+| Search boxes | 60 characters |
+| Email | 254 characters |
+| Password | 72 characters (Supabase/bcrypt maximum) |
+| Quantities (add item, batch, grocery) | 1–9,999 (batch edit 0–9,999) |
+| Low-stock threshold | 0–9,999 |
+| Shelf life | up to 10 years (3,650 days) |
+| Dates | years 2000–2099 |
+
+- [x] `InputLimits` with the numbers + `text()`/`number()`/`date()` checks.
+- [x] Server checks in InventoryService, GroceryService, CategoryService, AuthController;
+      item edit errors shown instead of a server error.
+- [x] Pages: maxlength/min/max from `InputLimits`; live "12/60" counter that turns
+      red with "Maximum 60 characters" at the limit (also when pasting).
+- [x] Tests for each check; browser check of the counter.
+
+Review: 64 tests pass. On a test copy (scratch DB + stand-in login): typing stops
+at each limit with a red "can be at most N characters" note under the field;
+sending over-limit values straight to the server returns the same friendly
+messages for add item, edit item (used to be a server error), new category and
+shelf life; every input on Home, Categories and Grocery carries its limit.

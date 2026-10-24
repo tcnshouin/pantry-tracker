@@ -119,7 +119,12 @@ public class CategoryService {
         if (amount == null || amount < 1) {
             throw new IllegalArgumentException("Enter a shelf life of at least 1, or choose no set shelf life");
         }
-        return amount * Views.unitDays(unit);
+        long days = (long) amount * Views.unitDays(unit);
+        if (days > InputLimits.SHELF_LIFE_MAX_DAYS) {
+            throw new IllegalArgumentException("Shelf life can be at most 10 years ("
+                    + InputLimits.format(InputLimits.SHELF_LIFE_MAX_DAYS) + " days)");
+        }
+        return (int) days;
     }
 
     private void ensureDefaults(UUID userId) {
@@ -145,25 +150,12 @@ public class CategoryService {
         return new CategoryOption(c.getId(), c.getName(), c.getGroupName(), c.getShelfLifeDays());
     }
 
-    private static final int NAME_MAX_LENGTH = 120;
-    private static final int GROUP_NAME_MAX_LENGTH = 60;
-
     private static String requireName(String name) {
-        String trimmed = name == null ? "" : name.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Category name is required");
-        }
-        if (trimmed.length() > NAME_MAX_LENGTH) {
-            throw new IllegalArgumentException("Category name must be " + NAME_MAX_LENGTH + " characters or fewer");
-        }
-        return trimmed;
+        return InputLimits.text(name, InputLimits.CATEGORY_NAME, "Category name");
     }
 
     private static String cleanGroup(String groupName) {
-        String trimmed = groupName == null ? "" : groupName.trim();
-        if (trimmed.length() > GROUP_NAME_MAX_LENGTH) {
-            throw new IllegalArgumentException("Category group must be " + GROUP_NAME_MAX_LENGTH + " characters or fewer");
-        }
+        String trimmed = InputLimits.optionalText(groupName, InputLimits.CATEGORY_GROUP, "Category group");
         return trimmed.isEmpty() ? "Others" : trimmed;
     }
 }
