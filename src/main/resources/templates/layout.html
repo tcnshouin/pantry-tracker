@@ -2345,19 +2345,33 @@
         }
         var body = card.querySelector('.pt-group-scroll');
         var rows = body ? body.querySelectorAll('.pt-item-row') : [];
-        if (rows.length < 2) {
+        if (!rows.length) {
             return;
         }
         var first = rows[0].getBoundingClientRect();
-        var pitch = rows[1].getBoundingClientRect().top - first.top;
-        var gap = pitch - first.height;
         var bodyTop = body.getBoundingClientRect().top + window.scrollY;
         var padTop = first.top - body.getBoundingClientRect().top;
         var bottomSpace = (parseFloat(getComputedStyle(document.querySelector('.pt-home-main')).paddingBottom) || 24)
             + (parseFloat(getComputedStyle(card).marginBottom) || 0);
-        var available = window.innerHeight - bodyTop - bottomSpace - padTop * 2;
+        var space = window.innerHeight - bodyTop - bottomSpace;
+        var available = space - padTop * 2;
+        var pad = parseFloat(getComputedStyle(body).paddingTop) || 0;
+        var cap = function () {
+            body.classList.add('pt-group-fitted');
+            body.style.maxHeight = Math.floor(space - pad) + 'px';
+        };
+        if (rows.length < 2 || padTop > pad + 1) {
+            cap();
+            return;
+        }
+        var pitch = rows[1].getBoundingClientRect().top - first.top;
+        var gap = pitch - first.height;
         var fit = Math.floor((available + gap) / pitch);
-        if (fit < 2 || fit >= rows.length) {
+        if (fit < 2) {
+            return;
+        }
+        if (fit >= rows.length) {
+            cap();
             return;
         }
         var extra = available - (fit * pitch - gap);
