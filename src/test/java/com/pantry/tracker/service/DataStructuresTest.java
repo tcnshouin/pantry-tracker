@@ -3,7 +3,7 @@ package com.pantry.tracker.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.pantry.tracker.model.Batch;
-import com.pantry.tracker.model.Category;
+import com.pantry.tracker.model.UniversalCategory;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views.ExpiringEntry;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class DataStructuresTest {
 
     private Item item(String name, long categoryId, long groupId) {
-        Category category = new Category();
+        UniversalCategory category = new UniversalCategory();
         category.setId(categoryId);
         LocationGroup group = new LocationGroup();
         group.setId(groupId);

@@ -1,8 +1,8 @@
 package com.pantry.tracker.repository;
 
-import com.pantry.tracker.model.Category;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
+import com.pantry.tracker.model.UserCategory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -25,8 +25,9 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     long countByLocationGroup(LocationGroup locationGroup);
 
-    long countByCategory(Category category);
+    long countByUserCategory(UserCategory userCategory);
 
-    @Query("select i.category.id, count(i) from Item i where i.userId = :userId group by i.category.id")
+    @Query("select coalesce(uc.id, c.id), count(i) from Item i left join i.universalCategory uc"
+            + " left join i.userCategory c where i.userId = :userId group by coalesce(uc.id, c.id)")
     List<Object[]> countPerCategory(@Param("userId") UUID userId);
 }

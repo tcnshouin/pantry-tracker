@@ -38,9 +38,13 @@ public class Item {
     @Column(nullable = false)
     private String name;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    @ManyToOne
+    @JoinColumn(name = "universal_category_id")
+    private UniversalCategory universalCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "user_category_id")
+    private UserCategory userCategory;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "location_group_id", nullable = false)
@@ -73,11 +77,20 @@ public class Item {
     @OrderBy("expirationDate asc")
     private List<Batch> batches = new ArrayList<>();
 
-    public Item(UUID userId, String name, Category category, LocationGroup locationGroup) {
+    public Item(UUID userId, String name, CategoryBase category, LocationGroup locationGroup) {
         this.userId = userId;
         this.name = name;
-        this.category = category;
+        setCategory(category);
         this.locationGroup = locationGroup;
+    }
+
+    public CategoryBase getCategory() {
+        return universalCategory != null ? universalCategory : userCategory;
+    }
+
+    public void setCategory(CategoryBase category) {
+        this.universalCategory = category instanceof UniversalCategory universal ? universal : null;
+        this.userCategory = category instanceof UserCategory own ? own : null;
     }
 
     public int totalQuantity() {

@@ -1,29 +1,23 @@
 package com.pantry.tracker.model;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.util.UUID;
+import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@Table(name = "category")
+@MappedSuperclass
 @Getter
 @Setter
 @NoArgsConstructor
-public class Category {
+public abstract class CategoryBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id")
-    private UUID userId;
 
     @Column(nullable = false)
     private String name;
@@ -34,10 +28,11 @@ public class Category {
     @Column(name = "shelf_life_days")
     private Integer shelfLifeDays;
 
-    public Category(UUID userId, String name, String groupName, Integer shelfLifeDays) {
-        this.userId = userId;
+    protected CategoryBase(String name, String groupName, Integer shelfLifeDays) {
         this.name = name;
         this.groupName = groupName;
         this.shelfLifeDays = shelfLifeDays;
     }
+
+    public abstract boolean isUniversal();
 }

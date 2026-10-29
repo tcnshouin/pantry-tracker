@@ -7,11 +7,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.pantry.tracker.model.Category;
+import com.pantry.tracker.model.UniversalCategory;
+import com.pantry.tracker.model.UserCategory;
 import com.pantry.tracker.model.Views;
 import com.pantry.tracker.model.Views.CategoryOption;
-import com.pantry.tracker.repository.CategoryRepository;
 import com.pantry.tracker.repository.ItemRepository;
+import com.pantry.tracker.repository.UniversalCategoryRepository;
+import com.pantry.tracker.repository.UserCategoryRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -24,7 +26,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class CategoryServiceTest {
 
     @Mock
-    private CategoryRepository categoryRepository;
+    private UniversalCategoryRepository universalRepository;
+
+    @Mock
+    private UserCategoryRepository userRepository;
 
     @Mock
     private ItemRepository itemRepository;
@@ -47,10 +52,10 @@ class CategoryServiceTest {
 
     @Test
     void editFormPicksTheLargestWholeUnit() {
-        CategoryOption twoYears = new CategoryOption(1L, "Rice", "Rice & Grains", 730);
+        CategoryOption twoYears = new CategoryOption(1L, "Rice", "Rice & Grains", 730, true);
         assertThat(twoYears.shelfLifeUnit()).isEqualTo("years");
         assertThat(twoYears.shelfLifeAmount()).isEqualTo(2);
-        CategoryOption sixMonths = new CategoryOption(2L, "Flour", "Baking", 180);
+        CategoryOption sixMonths = new CategoryOption(2L, "Flour", "Baking", 180, true);
         assertThat(sixMonths.shelfLifeUnit()).isEqualTo("months");
         assertThat(sixMonths.shelfLifeAmount()).isEqualTo(6);
     }
@@ -67,13 +72,14 @@ class CategoryServiceTest {
 
     @Test
     void duplicateNamesAreRejectedAndBlankGroupBecomesOthers() {
-        when(categoryRepository.existsByUserIdAndNameIgnoreCase(user, "Rice")).thenReturn(true);
-        assertThatThrownBy(() -> categoryService.create(user, " Rice ", "Rice & Grains", 2, "years", false))
-                .isInstanceOf(IllegalArgumentException.class);
+        when(userRepository.existsByUserIdAndNameIgnoreCase(user, "Pancit")).thenReturn(true);
+        assertThatThrownBy(() -> categoryService.create(user, " Pancit ", "Noodles & Pasta", 2, "years", false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("You already have");
 
-        when(categoryRepository.existsByUserIdAndNameIgnoreCase(user, "Kakanin")).thenReturn(false);
-        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> {
-            Category saved = inv.getArgument(0);
+        when(userRepository.save(any(UserCategory.class))).thenAnswer(inv -> {
+            UserCategory saved = inv.getArgument(0);
+            assertThat(saved.getUserId()).isEqualTo(user);
             assertThat(saved.getGroupName()).isEqualTo("Others");
             assertThat(saved.getShelfLifeDays()).isEqualTo(3);
             return saved;
@@ -82,14 +88,52 @@ class CategoryServiceTest {
     }
 
     @Test
+    void aDefaultCategoryNameCannotBeReused() {
+        when(universalRepository.existsByNameIgnoreCase("Rice")).thenReturn(true);
+
+        assertThatThrownBy(() -> categoryService.create(user, "Rice", "Rice & Grains", 2, "years", false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already a default category");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void defaultAndOtherUsersCategoriesCannotBeChangedOrDeleted() {
+        when(userRepository.findByIdAndUserId(1L, user)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> categoryService.delete(user, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("can't be changed");
+        assertThatThrownBy(() -> categoryService.update(user, 1L, "Rice", "Rice & Grains", 1, "years", false))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(userRepository, never()).delete(any());
+        verify(universalRepository, never()).delete(any());
+    }
+
+    @Test
+    void resolveFindsDefaultsAndOnlyTheUsersOwnCategories() {
+        UniversalCategory rice = new UniversalCategory("Rice", "Rice & Grains", 730);
+        UserCategory kakanin = new UserCategory(user, "Kakanin", "Snacks", 3);
+        when(universalRepository.findById(1L)).thenReturn(Optional.of(rice));
+        when(universalRepository.findById(9L)).thenReturn(Optional.empty());
+        when(universalRepository.findById(10L)).thenReturn(Optional.empty());
+        when(userRepository.findByIdAndUserId(9L, user)).thenReturn(Optional.of(kakanin));
+        when(userRepository.findByIdAndUserId(10L, user)).thenReturn(Optional.empty());
+
+        assertThat(categoryService.resolve(user, 1L)).containsSame(rice);
+        assertThat(categoryService.resolve(user, 9L)).containsSame(kakanin);
+        assertThat(categoryService.resolve(user, 10L)).isEmpty();
+    }
+
+    @Test
     void deleteIsBlockedWhileItemsUseTheCategory() {
-        Category rice = new Category(user, "Rice", "Rice & Grains", 730);
-        when(categoryRepository.findByIdAndUserId(5L, user)).thenReturn(Optional.of(rice));
-        when(itemRepository.countByCategory(rice)).thenReturn(3L);
+        UserCategory kakanin = new UserCategory(user, "Kakanin", "Snacks", 3);
+        when(userRepository.findByIdAndUserId(5L, user)).thenReturn(Optional.of(kakanin));
+        when(itemRepository.countByUserCategory(kakanin)).thenReturn(3L);
 
         assertThatThrownBy(() -> categoryService.delete(user, 5L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("3 items");
-        verify(categoryRepository, never()).delete(any());
+        verify(userRepository, never()).delete(any());
     }
 }
