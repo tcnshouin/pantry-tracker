@@ -8,14 +8,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pantry.tracker.model.Batch;
-import com.pantry.tracker.model.Category;
+import com.pantry.tracker.model.UniversalCategory;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views;
 import com.pantry.tracker.model.Views.FreshnessStatus;
 import com.pantry.tracker.model.Views.StockStatus;
 import com.pantry.tracker.repository.BatchRepository;
-import com.pantry.tracker.repository.CategoryRepository;
 import com.pantry.tracker.repository.GroceryListItemRepository;
 import com.pantry.tracker.repository.ItemRepository;
 import com.pantry.tracker.repository.LocationGroupRepository;
@@ -43,7 +42,7 @@ class InventoryServiceTest {
     private LocationGroupRepository groupRepository;
 
     @Mock
-    private CategoryRepository categoryRepository;
+    private CategoryService categoryService;
 
     @Mock
     private GroceryListItemRepository groceryRepository;
@@ -148,8 +147,8 @@ class InventoryServiceTest {
 
     @Test
     void expiryComesFromShelfLifeOrMustBeTypedForOthers() {
-        Category rice = new Category(user, "Rice", "Rice & Grains", 730);
-        Category others = new Category(user, "Others", "Others", null);
+        UniversalCategory rice = new UniversalCategory("Rice", "Rice & Grains", 730);
+        UniversalCategory others = new UniversalCategory("Others", "Others", null);
 
         assertThat(InventoryService.resolveExpiry(rice, today, null, true)).isEqualTo(today.plusDays(730));
         assertThat(InventoryService.resolveExpiry(others, today, today.plusDays(5), true)).isEqualTo(today.plusDays(5));

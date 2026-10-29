@@ -54,7 +54,7 @@ public final class Views {
         }
     }
 
-    public record CategoryOption(Long id, String name, String groupName, Integer shelfLifeDays) {
+    public record CategoryOption(Long id, String name, String groupName, Integer shelfLifeDays, boolean universal) {
 
         public String shelfLifeText() {
             return Views.shelfLifeText(shelfLifeDays);

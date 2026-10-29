@@ -60,10 +60,11 @@
                 </tr>
                 </thead>
                 <tbody>
-                <th:block th:each="row : ${rows}" th:with="c=${row.category()}">
-                    <tr class="pt-cat-row" th:data-name="${c.name()}" th:data-group="${c.groupName()}">
+                <th:block th:each="row, st : ${rows}" th:with="c=${row.category()}">
+                    <tr class="pt-cat-row" th:classappend="${st.odd} ? 'pt-cat-stripe'" th:data-name="${c.name()}" th:data-group="${c.groupName()}">
                         <td>
                             <span class="fw-semibold" th:text="${c.name()}">Category</span>
+                            <span th:if="${c.universal()}" class="badge rounded-pill text-bg-light border ms-2">Default</span>
                             <span th:if="${row.itemCount() > 0}" class="small text-muted ms-2"
                                   th:text="${row.itemCount()} + (${row.itemCount() == 1} ? ' item' : ' items')">2 items</span>
                         </td>
@@ -73,6 +74,9 @@
                             <span th:unless="${c.manualExpiry()}" th:text="${c.shelfLifeText()}">3 days</span>
                         </td>
                         <td class="text-end text-nowrap">
+                            <span th:if="${c.universal()}" class="text-muted px-2" title="Default categories can't be edited or deleted"
+                                  th:attr="aria-label=${c.name()} + ' is a default category and can\'t be changed'"><i class="bi bi-lock"></i></span>
+                            <th:block th:unless="${c.universal()}">
                             <button type="button" class="btn btn-sm pt-icon-btn pt-cat-edit-btn" title="Edit category"
                                     th:attr="aria-label='Edit ' + ${c.name()},data-edit='cat-edit-' + ${c.id()}">
                                 <i class="bi bi-pencil"></i>
@@ -94,9 +98,10 @@
                                     </li>
                                 </ul>
                             </div>
+                            </th:block>
                         </td>
                     </tr>
-                    <tr class="pt-cat-edit" th:id="'cat-edit-' + ${c.id()}" hidden>
+                    <tr th:unless="${c.universal()}" class="pt-cat-edit" th:id="'cat-edit-' + ${c.id()}" hidden>
                         <td colspan="4">
                             <form th:action="@{/categories/{id}(id=${c.id()})}" method="post" class="pt-panel my-3">
                                 <div class="pt-panel-title"><i class="bi bi-pencil-square me-2"></i>Edit category</div>
@@ -130,7 +135,7 @@
                     <span class="pt-modal-icon" aria-hidden="true"><i class="bi bi-tag"></i></span>
                     <div class="me-auto">
                         <h2 class="modal-title h5 mb-0">New Category</h2>
-                        <div class="small text-muted">Only you will see it</div>
+                        <div class="small text-muted">Only you will see it. Defaults can't be edited, so give yours a different name.</div>
                     </div>
                     <button type="button" class="pt-modal-close" data-bs-dismiss="modal" aria-label="Close">
                         <i class="bi bi-x-lg"></i>

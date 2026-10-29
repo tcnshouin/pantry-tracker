@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pantry.tracker.model.Batch;
-import com.pantry.tracker.model.Category;
+import com.pantry.tracker.model.UniversalCategory;
 import com.pantry.tracker.model.GroceryListItem;
 import com.pantry.tracker.model.GroceryListItem.Source;
 import com.pantry.tracker.model.Item;
@@ -52,7 +52,7 @@ class GroceryServiceTest {
         item.setLowStockEnabled(true);
         item.setLowStockThreshold(2);
         item.setLowStockSuggested(alreadySuggested);
-        item.setCategory(new Category(user, "Rice", "Rice & Grains", 730));
+        item.setCategory(new UniversalCategory("Rice", "Rice & Grains", 730));
         item.setBatches(new ArrayList<>());
         Batch batch = new Batch();
         batch.setQuantity(quantity);
@@ -123,7 +123,7 @@ class GroceryServiceTest {
     void putAwaySkipsItemsWhoseCategoryNeedsAManualDate() {
         Item other = item(0, false);
         other.setId(12L);
-        other.setCategory(new Category(user, "Others", "Others", null));
+        other.setCategory(new UniversalCategory("Others", "Others", null));
         GroceryListItem entry = new GroceryListItem(user, other, "Mystery jar", 1, Source.MANUAL);
         when(groceryRepository.findByUserIdAndIdIn(user, List.of(3L))).thenReturn(List.of(entry));
 

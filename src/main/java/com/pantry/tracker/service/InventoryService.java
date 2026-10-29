@@ -1,7 +1,7 @@
 package com.pantry.tracker.service;
 
 import com.pantry.tracker.model.Batch;
-import com.pantry.tracker.model.Category;
+import com.pantry.tracker.model.CategoryBase;
 import com.pantry.tracker.model.Item;
 import com.pantry.tracker.model.LocationGroup;
 import com.pantry.tracker.model.Views;
@@ -15,7 +15,6 @@ import com.pantry.tracker.model.Views.LocationGroupView;
 import com.pantry.tracker.model.Views.Overview;
 import com.pantry.tracker.model.Views.StockStatus;
 import com.pantry.tracker.repository.BatchRepository;
-import com.pantry.tracker.repository.CategoryRepository;
 import com.pantry.tracker.repository.GroceryListItemRepository;
 import com.pantry.tracker.repository.ItemRepository;
 import com.pantry.tracker.repository.LocationGroupRepository;
@@ -46,19 +45,19 @@ public class InventoryService {
     private final ItemRepository itemRepository;
     private final BatchRepository batchRepository;
     private final LocationGroupRepository groupRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
     private final GroceryListItemRepository groceryRepository;
 
     @Value("${pantry.expiring-soon-days:7}")
     private int expiringSoonDays = 7;
 
     public InventoryService(ItemRepository itemRepository, BatchRepository batchRepository,
-                            LocationGroupRepository groupRepository, CategoryRepository categoryRepository,
+                            LocationGroupRepository groupRepository, CategoryService categoryService,
                             GroceryListItemRepository groceryRepository) {
         this.itemRepository = itemRepository;
         this.batchRepository = batchRepository;
         this.groupRepository = groupRepository;
-        this.categoryRepository = categoryRepository;
+        this.categoryService = categoryService;
         this.groceryRepository = groceryRepository;
     }
 
@@ -164,7 +163,8 @@ public class InventoryService {
         InputLimits.quantity(quantity, 1);
         InputLimits.date(expirationDate, "Expiration date");
         LocationGroup group = findGroup(userId, groupId);
-        Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
+        CategoryBase category = categoryService.resolve(userId, categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Choose a category from the list"));
         LocalDate expiry = resolveExpiry(category, LocalDate.now(), expirationDate, autoExpiry);
         Item item = new Item(userId, itemName, category, group);
         Batch batch = new Batch(item, quantity, expiry);
@@ -187,7 +187,8 @@ public class InventoryService {
                     "Low-stock threshold");
         }
         Item item = findItem(userId, itemId);
-        Category category = categoryRepository.findByIdAndUserId(categoryId, userId).orElseThrow();
+        CategoryBase category = categoryService.resolve(userId, categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Choose a category from the list"));
         if (undo != null) {
             UndoAction action = new UndoAction(UndoAction.Type.RESTORE_ITEM, "Edit item \"" + item.getName() + "\"");
             action.itemId = item.getId();
@@ -393,7 +394,7 @@ public class InventoryService {
                     .ifPresent(itemRepository::delete);
             case RESTORE_ITEM -> itemRepository.findByIdAndUserId(action.itemId, userId).ifPresent(item -> {
                 item.setName(action.name);
-                categoryRepository.findByIdAndUserId(action.categoryId, userId).ifPresent(item::setCategory);
+                categoryService.resolve(userId, action.categoryId).ifPresent(item::setCategory);
                 item.setLowStockEnabled(action.lowStockEnabled);
                 item.setLowStockThreshold(action.lowStockThreshold);
             });
@@ -542,7 +543,7 @@ public class InventoryService {
 
     private void recreateItem(UUID userId, UndoAction action) {
         LocationGroup group = groupRepository.findByIdAndUserId(action.groupId, userId).orElse(null);
-        Category category = categoryRepository.findByIdAndUserId(action.categoryId, userId).orElse(null);
+        CategoryBase category = categoryService.resolve(userId, action.categoryId).orElse(null);
         if (group == null || category == null) {
             return;
         }
@@ -570,7 +571,7 @@ public class InventoryService {
         }
     }
 
-    static LocalDate resolveExpiry(Category category, LocalDate dateAdded, LocalDate manualDate, boolean autoExpiry) {
+    static LocalDate resolveExpiry(CategoryBase category, LocalDate dateAdded, LocalDate manualDate, boolean autoExpiry) {
         Integer days = category.getShelfLifeDays();
         if (days == null && manualDate == null) {
             throw new IllegalArgumentException("\"" + category.getName()
